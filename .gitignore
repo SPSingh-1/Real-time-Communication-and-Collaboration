@@ -1,0 +1,17 @@
+# Top-level .gitignore
+# Ignore node_modules in sub-directories
+client/node_modules/
+Server/node_modules/
+
+# Ignore .env files in sub-directories
+client/.env
+Server/.env
+
+# Common OS and IDE files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Any other global logs or temp files
+*.log

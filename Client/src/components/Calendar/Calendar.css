@@ -1,0 +1,174 @@
+/* .calendar-container {
+  max-width: 420px;
+  margin: 2rem auto;
+  background: white;
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  font-family: 'Segoe UI', sans-serif;
+}
+
+.react-calendar {
+  border: none;
+}
+
+.react-calendar__tile--active {
+  background: #2563eb !important;
+  color: white;
+}
+
+.event-marker {
+  margin-top: 4px;
+  font-size: 0.7rem;
+  color: #2563eb;
+  font-weight: bold;
+  text-align: center;
+}
+
+.prompt-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0,0,0,0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.prompt-box {
+  background: #fff;
+  padding: 20px;
+  border-radius: 12px;
+  width: 300px;
+  box-shadow: 0 0 12px rgba(0,0,0,0.3);
+  text-align: center;
+}
+
+.event-list {
+  max-height: 100px;
+  overflow-y: auto;
+  text-align: left;
+  margin-bottom: 10px;
+}
+
+.event-input {
+  width: 100%;
+  padding: 6px;
+  margin-bottom: 12px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+}
+
+.button-group {
+  display: flex;
+  justify-content: space-between;
+}
+
+.btn {
+  padding: 6px 10px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.btn.add {
+  background-color: #2563eb;
+  color: white;
+}
+
+.btn.delete {
+  background-color: #dc2626;
+  color: white;
+}
+
+.btn.close {
+  background-color: #6b7280;
+  color: white;
+}
+.react-calendar {
+  width: 100%;
+  max-width: 500px;
+  background: white;
+  border: 1px solid #a0a096;
+  border-radius: 10px;
+  font-family: Arial, sans-serif;
+  line-height: 1.125em;
+  padding: 1rem;
+}
+
+.react-calendar__tile--active {
+  background: #006edc;
+  color: white;
+}
+
+.event-marker {
+  margin-top: 4px;
+  font-size: 0.75rem;
+  background-color: #facc15;
+  padding: 2px 4px;
+  border-radius: 4px;
+  color: #000;
+}
+.daily-view {
+  margin-top: 2rem;
+  padding-left: 1rem;
+}
+.daily-title {
+  font-size: 1.1rem;
+  margin-bottom: 1rem;
+}
+.time-slot {
+  display: flex;
+  align-items: flex-start;
+  margin-bottom: 10px;
+}
+.time-label {
+  width: 60px;
+  text-align: right;
+  margin-right: 10px;
+  font-weight: bold;
+}
+.event-slot {
+  flex-grow: 1;
+  border-left: 2px dashed #ccc;
+  padding-left: 10px;
+  min-height: 30px;
+}
+.event-block {
+  background-color: #4caf50;
+  color: white;
+  padding: 6px 12px;
+  border-radius: 5px;
+  margin-bottom: 6px;
+  font-size: 0.85rem;
+}
+.star-marker {
+  color: red;
+  font-size: 1.2rem;
+  font-weight: bold;
+  position: relative;
+  top: 4px;
+}
+
+.below-calendar-events {
+  margin-top: 1.5rem;
+  padding: 1rem;
+  background-color: #f6f6f6;
+  border-radius: 8px;
+}
+
+.below-calendar-events h4 {
+  margin-bottom: 0.5rem;
+  font-size: 1.1rem;
+  color: #333;
+}
+
+.below-calendar-events ul {
+  padding-left: 1rem;
+}
+
+.below-calendar-events li {
+  margin-bottom: 0.4rem;
+} */

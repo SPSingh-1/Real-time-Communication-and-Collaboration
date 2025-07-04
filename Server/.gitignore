@@ -1,0 +1,21 @@
+# .gitignore
+# Node.js
+node_modules/
+npm-debug.log
+yarn-debug.log
+.env # This is crucial for your Cloudinary credentials!
+uploads/     # If you had a local uploads folder
+
+# Logs
+*.log
+logs/
+
+# Development specific
+.vscode/
+.idea/
+
+# macOS
+.DS_Store
+
+# Windows
+Thumbs.db
