@@ -3,26 +3,19 @@ import http from 'http';
 import { Server } from 'socket.io';
 import cors from 'cors';
 import mongoose from 'mongoose';
-import multer from 'multer';
-import path from 'path';
 import nodemailer from 'nodemailer';
-import { fileURLToPath } from 'url';
-import { dirname } from 'path';
-
 // Routes
 import authRoutes from './routes/auth.js';
 import createEventRoutes from './routes/events.js';
 import notificationRoutes from './routes/notification.js';
 import noteRouter from './routes/noteRouter.js';
+import upload from './routes//upload.js';
 import attendeeRoutes from './routes/attendeeRouter.js';
 import setupSocketHandlers from './routes/messageRouter.js'; // ✅ message router socket handler
 
 // Middleware and Models
-import fetchUser from './middleware/fetchUser.js';
 import './models/User.js';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
 
 const app = express();
 const server = http.createServer(app);
@@ -37,25 +30,14 @@ const io = new Server(server, {
 // Apply middleware
 app.use(cors());
 app.use(express.json());
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+app.use('/upload', upload);
 
 // Mount REST routes
 app.use('/api/auth', authRoutes);
 app.use('/notifications', notificationRoutes);
 app.use('/notes', noteRouter);
 app.use('/attendees', attendeeRoutes);
-
-// File Upload
-const storage = multer.diskStorage({
-  destination: 'uploads/',
-  filename: (req, file, cb) => cb(null, `${Date.now()}-${file.originalname}`)
-});
-const upload = multer({ storage });
-
-app.post('/upload', fetchUser, upload.single('file'), (req, res) => {
-  const user = req.user.id;
-  res.json({ fileUrl: `/uploads/${req.file.filename}`, uploadedBy: user });
-});
+app.use('/uploads', express.static('uploads'));
 
 // Email Reminder
 app.post('/notify', async (req, res) => {
