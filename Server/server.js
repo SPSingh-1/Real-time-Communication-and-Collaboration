@@ -1,3 +1,6 @@
+import dotenv from 'dotenv';
+dotenv.config();
+
 import express from 'express';
 import http from 'http';
 import { Server } from 'socket.io';
@@ -43,7 +46,7 @@ app.use('/attendees', attendeeRoutes);
 app.use('/uploads', express.static('uploads'));
 
 // ✅ Mount Upload API
-app.use('/general-upload', fileUploadRoutes); // Handles general file uploads (from './routes/fileUpload.js')
+app.use('/collab_uploads', fileUploadRoutes); // Handles general file uploads (from './routes/fileUpload.js')
 app.use('/files', fileRoutes); // This is correct for listing/deleting general files
 
 

@@ -6,7 +6,8 @@ import { body, validationResult } from 'express-validator';
 import fetchUser from '../middleware/fetchUser.js';
 
 const router = express.Router();
-const JWT_SECRET = 'Shashi@2002';
+// const JWT_SECRET = 'Shashi@2002';
+const JWT_SECRET = process.env.JWT_SECRET;
 
 // Route: POST /api/auth/createuser
 router.post(
@@ -31,7 +32,7 @@ router.post(
 
       user = await User.create({ name, email, phoneno, password: hashedPassword });
 
-      const token = jwt.sign({ user: { id: user.id } }, JWT_SECRET);
+      const token = jwt.sign({ user: { id: user.id }, name: user.name }, JWT_SECRET);
       res.json({ success: true, token });
     } catch (err) {
       console.error(err);
@@ -59,7 +60,7 @@ router.post(
       const isMatch = await bcrypt.compare(password, user.password);
       if (!isMatch) return res.status(400).json({ error: 'Invalid credentials' });
 
-      const token = jwt.sign({ user: { id: user.id } }, JWT_SECRET);
+      const token = jwt.sign({ user: { id: user.id }, name: user.name }, JWT_SECRET);
       res.json({ success: true, token });
     } catch (err) {
       console.error(err);
