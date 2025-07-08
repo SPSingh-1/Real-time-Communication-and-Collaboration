@@ -278,7 +278,7 @@ const FileUploader = () => {
             </div>
 
             {/* File List */}
-            <div className="bg-white p-6 rounded-lg shadow-md border border-gray-200">
+            <div className="bg-white p-6 rounded-lg shadow-md border border-gray-200 h-[350px] overflow-y-auto">
                 <h2 className="text-2xl font-bold mb-4 text-gray-800">Available Files ({filteredFiles.length})</h2>
                 {filteredFiles.length === 0 ? (
                     <p className="text-gray-600 text-center py-8">No files found in this category.</p>

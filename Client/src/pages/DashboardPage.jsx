@@ -10,7 +10,7 @@ const DashboardPage = () => {
   const [activeTab, setActiveTab] = useState('chat');
 
   return (
-    <div className="flex min-h-screen bg-gray-100">
+    <div className="flex min-h-screen bg-gray-100 overflow-y-hidden">
       <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
       <main className="flex-1 p-6 bg-gray-300 overflow-y-auto dashboard-content">
         {activeTab === 'chat' && <ChatBox />}
