@@ -9,10 +9,11 @@ import authRoutes from './routes/auth.js';
 import createEventRoutes from './routes/events.js';
 import notificationRoutes from './routes/notification.js';
 import noteRouter from './routes/noteRouter.js';
-import upload from './routes//upload.js';
+import upload from './routes/upload.js'; // This is your chat upload route
 import attendeeRoutes from './routes/attendeeRouter.js';
-import setupSocketHandlers from './routes/messageRouter.js'; // ✅ message router socket handler
-
+import setupSocketHandlers from './routes/messageRouter.js';
+import fileUploadRoutes from './routes/fileUpload.js'; // This is your general file upload route
+import fileRoutes from './routes/fileRoutes.js';
 // Middleware and Models
 import './models/User.js';
 
@@ -30,7 +31,9 @@ const io = new Server(server, {
 // Apply middleware
 app.use(cors());
 app.use(express.json());
-app.use('/upload', upload);
+
+// --- Keep this for Chat Upload ---
+app.use('/upload', upload); // Handles chat file uploads (from './routes/upload.js')
 
 // Mount REST routes
 app.use('/api/auth', authRoutes);
@@ -38,6 +41,11 @@ app.use('/notifications', notificationRoutes);
 app.use('/notes', noteRouter);
 app.use('/attendees', attendeeRoutes);
 app.use('/uploads', express.static('uploads'));
+
+// ✅ Mount Upload API
+app.use('/general-upload', fileUploadRoutes); // Handles general file uploads (from './routes/fileUpload.js')
+app.use('/files', fileRoutes); // This is correct for listing/deleting general files
+
 
 // Email Reminder
 app.post('/notify', async (req, res) => {
