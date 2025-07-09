@@ -1,17 +1,42 @@
-// src/MyComponents/TaskManager.jsx
 import React, { useState, useEffect, useCallback } from 'react';
-import TaskForm from '../TaskManager/TaskForm'; // Correct path
-import TaskList from '../TaskManager/TaskList'; // Correct path
+import TaskForm from '../TaskManager/TaskForm';
+import TaskList from '../TaskManager/TaskList';
+import { jwtDecode } from 'jwt-decode'; // Import jwtDecode
 
 // Base URL for your Node.js MongoDB backend
-const MONGODB_API_BASE_URL = 'http://localhost:3001/api/tasks'; // Ensure this matches your backend server.js port and prefix
+const MONGODB_API_BASE_URL = 'http://localhost:3001/api/tasks';
 
 const TaskManager = () => {
     const [tasks, setTasks] = useState([]);
-    // currentView can be 'list' (TaskList) or 'form' (TaskForm)
     const [currentView, setCurrentView] = useState('list');
-    // Store the task object if we are editing, null otherwise
     const [editingTask, setEditingTask] = useState(null);
+
+    // State to hold the current logged-in user's name
+    const [currentUserName, setCurrentUserName] = useState('Guest');
+
+    // --- New Effect to decode token and set current user info ---
+    useEffect(() => {
+        const token = localStorage.getItem('token');
+        if (token) {
+            try {
+                const decodedToken = jwtDecode(token);
+                // Adjust these property names based on your actual JWT payload structure
+                setCurrentUserName(decodedToken.name || decodedToken.username || 'Guest');
+                // You might also want to set currentUserId here if needed for backend validation
+                // For this scenario, we only strictly need the name for the frontend display.
+                console.log("Decoded Token in TaskManager:", {
+                    name: decodedToken.name || decodedToken.username,
+                    // id: decodedToken.user?.id || decodedToken.id // Uncomment if you need the ID here
+                });
+            } catch (error) {
+                console.error("Error decoding token in TaskManager:", error);
+                setCurrentUserName('Guest'); // Fallback in case of invalid token
+                // You could also show a toast here if you wanted, similar to FileUploader
+            }
+        } else {
+            setCurrentUserName('Guest'); // No token found, default to Guest
+        }
+    }, []); // Empty dependency array means this runs once on component mount
 
     // Function to fetch all tasks from the backend
     const fetchTasks = useCallback(async () => {
@@ -25,7 +50,6 @@ const TaskManager = () => {
             setTasks(data);
         } catch (error) {
             console.error("Error fetching tasks:", error);
-            // In a real app, you might show an error message to the user
         }
     }, []);
 
@@ -49,10 +73,12 @@ const TaskManager = () => {
                 });
             } else {
                 // This is an add operation
+                // --- Automatically add currentUserName to the new task data ---
+                const newTaskData = { ...taskData, createdBy: currentUserName };
                 response = await fetch(MONGODB_API_BASE_URL, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(taskData),
+                    body: JSON.stringify(newTaskData),
                 });
             }
 
@@ -67,7 +93,6 @@ const TaskManager = () => {
             setEditingTask(null); // Clear editing state after save
         } catch (error) {
             console.error("Error saving task:", error);
-            // In a real app, show a user-friendly error message
         }
     };
 
@@ -137,7 +162,8 @@ const TaskManager = () => {
                     task={editingTask}
                     onSave={handleSaveTask}
                     onCancel={handleBackToListClick}
-                    userId="sampleUserId123" // Replace with actual user ID from your auth system
+                    // Pass the fetched currentUserName here
+                    loggedInUserName={currentUserName}
                 />
             ) : ( // currentView === 'list'
                 <TaskList
