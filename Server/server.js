@@ -7,6 +7,7 @@ import { Server } from 'socket.io';
 import cors from 'cors';
 import mongoose from 'mongoose';
 import nodemailer from 'nodemailer';
+
 // Routes
 import authRoutes from './routes/auth.js';
 import createEventRoutes from './routes/events.js';
@@ -20,6 +21,8 @@ import fileRoutes from './routes/fileRoutes.js';
 // Middleware and Models
 import './models/User.js';
 
+// --- NEW: Import the Task Router ---
+import taskRouter from './routes/taskRouter.js'; // Adjust path if needed
 
 const app = express();
 const server = http.createServer(app);
@@ -48,7 +51,6 @@ app.use('/uploads', express.static('uploads'));
 // ✅ Mount Upload API
 app.use('/collab_uploads', fileUploadRoutes); // Handles general file uploads (from './routes/fileUpload.js')
 app.use('/files', fileRoutes); // This is correct for listing/deleting general files
-
 
 // Email Reminder
 app.post('/notify', async (req, res) => {
@@ -85,6 +87,9 @@ app.use('/events', createEventRoutes(io));
 
 // ✅ Socket.IO for messages
 setupSocketHandlers(io);
+
+// --- NEW: Mount the Task Router ---
+app.use('/api/tasks', taskRouter); // This will handle all /api/tasks routes
 
 // MongoDB connection
 mongoose.connect('mongodb://localhost:27017/realtime-collobration')
