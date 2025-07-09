@@ -18,6 +18,7 @@ const Sidebar = ({ activeTab, setActiveTab }) => {
         <SidebarButton icon={<FaFileAlt />} label="Files" tab="files" activeTab={activeTab} setActiveTab={setActiveTab} />
         <SidebarButton icon={<FaCalendarAlt />} label="Calendar" tab="calendar" activeTab={activeTab} setActiveTab={setActiveTab} />
         <SidebarButton icon={<FaClipboardList />} label="Figma Tool" tab="figma" activeTab={activeTab} setActiveTab={setActiveTab} />
+        <SidebarButton icon={<FaClipboardList />} label="Video Conference" tab="VideoConferenc" activeTab={activeTab} setActiveTab={setActiveTab} />
       </nav>
 
       <button onClick={logout} className="sidebar-logout">

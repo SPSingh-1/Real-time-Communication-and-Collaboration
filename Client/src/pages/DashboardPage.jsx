@@ -5,6 +5,7 @@ import TaskManager from '../components/Tools/TaskManager';
 import FileManager from '../components/Tools/FileManager';
 import CalendarTool from '../components/Tools/CalendarTool';
 import FigmaTool from '../components/Tools/FigmaTool';
+import VideoConferenc from '../components/Tools/VideoConferenc';
 
 const DashboardPage = () => {
   const [activeTab, setActiveTab] = useState('chat');
@@ -18,6 +19,7 @@ const DashboardPage = () => {
         {activeTab === 'files' && <FileManager />}
         {activeTab === 'calendar' && <CalendarTool />}
         {activeTab === 'figma' && <FigmaTool />}
+        {activeTab === 'VideoConferenc' && <VideoConferenc />}
       </main>
     </div>
   );
