@@ -2,6 +2,7 @@
 import express from 'express'; // Use import for ES modules
 import { google } from 'googleapis'; // Use import for ES modules
 import { OAuth2Client } from 'google-auth-library'; // Use import for ES modules
+import jwt from 'jsonwebtoken'; // Import jsonwebtoken
 
 const router = express.Router(); // Create an Express Router
 
@@ -11,6 +12,11 @@ let CLIENT_ID;
 let CLIENT_SECRET;
 let REDIRECT_URI;
 let SCOPES;
+
+// --- Jitsi Jaas Configuration (passed from server.js) ---
+let JITSI_APP_ID;
+let JITSI_KID;
+let JITSI_PRIVATE_KEY; // This will now receive the key directly from fs.readFileSync
 
 // Initialize OAuth2Client (will be initialized when init function is called)
 let oauth2Client;
@@ -22,6 +28,12 @@ export const initVideoRouter = (config) => { // Export initVideoRouter as a name
     CLIENT_SECRET = config.CLIENT_SECRET;
     REDIRECT_URI = config.REDIRECT_URI;
     SCOPES = config.SCOPES;
+
+    // Jitsi Jaas configuration
+    JITSI_APP_ID = config.JITSI_APP_ID;
+    JITSI_KID = config.JITSI_KID;
+    JITSI_PRIVATE_KEY = config.JITSI_PRIVATE_KEY; // This is where the file content is passed
+
 
     oauth2Client = new OAuth2Client(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
 };
@@ -63,21 +75,22 @@ router.get('/oauth2callback', async (req, res) => {
     }
 });
 
-// --- Middleware to check if user is authenticated for API calls ---
-// This middleware should be applied to routes that require authentication
-router.use((req, res, next) => {
+// --- Google Meet Specific Routes with Middleware ---
+const googleMeetRouter = express.Router();
+
+googleMeetRouter.use((req, res, next) => {
     if (!currentUserTokens) {
-        // In a production app, you'd check a session, JWT, or database for user's tokens
-        return res.status(401).json({ error: 'Not authenticated. Please log in with Google.' });
+        return res.status(401).json({ error: 'Not authenticated with Google. Please log in.' });
     }
     oauth2Client.setCredentials(currentUserTokens);
     next();
 });
 
-// --- 3. Endpoint to Create a Google Meet Meeting ---
-router.post('/create-meet-link', async (req, res) => {
+// Attach Google Meet routes to the sub-router
+// Note: These paths are now relative to '/api/google-meet'
+googleMeetRouter.post('/create-link', async (req, res) => {
     try {
-        if (!oauth2Client) {
+        if (!oauth2Client) { // Redundant check here if middleware works, but harmless
             return res.status(500).json({ error: 'OAuth client not initialized.' });
         }
         // Re-authenticate if access token is expired using refresh token
@@ -101,12 +114,12 @@ router.post('/create-meet-link', async (req, res) => {
     }
 });
 
-// --- Optional: Endpoint to Create a Google Calendar Event with Meet Link ---
-router.post('/schedule-meet', async (req, res) => {
+// Optional: Endpoint to Create a Google Calendar Event with Meet Link
+googleMeetRouter.post('/schedule', async (req, res) => {
     const { summary, description, startTime, endTime, attendees } = req.body;
 
     try {
-        if (!oauth2Client) {
+        if (!oauth2Client) { // Redundant check here if middleware works, but harmless
             return res.status(500).json({ error: 'OAuth client not initialized.' });
         }
         if (oauth2Client.isTokenExpired()) {
@@ -162,5 +175,63 @@ router.post('/schedule-meet', async (req, res) => {
         res.status(500).json({ error: 'Failed to schedule Meet with Calendar.' });
     }
 });
+
+// Mount the googleMeetRouter at '/google-meet'
+router.use('/google-meet', googleMeetRouter);
+
+// --- Jitsi Jaas JWT Generation Endpoint ---
+router.post('/jitsi/generate-jwt', (req, res) => {
+    // In a real application, you'd get user info from a session or database
+    const { room, userId, userName, userEmail, userAvatar, moderator } = req.body;
+
+    if (!JITSI_APP_ID || !JITSI_KID || !JITSI_PRIVATE_KEY) {
+        return res.status(500).json({ error: 'Jitsi Jaas credentials (App ID, Key ID, or Private Key) not configured on server.' });
+    }
+
+    const payload = {
+        aud: 'jitsi',
+        iss: 'chat', // Or your application name
+        iat: Math.floor(Date.now() / 1000),
+        exp: Math.floor(Date.now() / 1000) + (60 * 60 * 7), // Token valid for 7 hours
+        nbf: Math.floor(Date.now() / 1000) - 5, // Not before 5 seconds ago
+        sub: JITSI_APP_ID, // Use your Jitsi App ID as the subject
+        context: {
+            features: {
+                livestreaming: true,
+                'file-upload': false,
+                'outbound-call': true,
+                'sip-outbound-call': false,
+                transcription: true,
+                recording: true,
+                flip: false,
+            },
+            user: {
+                'hidden-from-recorder': false,
+                moderator: moderator || false, // 'moderator' role should be dynamic or based on user's role
+                name: userName || 'Guest User',
+                id: userId || `guest-${Date.now()}`,
+                avatar: userAvatar || '',
+                email: userEmail || 'guest@example.com',
+            },
+        },
+        room: room || '*', // '*' means any room within the app ID context, or a specific room name
+    };
+
+    const header = {
+        kid: JITSI_KID, // Your Jitsi Key ID
+        typ: 'JWT',
+        alg: 'RS256',
+    };
+
+    try {
+        // Use the loaded JITSI_PRIVATE_KEY to sign the token
+        const token = jwt.sign(payload, JITSI_PRIVATE_KEY, { algorithm: 'RS256', header });
+        res.json({ jwt: token });
+    } catch (error) {
+        console.error('Error generating Jitsi JWT:', error.message);
+        res.status(500).json({ error: 'Failed to generate Jitsi JWT.' });
+    }
+});
+
 
 export default router; // Export the router as the default export
