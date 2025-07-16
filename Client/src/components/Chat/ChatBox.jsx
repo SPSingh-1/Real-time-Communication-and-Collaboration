@@ -258,14 +258,17 @@ const ChatBox = () => {
     const sortedMessages = [...pinnedMsgs, ...messages.filter(m => !pinnedMsgs.some(p => p._id === m._id))];
 
     return (
-        <div className="h-screen flex flex-col bg-[url('/bg-chat-dark.png')] bg-cover">
+        <>
+        <div className='text-[50px] flex items-center justify-center border-2 border-gray-950'>Group chats</div>
+            <div className="h-screen flex flex-col bg-[url('/bg-chat-dark.png')] bg-cover">
             <div className="flex-1 overflow-y-auto px-4 py-6 space-y-4">
                 {sortedMessages.map((m) => {
-                    const isMine = m.user?._id === userId;
+                    const isMine = m.user?._id === userId; 
                     const options = isMine ? ['reply', 'edit', 'delete', 'copy', 'pin', 'star'] : ['reply', 'copy', 'pin', 'star'];
                     const reactionCounts = getReactionCounts(m.reactions);
 
                     return (
+                        
                         <div
                             key={m._id}
                             id={`message-container-${m._id}`}
@@ -284,8 +287,8 @@ const ChatBox = () => {
                             }}
                         >
                             {/* Message Bubble (now the relative container for the icons) */}
-                            <div className={`relative px-4 py-2 rounded-xl text-sm break-words transition-all duration-200
-                                ${isMine ? 'bg-[#ff5252] text-white border-r-4 border-blue-700 rounded-br-none' : 'bg-[#2f8e2f] text-white border-l-4 border-l-pink-700  rounded-bl-none'}`}>
+                            <div className={`relative px-4 py-2 rounded-xl text-sm break-words transition-all duration-200 min-w-[100px] justify-end items-end
+                                ${isMine ? 'bg-blue-800 text-white font-[500] border-r-4 border-green-700 rounded-br-none' : 'bg-gray-600 text-white font-[500] border-l-4 border-l-pink-700  rounded-bl-none'}`}>
 
                                 {/* Single Smiley Trigger Icon - NOW CHILD OF MESSAGE BUBBLE */}
                                 {showTriggerSmileyForMsgId === m._id && !showQuickReactionBarForMsgId && !fullPickerMessageId && (
@@ -332,7 +335,7 @@ const ChatBox = () => {
 
                                 {m.replyTo && (
                                     <div className="text-xs italic text-gray-200 mb-1 border-b-1 border-gray-900">
-                                        Replying to: <span className="font-semibold text-gray-900 text-[13px]">{m.replyTo.user?.name || 'Unknown'}:</span> <em>{m.replyTo?.text || 'Unknown message'}</em>
+                                        <span className="font-semibold text-gray-900 text-[13px]">{m.replyTo.user?.name || 'Unknown'}:</span> <em>{m.replyTo?.text || 'Unknown message'}</em>
                                     </div>
                                 )}
 
@@ -352,11 +355,11 @@ const ChatBox = () => {
 
                                 {/* Reaction badges (these stay, appearing below the message bubble) */}
                                 {Object.keys(reactionCounts).length > 0 && (
-                                    <div className={`absolute -bottom-5 ${isMine ? 'left-0' : 'right-0'} flex gap-1`}>
+                                    <div className={`absolute -bottom-3 ${isMine ? 'left-0' : 'right-0'} flex gap-1`}>
                                         {Object.entries(reactionCounts).map(([emoji, count]) => (
                                             <span
                                                 key={emoji}
-                                                className="bg-white text-gray-800 border px-2 py-0.5 rounded-full text-sm shadow cursor-pointer hover:scale-105"
+                                                className="bg-none text-gray-800 px-2 py-0.5 rounded-full text-[20px] shadow cursor-pointer hover:scale-105"
                                                 onClick={() => {
                                                     // Toggle the specific emoji reaction when clicking on its badge
                                                     handleReaction(m._id, emoji);
@@ -438,14 +441,14 @@ const ChatBox = () => {
 
             <div className="sticky bottom-0 left-0 w-full border-t px-4 py-3 bg-[#c4c7c9] z-10">
                 {replyTo && (
-                    <div className="text-sm text-[#ff5252] mb-1">
-                        <span className='text-gray-900 font-[600]'>Replying to:</span> <span className="font-semibold text-bold text-[14px]">{replyTo.user?.name || 'Unknown'}:</span> <em>{replyTo.text}</em>
+                    <div className="text-sm text-black mb-1">
+                        <span className="font-semibold text-bold text-[14px]">{replyTo.user?.name || 'Unknown'}:</span> <em>{replyTo.text}</em>
                         <button className="ml-2 text-black" onClick={() => setReplyTo(null)}>×</button>
                     </div>
                 )}
                 <div className="flex items-center gap-2">
                     <div className="relative">
-                        <button onClick={() => setShowAttachmentMenu(!showAttachmentMenu)} className="text-xl px-3 py-2 rounded hover:bg-gray-950 transition text-[#2f8e2f]">
+                        <button onClick={() => setShowAttachmentMenu(!showAttachmentMenu)} className="text-xl px-3 py-2 rounded hover:bg-gray-200 transition text-[#280fe6] hover:text-gray-600">
                             <FaPaperclip />
                         </button>
                         {showAttachmentMenu && (
@@ -459,7 +462,7 @@ const ChatBox = () => {
                         )}
                     </div>
 
-                    <button onClick={() => setShowEmojiPicker(!showEmojiPicker)} className="text-xl px-3 py-2 rounded hover:bg-gray-950 transition text-[#2f8e2f]">
+                    <button onClick={() => setShowEmojiPicker(!showEmojiPicker)} className="text-xl px-3 py-2 rounded hover:bg-gray-200 transition text-[#280fe6] hover:text-gray-600">
                         <FaSmile />
                     </button>
 
@@ -471,7 +474,7 @@ const ChatBox = () => {
                         placeholder="Type a message"
                         onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
                     />
-                    <button onClick={sendMessage} className="bg-[#ff5252] text-white px-4 py-2 rounded hover:bg-[#af0c0c] transition">
+                    <button onClick={sendMessage} className="bg-gray-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition">
                         Send
                     </button>
                 </div>
@@ -482,6 +485,8 @@ const ChatBox = () => {
                 )}
             </div>
         </div>
+        
+        </>
     );
 };
 

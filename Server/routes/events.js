@@ -3,10 +3,29 @@ import express from 'express';
 import Events from '../models/Events.js';
 import Notification from '../models/Notification.js';
 import fetchUser from '../middleware/fetchUser.js';
+import cron from 'node-cron';
 
 const router = express.Router();
 
 export default function createEventRoutes(io) {
+  // ✅ AUTO-CLEANUP JOB: Delete events older than last month
+  cron.schedule('0 2 * * *', async () => {
+    try {
+      const now = new Date();
+      const lastMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59);
+
+      const result = await Events.deleteMany({
+        date: { $lte: lastMonthEnd }
+      });
+
+      if (result.deletedCount > 0) {
+        console.log(`🧹 Auto-cleanup: Deleted ${result.deletedCount} events older than ${lastMonthEnd.toDateString()}`);
+      }
+    } catch (error) {
+      console.error('❌ Error during event auto-cleanup:', error.message);
+    }
+  });
+
   // ✅ CREATE EVENT
   router.post('/', fetchUser, async (req, res) => {
     try {
@@ -16,20 +35,16 @@ export default function createEventRoutes(io) {
         title,
         date,
         time,
-        description: description || '', // avoid undefined
+        description: description || '',
         user: req.user.id
       });
-    console.log('📥 Incoming event payload:', req.body); // <-- Add this
 
-
-
+      console.log('📥 Incoming event payload:', req.body);
 
       const populated = await Events.findById(event._id).populate('user', 'name email');
 
-      // Broadcast new event
       io.emit('newEvent', populated);
 
-      // Save and emit notification
       const notification = await Notification.create({
         type: 'event',
         text: `${populated.user.name} created event "${populated.title}"`,
