@@ -1,12 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import PropTypes from 'prop-types'; // Import PropTypes for type checking
 
-// Reusable Input Field Component
-// This component handles rendering different types of form inputs (text, select, textarea, date, number, checkbox)
-// It abstracts away the common styling and structure for each input.
+// Reusable Input Field Component with 3D styling
 const InputField = ({ label, name, type = 'text', value, onChange, placeholder, options = [], multiple = false, disabled = false, required = false }) => {
-    const commonClasses = "mt-1 block w-full p-3 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-lg";
-    const labelClasses = "block text-sm font-medium text-gray-700";
+    const commonClasses = "mt-2 block w-full p-4 border-2 border-white/20 rounded-2xl shadow-2xl focus:ring-4 focus:ring-cyan-500/50 focus:border-cyan-400 sm:text-sm bg-white/10 backdrop-blur-md text-white placeholder-white/60 transform-gpu transition-all duration-500 hover:scale-105 hover:shadow-cyan-500/25 focus:scale-105";
+    const labelClasses = "block text-sm font-bold text-white/90 mb-2 transform-gpu transition-all duration-300 hover:text-cyan-400";
 
     // Handle array values for 'assignedTo' when converting to string for input 'value'
     const displayValue = Array.isArray(value) ? value.join(', ') : value;
@@ -14,116 +12,135 @@ const InputField = ({ label, name, type = 'text', value, onChange, placeholder, 
     switch (type) {
         case 'select':
             return (
-                <div>
+                <div className="transform-gpu transition-all duration-700 hover:translate-y-[-2px]">
                     <label htmlFor={name} className={labelClasses}>
-                        {label} {required && <span className="text-red-500">*</span>}
+                        {label} {required && <span className="text-red-400 animate-pulse">*</span>}
                     </label>
-                    <select
-                        id={name}
-                        name={name}
-                        value={displayValue}
-                        onChange={onChange}
-                        className={commonClasses}
-                        multiple={multiple}
-                        disabled={disabled}
-                        required={required}
-                    >
-                        <option value="">{placeholder || `Select a ${label}`}</option>
-                        {options.map((option) => (
-                            <option key={option} value={option}>{option}</option>
-                        ))}
-                    </select>
+                    <div className="relative group">
+                        <select
+                            id={name}
+                            name={name}
+                            value={displayValue}
+                            onChange={onChange}
+                            className={`${commonClasses} cursor-pointer appearance-none`}
+                            multiple={multiple}
+                            disabled={disabled}
+                            required={required}
+                        >
+                            <option value="" className="bg-gray-800 text-white">{placeholder || `Select a ${label}`}</option>
+                            {options.map((option) => (
+                                <option key={option} value={option} className="bg-gray-800 text-white">{option}</option>
+                            ))}
+                        </select>
+                        <div className="absolute inset-y-0 right-0 flex items-center px-4 pointer-events-none">
+                            <div className="w-4 h-4 border-2 border-white/60 border-t-transparent rounded-full animate-spin opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                        </div>
+                    </div>
                 </div>
             );
         case 'textarea':
             return (
-                <div>
+                <div className="transform-gpu transition-all duration-700 hover:translate-y-[-2px]">
                     <label htmlFor={name} className={labelClasses}>
-                        {label} {required && <span className="text-red-500">*</span>}
+                        {label} {required && <span className="text-red-400 animate-pulse">*</span>}
                     </label>
-                    <textarea
-                        id={name}
-                        name={name}
-                        value={displayValue}
-                        onChange={onChange}
-                        rows="3"
-                        className={`${commonClasses} resize-y`}
-                        placeholder={placeholder}
-                        disabled={disabled}
-                        required={required}
-                    />
+                    <div className="relative group">
+                        <textarea
+                            id={name}
+                            name={name}
+                            value={displayValue}
+                            onChange={onChange}
+                            rows="4"
+                            className={`${commonClasses} resize-none`}
+                            placeholder={placeholder}
+                            disabled={disabled}
+                            required={required}
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/10 to-purple-500/10 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
+                    </div>
                 </div>
             );
         case 'date':
             return (
-                <div>
+                <div className="transform-gpu transition-all duration-700 hover:translate-y-[-2px]">
                     <label htmlFor={name} className={labelClasses}>
-                        {label} {required && <span className="text-red-500">*</span>}
+                        {label} {required && <span className="text-red-400 animate-pulse">*</span>}
                     </label>
-                    <input
-                        type="date"
-                        id={name}
-                        name={name}
-                        // Format date to 'YYYY-MM-DD' for date input type
-                        value={displayValue ? new Date(displayValue).toISOString().split('T')[0] : ''}
-                        onChange={onChange}
-                        className={commonClasses}
-                        disabled={disabled}
-                        required={required}
-                    />
+                    <div className="relative group">
+                        <input
+                            type="date"
+                            id={name}
+                            name={name}
+                            value={displayValue ? new Date(displayValue).toISOString().split('T')[0] : ''}
+                            onChange={onChange}
+                            className={`${commonClasses} [&::-webkit-calendar-picker-indicator]:invert [&::-webkit-calendar-picker-indicator]:opacity-70`}
+                            disabled={disabled}
+                            required={required}
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-r from-emerald-500/10 to-teal-500/10 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
+                    </div>
                 </div>
             );
         case 'number':
             return (
-                <div>
+                <div className="transform-gpu transition-all duration-700 hover:translate-y-[-2px]">
                     <label htmlFor={name} className={labelClasses}>
-                        {label} {required && <span className="text-red-500">*</span>}
+                        {label} {required && <span className="text-red-400 animate-pulse">*</span>}
                     </label>
-                    <input
-                        type="number"
-                        id={name}
-                        name={name}
-                        value={displayValue}
-                        onChange={onChange}
-                        className={commonClasses}
-                        placeholder={placeholder}
-                        disabled={disabled}
-                        required={required}
-                    />
+                    <div className="relative group">
+                        <input
+                            type="number"
+                            id={name}
+                            name={name}
+                            value={displayValue}
+                            onChange={onChange}
+                            className={commonClasses}
+                            placeholder={placeholder}
+                            disabled={disabled}
+                            required={required}
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-r from-yellow-500/10 to-orange-500/10 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
+                    </div>
                 </div>
             );
         case 'checkbox':
             return (
-                <div className="flex items-center">
-                    <input
-                        type="checkbox"
-                        id={name}
-                        name={name}
-                        checked={value}
-                        onChange={onChange}
-                        className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                        disabled={disabled}
-                    />
-                    <label htmlFor={name} className="ml-2 block text-sm text-gray-900">{label}</label>
+                <div className="flex items-center transform-gpu transition-all duration-700 hover:translate-y-[-2px] hover:scale-105">
+                    <div className="relative">
+                        <input
+                            type="checkbox"
+                            id={name}
+                            name={name}
+                            checked={value}
+                            onChange={onChange}
+                            className="h-6 w-6 text-cyan-600 border-2 border-white/30 rounded-lg focus:ring-cyan-500 focus:ring-4 bg-white/10 backdrop-blur-md transform-gpu transition-all duration-300 hover:scale-110"
+                            disabled={disabled}
+                        />
+                        <div className="absolute inset-0 bg-cyan-500/20 rounded-lg opacity-0 hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
+                    </div>
+                    <label htmlFor={name} className="ml-3 block text-sm font-medium text-white/90 transition-colors duration-300 hover:text-cyan-400">{label}</label>
                 </div>
             );
         default:
             return (
-                <div>
+                <div className="transform-gpu transition-all duration-700 hover:translate-y-[-2px]">
                     <label htmlFor={name} className={labelClasses}>
-                        {label} {required && <span className="text-red-500">*</span>}
+                        {label} {required && <span className="text-red-400 animate-pulse">*</span>}
                     </label>
-                    <input
-                        type={type}
-                        id={name}
-                        name={name}
-                        value={displayValue}
-                        onChange={onChange}
-                        className={commonClasses}
-                        placeholder={placeholder}
-                        disabled={disabled}
-                        required={required}
-                    />
+                    <div className="relative group">
+                        <input
+                            type={type}
+                            id={name}
+                            name={name}
+                            value={displayValue}
+                            onChange={onChange}
+                            className={commonClasses}
+                            placeholder={placeholder}
+                            disabled={disabled}
+                            required={required}
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 to-indigo-500/10 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
+                    </div>
                 </div>
             );
     }
@@ -148,8 +165,7 @@ InputField.propTypes = {
     required: PropTypes.bool,
 };
 
-
-const TaskForm = ({ task, onSave, onCancel, loggedInUserName }) => { // Changed 'userId' to 'loggedInUserName'
+const TaskForm = ({ task, onSave, onCancel, loggedInUserName }) => {
     // Determine if the form is in edit mode (true if 'task' prop is provided)
     const isEditMode = !!task;
 
@@ -181,8 +197,7 @@ const TaskForm = ({ task, onSave, onCancel, loggedInUserName }) => { // Changed 
         }
     });
 
-    // Effect to update form data when 'task' prop changes (e.g., when switching from add to edit mode)
-    // or when 'loggedInUserName' changes (relevant for new task creation)
+    // Effect to update form data when 'task' prop changes or when 'loggedInUserName' changes
     useEffect(() => {
         if (isEditMode && task) {
             setFormData({
@@ -258,51 +273,67 @@ const TaskForm = ({ task, onSave, onCancel, loggedInUserName }) => { // Changed 
         onSave(formData);
     };
 
-  return (
+    return (
         <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 p-8 relative overflow-hidden">
-            {/* Animated background elements */}
+            {/* Enhanced 3D animated background elements */}
             <div className="absolute inset-0 overflow-hidden">
-                <div className="absolute top-20 left-20 w-72 h-72 bg-blue-500/10 rounded-full blur-3xl animate-pulse"></div>
-                <div className="absolute bottom-20 right-20 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl animate-pulse delay-1000"></div>
-                <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-indigo-500/10 rounded-full blur-3xl animate-pulse delay-500"></div>
+                {/* Geometric shapes with 3D transforms */}
+                <div className="absolute top-20 left-20 w-32 h-32 bg-gradient-to-r from-cyan-400/20 to-blue-500/20 rounded-3xl blur-xl animate-float-3d transform-gpu"></div>
+                <div className="absolute bottom-20 right-20 w-40 h-40 bg-gradient-to-r from-purple-400/20 to-pink-500/20 rounded-full blur-2xl animate-spin-3d transform-gpu"></div>
+                <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-28 h-28 bg-gradient-to-r from-emerald-400/20 to-teal-500/20 rounded-2xl blur-xl animate-bounce-3d transform-gpu"></div>
+                
+                {/* Large orbital rings */}
+                <div className="absolute top-10 right-10 w-64 h-64 border-2 border-white/10 rounded-full animate-spin-slow transform-gpu"></div>
+                <div className="absolute bottom-10 left-10 w-48 h-48 border-2 border-cyan-400/20 rounded-full animate-spin-reverse transform-gpu"></div>
             </div>
 
-            {/* Floating particles */}
+            {/* Enhanced floating particles with 3D movement */}
             <div className="absolute inset-0 pointer-events-none">
-                {[...Array(15)].map((_, i) => (
+                {[...Array(25)].map((_, i) => (
                     <div
                         key={i}
-                        className="absolute w-1 h-1 bg-white/30 rounded-full animate-float"
+                        className="absolute w-2 h-2 bg-white/50 rounded-full animate-particle-3d transform-gpu shadow-2xl shadow-white/20"
                         style={{
                             left: `${Math.random() * 100}%`,
                             top: `${Math.random() * 100}%`,
                             animationDelay: `${Math.random() * 5}s`,
-                            animationDuration: `${3 + Math.random() * 4}s`
+                            animationDuration: `${4 + Math.random() * 6}s`
                         }}
                     ></div>
                 ))}
             </div>
 
-            <div className="max-w-5xl mx-auto relative z-10">
-                <div className="bg-gradient-to-br from-white/15 to-white/5 backdrop-blur-xl rounded-3xl border border-white/20 shadow-2xl p-8 transform hover:scale-[1.01] transition-all duration-700">
-                    <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/10 to-purple-500/10 rounded-3xl blur-xl -z-10"></div>
+            <div className="max-w-6xl mx-auto relative z-10">
+                {/* Main 3D container with enhanced effects */}
+                <div 
+                    className="bg-gradient-to-br from-white/15 to-white/5 backdrop-blur-2xl rounded-3xl border border-white/30 shadow-2xl p-8 transform-gpu transition-all duration-1000 hover:scale-[1.01] hover:rotate-x-1"
+                    style={{ 
+                        transformStyle: 'preserve-3d',
+                        perspective: '1200px',
+                        boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 0 60px rgba(34, 211, 238, 0.15)'
+                    }}
+                >
+                    {/* Enhanced glowing border */}
+                    <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/30 via-purple-500/30 to-pink-500/30 rounded-3xl blur-2xl animate-pulse-rainbow -z-10"></div>
                     
-                    {/* Header with window controls */}
-                    <div className="flex items-center justify-between mb-8">
-                        <div className="flex items-center space-x-3">
-                            <div className="w-3 h-3 bg-red-500 rounded-full shadow-lg shadow-red-500/50"></div>
-                            <div className="w-3 h-3 bg-yellow-500 rounded-full shadow-lg shadow-yellow-500/50"></div>
-                            <div className="w-3 h-3 bg-green-500 rounded-full shadow-lg shadow-green-500/50"></div>
+                    {/* 3D Header with window controls */}
+                    <div className="flex items-center justify-between mb-8 transform-gpu transition-all duration-700 hover:translate-z-2">
+                        <div className="flex items-center space-x-4">
+                            {/* Animated window controls */}
+                            <div className="w-4 h-4 bg-red-500 rounded-full shadow-lg shadow-red-500/50 animate-pulse transform-gpu hover:scale-125 transition-transform duration-300"></div>
+                            <div className="w-4 h-4 bg-yellow-500 rounded-full shadow-lg shadow-yellow-500/50 animate-pulse delay-200 transform-gpu hover:scale-125 transition-transform duration-300"></div>
+                            <div className="w-4 h-4 bg-green-500 rounded-full shadow-lg shadow-green-500/50 animate-pulse delay-400 transform-gpu hover:scale-125 transition-transform duration-300"></div>
                         </div>
-                        <h3 className="text-3xl font-black bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400 text-transparent bg-clip-text">
+                        <h3 className="text-4xl font-black bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400 text-transparent bg-clip-text animate-text-glow">
                             {isEditMode ? '✏️ Edit Task' : '➕ Add New Task'}
                         </h3>
                     </div>
 
+                    {/* Enhanced 3D form */}
                     <form onSubmit={handleSubmit} className="space-y-8">
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                             <InputField
-                                label="📝 Task Title"
+                                label="🎯 Task Title"
                                 name="taskTitle"
                                 value={formData.taskTitle}
                                 onChange={handleChange}
@@ -371,7 +402,7 @@ const TaskForm = ({ task, onSave, onCancel, loggedInUserName }) => { // Changed 
                         </div>
 
                         <InputField
-                            label="📄 Task Description"
+                            label="📝 Task Description"
                             name="taskDescription"
                             type="textarea"
                             value={formData.taskDescription}
@@ -380,31 +411,45 @@ const TaskForm = ({ task, onSave, onCancel, loggedInUserName }) => { // Changed 
                             required={true}
                         />
 
-                        <div className="flex justify-end space-x-6 mt-12">
+                        {/* Enhanced 3D action buttons */}
+                        <div className="flex justify-end space-x-8 mt-12">
                             <button
                                 type="button"
                                 onClick={onCancel}
-                                className="px-8 py-4 bg-gradient-to-r from-gray-500 to-gray-600 text-white font-bold rounded-2xl
-                                         hover:from-gray-600 hover:to-gray-700 transform hover:scale-105 hover:rotate-1
-                                         transition-all duration-300 shadow-2xl hover:shadow-gray-500/25
-                                         relative overflow-hidden group"
+                                className="group relative px-10 py-5 bg-gradient-to-r from-gray-600 to-gray-700 text-white font-bold rounded-3xl
+                                         shadow-2xl hover:shadow-gray-500/50 transform-gpu transition-all duration-500 
+                                         hover:scale-110 hover:rotate-y-6 focus:outline-none focus:ring-4 focus:ring-gray-500/50
+                                         overflow-hidden"
+                                style={{ transformStyle: 'preserve-3d' }}
                             >
-                                <div className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                                <span className="relative z-10">❌ Cancel</span>
+                                <div className="absolute inset-0 bg-gradient-to-r from-gray-700 to-gray-800 rounded-3xl transform translate-z-[-6px] group-hover:translate-z-[-12px] transition-transform duration-500"></div>
+                                <div className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-3xl"></div>
+                                <div className="relative z-10 flex items-center space-x-2">
+                                    <span className="text-2xl animate-bounce">❌</span>
+                                    <span>Cancel</span>
+                                </div>
                             </button>
                             <button
                                 type="submit"
-                                className={`px-8 py-4 font-bold rounded-2xl transform hover:scale-105 hover:rotate-1
-                                         transition-all duration-300 shadow-2xl relative overflow-hidden group
+                                className={`group relative px-10 py-5 font-bold rounded-3xl transform-gpu transition-all duration-500 
+                                         hover:scale-110 hover:rotate-y-6 shadow-2xl overflow-hidden focus:outline-none focus:ring-4
                                          ${isEditMode ? 
-                                           'bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 hover:shadow-blue-500/25' : 
-                                           'bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 hover:shadow-green-500/25'
+                                           'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 hover:shadow-blue-500/50 focus:ring-blue-500/50' : 
+                                           'bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 hover:shadow-emerald-500/50 focus:ring-emerald-500/50'
                                          } text-white`}
+                                style={{ transformStyle: 'preserve-3d' }}
                             >
-                                <div className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                                <span className="relative z-10">
-                                    {isEditMode ? '💫 Update Task' : '✨ Add Task'}
-                                </span>
+                                <div className={`absolute inset-0 rounded-3xl transform translate-z-[-6px] group-hover:translate-z-[-12px] transition-transform duration-500
+                                    ${isEditMode ? 'bg-gradient-to-r from-blue-700 to-indigo-700' : 'bg-gradient-to-r from-emerald-700 to-teal-700'}`}></div>
+                                <div className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-3xl"></div>
+                                <div className="relative z-10 flex items-center space-x-2">
+                                    <span className="text-2xl animate-pulse">
+                                        {isEditMode ? '💫' : '✨'}
+                                    </span>
+                                    <span>
+                                        {isEditMode ? 'Update Task' : 'Add Task'}
+                                    </span>
+                                </div>
                             </button>
                         </div>
                     </form>
@@ -412,12 +457,118 @@ const TaskForm = ({ task, onSave, onCancel, loggedInUserName }) => { // Changed 
             </div>
 
             <style jsx>{`
-                @keyframes float {
-                    0%, 100% { transform: translateY(0px) rotate(0deg); }
-                    50% { transform: translateY(-20px) rotate(180deg); }
+                @keyframes float-3d {
+                    0%, 100% { 
+                        transform: translateY(0px) translateX(0px) rotateX(0deg) rotateY(0deg) rotateZ(0deg); 
+                    }
+                    33% { 
+                        transform: translateY(-30px) translateX(20px) rotateX(120deg) rotateY(120deg) rotateZ(120deg); 
+                    }
+                    66% { 
+                        transform: translateY(15px) translateX(-20px) rotateX(240deg) rotateY(240deg) rotateZ(240deg); 
+                    }
                 }
-                .animate-float {
-                    animation: float 6s ease-in-out infinite;
+                @keyframes spin-3d {
+                    from { 
+                        transform: rotateX(0deg) rotateY(0deg) rotateZ(0deg); 
+                    }
+                    to { 
+                        transform: rotateX(360deg) rotateY(360deg) rotateZ(360deg); 
+                    }
+                }
+                @keyframes bounce-3d {
+                    0%, 100% { 
+                        transform: translateY(0px) rotateY(0deg) scale(1); 
+                        opacity: 0.6; 
+                    }
+                    50% { 
+                        transform: translateY(-40px) rotateY(180deg) scale(1.2); 
+                        opacity: 1; 
+                    }
+                }
+                @keyframes spin-slow {
+                    from { transform: rotate(0deg); }
+                    to { transform: rotate(360deg); }
+                }
+                @keyframes spin-reverse {
+                    from { transform: rotate(360deg); }
+                    to { transform: rotate(0deg); }
+                }
+                @keyframes particle-3d {
+                    0%, 100% { 
+                        transform: translateY(0px) translateX(0px) translateZ(0px) rotateX(0deg) rotateY(0deg); 
+                        opacity: 0.3; 
+                    }
+                    25% { 
+                        transform: translateY(-50px) translateX(30px) translateZ(20px) rotateX(90deg) rotateY(90deg); 
+                        opacity: 0.8; 
+                    }
+                    50% { 
+                        transform: translateY(-80px) translateX(0px) translateZ(40px) rotateX(180deg) rotateY(180deg); 
+                        opacity: 1; 
+                    }
+                    75% { 
+                        transform: translateY(-50px) translateX(-30px) translateZ(20px) rotateX(270deg) rotateY(270deg); 
+                        opacity: 0.8; 
+                    }
+                }
+                @keyframes pulse-rainbow {
+                    0%, 100% { 
+                        opacity: 0.2; 
+                        transform: scale(1); 
+                    }
+                    50% { 
+                        opacity: 0.4; 
+                        transform: scale(1.05); 
+                    }
+                }
+                @keyframes text-glow {
+                    0%, 100% { 
+                        text-shadow: 0 0 20px rgba(6, 182, 212, 0.5), 0 0 40px rgba(139, 92, 246, 0.3), 0 0 60px rgba(236, 72, 153, 0.2); 
+                    }
+                    50% { 
+                        text-shadow: 0 0 40px rgba(6, 182, 212, 0.8), 0 0 80px rgba(139, 92, 246, 0.6), 0 0 120px rgba(236, 72, 153, 0.4); 
+                    }
+                }
+
+                .animate-float-3d {
+                    animation: float-3d 8s ease-in-out infinite;
+                }
+                .animate-spin-3d {
+                    animation: spin-3d 12s linear infinite;
+                }
+                .animate-bounce-3d {
+                    animation: bounce-3d 4s ease-in-out infinite;
+                }
+                .animate-spin-slow {
+                    animation: spin-slow 20s linear infinite;
+                }
+                .animate-spin-reverse {
+                    animation: spin-reverse 15s linear infinite;
+                }
+                .animate-particle-3d {
+                    animation: particle-3d 8s ease-in-out infinite;
+                }
+                .animate-pulse-rainbow {
+                    animation: pulse-rainbow 4s ease-in-out infinite;
+                }
+                .animate-text-glow {
+                    animation: text-glow 3s ease-in-out infinite;
+                }
+                .hover\\:rotate-y-6:hover {
+                    transform: rotateY(6deg);
+                }
+                .hover\\:rotate-x-1:hover {
+                    transform: rotateX(1deg);
+                }
+                .hover\\:translate-z-2:hover {
+                    transform: translateZ(8px);
+                }
+                .translate-z-\\[-6px\\] {
+                    transform: translateZ(-6px);
+                }
+                .group:hover .group-hover\\:translate-z-\\[-12px\\] {
+                    transform: translateZ(-12px);
                 }
             `}</style>
         </div>
