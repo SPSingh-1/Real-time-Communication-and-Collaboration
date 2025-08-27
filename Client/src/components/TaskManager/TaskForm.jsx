@@ -258,132 +258,178 @@ const TaskForm = ({ task, onSave, onCancel, loggedInUserName }) => { // Changed 
         onSave(formData);
     };
 
-    return (
-        <div className="bg-white rounded-xl shadow-lg p-6 mb-6">
-            <h3 className="text-2xl font-bold text-gray-800 mb-6 border-b pb-3">
-                {isEditMode ? 'Edit Task' : 'Add New Task'}
-            </h3>
-            <form onSubmit={handleSubmit} className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {/* Task Title Input */}
-                    <InputField
-                        label="Task Title"
-                        name="taskTitle"
-                        value={formData.taskTitle}
-                        onChange={handleChange}
-                        placeholder="e.g., Implement User Auth"
-                        required={true}
-                        disabled={isEditMode} // Disabled in edit mode to prevent changing initial task title
-                    />
-                    {/* Project Name Input */}
-                    <InputField
-                        label="Project Name"
-                        name="projectName"
-                        value={formData.projectName}
-                        onChange={handleChange}
-                        placeholder="e.g., Project Hansel"
-                        required={true}
-                        disabled={isEditMode} // Disabled in edit mode
-                    />
-                    {/* Priority Select */}
-                    <InputField
-                        label="Priority"
-                        name="priority"
-                        type="select"
-                        value={formData.priority}
-                        onChange={handleChange}
-                        options={['High', 'Medium', 'Low']}
-                        required={true}
-                    />
-                    {/* Task Status Select */}
-                    <InputField
-                        label="Task Status"
-                        name="taskStatus"
-                        type="select"
-                        value={formData.taskStatus}
-                        onChange={handleChange}
-                        options={['To Do', 'In Progress', 'Completed', 'Blocked']}
-                        required={true}
-                    />
-                    {/* Assigned To Input (comma-separated) */}
-                    <InputField
-                        label="Assigned To (comma-separated)"
-                        name="assignedTo"
-                        value={formData.assignedTo}
-                        onChange={handleChange}
-                        placeholder="e.g., Alice, Bob"
-                        required={true}
-                    />
-                    {/* Due Date Input */}
-                    <InputField
-                        label="Due Date"
-                        name="dueDate"
-                        type="date"
-                        value={formData.dueDate}
-                        onChange={handleChange}
-                        required={true}
-                    />
-                    {/* Project Manager Input */}
-                    <InputField
-                        label="Project Manager"
-                        name="projectManagerName"
-                        value={formData.projectManagerName}
-                        onChange={handleChange}
-                        placeholder="e.g., Mary Cassatt"
-                        required={true}
-                    />
-                </div>
-                {/* Task Description Textarea */}
-                <InputField
-                    label="Task Description"
-                    name="taskDescription"
-                    type="textarea"
-                    value={formData.taskDescription}
-                    onChange={handleChange}
-                    placeholder="Detailed overview of the task..."
-                    required={true}
-                />
+  return (
+        <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 p-8 relative overflow-hidden">
+            {/* Animated background elements */}
+            <div className="absolute inset-0 overflow-hidden">
+                <div className="absolute top-20 left-20 w-72 h-72 bg-blue-500/10 rounded-full blur-3xl animate-pulse"></div>
+                <div className="absolute bottom-20 right-20 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl animate-pulse delay-1000"></div>
+                <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-indigo-500/10 rounded-full blur-3xl animate-pulse delay-500"></div>
+            </div>
 
-                {/* Created By Field - always disabled, displays initial creator */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <InputField
-                        label="Created By"
-                        name="createdBy"
-                        value={formData.createdBy}
-                        onChange={handleChange} // onChange is still passed, but won't do anything due to disabled
-                        disabled={true} // This field is read-only
-                    />
-                </div>
+            {/* Floating particles */}
+            <div className="absolute inset-0 pointer-events-none">
+                {[...Array(15)].map((_, i) => (
+                    <div
+                        key={i}
+                        className="absolute w-1 h-1 bg-white/30 rounded-full animate-float"
+                        style={{
+                            left: `${Math.random() * 100}%`,
+                            top: `${Math.random() * 100}%`,
+                            animationDelay: `${Math.random() * 5}s`,
+                            animationDuration: `${3 + Math.random() * 4}s`
+                        }}
+                    ></div>
+                ))}
+            </div>
 
-                {/* Form Action Buttons */}
-                <div className="flex justify-end space-x-4 mt-6">
-                    <button
-                        type="button"
-                        onClick={onCancel}
-                        className="px-6 py-3 bg-gray-300 text-gray-800 rounded-lg shadow-md hover:bg-gray-400 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-gray-500"
-                    >
-                        Cancel
-                    </button>
-                    <button
-                        type="submit"
-                        className={`px-6 py-3 rounded-lg shadow-md hover:opacity-90 transition-colors duration-200 focus:outline-none focus:ring-2 ${
-                            isEditMode ? 'bg-blue-600 focus:ring-blue-500' : 'bg-green-600 focus:ring-green-500'
-                        } text-white`}
-                    >
-                        {isEditMode ? 'Update Task' : 'Add Task'}
-                    </button>
+            <div className="max-w-5xl mx-auto relative z-10">
+                <div className="bg-gradient-to-br from-white/15 to-white/5 backdrop-blur-xl rounded-3xl border border-white/20 shadow-2xl p-8 transform hover:scale-[1.01] transition-all duration-700">
+                    <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/10 to-purple-500/10 rounded-3xl blur-xl -z-10"></div>
+                    
+                    {/* Header with window controls */}
+                    <div className="flex items-center justify-between mb-8">
+                        <div className="flex items-center space-x-3">
+                            <div className="w-3 h-3 bg-red-500 rounded-full shadow-lg shadow-red-500/50"></div>
+                            <div className="w-3 h-3 bg-yellow-500 rounded-full shadow-lg shadow-yellow-500/50"></div>
+                            <div className="w-3 h-3 bg-green-500 rounded-full shadow-lg shadow-green-500/50"></div>
+                        </div>
+                        <h3 className="text-3xl font-black bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400 text-transparent bg-clip-text">
+                            {isEditMode ? '✏️ Edit Task' : '➕ Add New Task'}
+                        </h3>
+                    </div>
+
+                    <form onSubmit={handleSubmit} className="space-y-8">
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                            <InputField
+                                label="📝 Task Title"
+                                name="taskTitle"
+                                value={formData.taskTitle}
+                                onChange={handleChange}
+                                placeholder="e.g., Implement User Auth"
+                                required={true}
+                                disabled={isEditMode}
+                            />
+                            <InputField
+                                label="🚀 Project Name"
+                                name="projectName"
+                                value={formData.projectName}
+                                onChange={handleChange}
+                                placeholder="e.g., Project Hansel"
+                                required={true}
+                                disabled={isEditMode}
+                            />
+                            <InputField
+                                label="⚡ Priority"
+                                name="priority"
+                                type="select"
+                                value={formData.priority}
+                                onChange={handleChange}
+                                options={['High', 'Medium', 'Low']}
+                                required={true}
+                            />
+                            <InputField
+                                label="📊 Task Status"
+                                name="taskStatus"
+                                type="select"
+                                value={formData.taskStatus}
+                                onChange={handleChange}
+                                options={['To Do', 'In Progress', 'Completed', 'Blocked']}
+                                required={true}
+                            />
+                            <InputField
+                                label="👥 Assigned To (comma-separated)"
+                                name="assignedTo"
+                                value={formData.assignedTo}
+                                onChange={handleChange}
+                                placeholder="e.g., Alice, Bob"
+                                required={true}
+                            />
+                            <InputField
+                                label="📅 Due Date"
+                                name="dueDate"
+                                type="date"
+                                value={formData.dueDate}
+                                onChange={handleChange}
+                                required={true}
+                            />
+                            <InputField
+                                label="👨‍💼 Project Manager"
+                                name="projectManagerName"
+                                value={formData.projectManagerName}
+                                onChange={handleChange}
+                                placeholder="e.g., Mary Cassatt"
+                                required={true}
+                            />
+                            <InputField
+                                label="👤 Created By"
+                                name="createdBy"
+                                value={formData.createdBy}
+                                onChange={handleChange}
+                                disabled={true}
+                            />
+                        </div>
+
+                        <InputField
+                            label="📄 Task Description"
+                            name="taskDescription"
+                            type="textarea"
+                            value={formData.taskDescription}
+                            onChange={handleChange}
+                            placeholder="Detailed overview of the task..."
+                            required={true}
+                        />
+
+                        <div className="flex justify-end space-x-6 mt-12">
+                            <button
+                                type="button"
+                                onClick={onCancel}
+                                className="px-8 py-4 bg-gradient-to-r from-gray-500 to-gray-600 text-white font-bold rounded-2xl
+                                         hover:from-gray-600 hover:to-gray-700 transform hover:scale-105 hover:rotate-1
+                                         transition-all duration-300 shadow-2xl hover:shadow-gray-500/25
+                                         relative overflow-hidden group"
+                            >
+                                <div className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                                <span className="relative z-10">❌ Cancel</span>
+                            </button>
+                            <button
+                                type="submit"
+                                className={`px-8 py-4 font-bold rounded-2xl transform hover:scale-105 hover:rotate-1
+                                         transition-all duration-300 shadow-2xl relative overflow-hidden group
+                                         ${isEditMode ? 
+                                           'bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 hover:shadow-blue-500/25' : 
+                                           'bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 hover:shadow-green-500/25'
+                                         } text-white`}
+                            >
+                                <div className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                                <span className="relative z-10">
+                                    {isEditMode ? '💫 Update Task' : '✨ Add Task'}
+                                </span>
+                            </button>
+                        </div>
+                    </form>
                 </div>
-            </form>
+            </div>
+
+            <style jsx>{`
+                @keyframes float {
+                    0%, 100% { transform: translateY(0px) rotate(0deg); }
+                    50% { transform: translateY(-20px) rotate(180deg); }
+                }
+                .animate-float {
+                    animation: float 6s ease-in-out infinite;
+                }
+            `}</style>
         </div>
     );
 };
 
 // PropTypes for TaskForm component
 TaskForm.propTypes = {
-    task: PropTypes.object, // Can be null for new tasks
+    task: PropTypes.object,
     onSave: PropTypes.func.isRequired,
     onCancel: PropTypes.func.isRequired,
-    loggedInUserName: PropTypes.string.isRequired, // Ensure this prop is passed and is a string
+    loggedInUserName: PropTypes.string.isRequired,
 };
 
 export default TaskForm;

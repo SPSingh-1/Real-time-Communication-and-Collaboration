@@ -1,5 +1,6 @@
 
 import { FaSignOutAlt, FaTasks, FaFileAlt, FaComments, FaClipboardList, FaCalendarAlt } from 'react-icons/fa';
+import { TbLayoutDashboardFilled } from "react-icons/tb";
 import useAppContext from '../../context/useAppContext';
 import './Sidebar.css';
 
@@ -13,6 +14,7 @@ const Sidebar = ({ activeTab, setActiveTab }) => {
       </div>
 
       <nav className="sidebar-nav">
+        <SidebarButton icon={<TbLayoutDashboardFilled />} label="Dashboard" tab="Dashboard" activeTab={activeTab} setActiveTab={setActiveTab} />
         <SidebarButton icon={<FaComments />} label="Chat" tab="chat" activeTab={activeTab} setActiveTab={setActiveTab} />
         <SidebarButton icon={<FaTasks />} label="Tasks" tab="tasks" activeTab={activeTab} setActiveTab={setActiveTab} />
         <SidebarButton icon={<FaFileAlt />} label="Files" tab="files" activeTab={activeTab} setActiveTab={setActiveTab} />

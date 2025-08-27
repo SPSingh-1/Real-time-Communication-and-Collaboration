@@ -1,0 +1,108 @@
+.register-bg {
+  position: relative;
+  background-image: url('/signupbg.png');
+  background-size: cover;
+  background-position: center;
+  overflow: hidden;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  perspective: 1000px;
+}
+.login-bg {
+  position: relative;
+  background-image: url('/login.png');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  overflow: hidden;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  perspective: 1000px;
+}
+
+.floating-cubes {
+  position: absolute;
+  width: 200px;
+  height: 200px;
+  background: rgba(0, 255, 255, 0.2);
+  box-shadow: 0 0 30px cyan;
+  transform-style: preserve-3d;
+  border-radius: 20px;
+  animation: floatCube 10s infinite linear;
+}
+
+@keyframes floatCube {
+  0% {
+    transform: rotateY(0deg) rotateX(0deg) translateZ(0);
+  }
+  100% {
+    transform: rotateY(360deg) rotateX(360deg) translateZ(100px);
+  }
+}
+
+.card-container {
+  position: relative;
+  z-index: 2;
+  background: rgba(0, 0, 0, 0.6);
+  padding: 2rem;
+  border-radius: 12px;
+  backdrop-filter: blur(10px);
+  transform: rotateY(20deg);
+  background: linear-gradient(135deg, rgba(255,255,255,0.1), rgba(0,0,0,0.6));
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  padding: 2rem;
+  border-radius: 16px;
+  color: white;
+  box-shadow: 0 0 30px rgba(0, 255, 255, 0.3);
+  width: 100%;
+  max-width: 500px;
+  margin: auto;
+}
+.form-content {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  color: white;
+}
+.login-link {
+  text-align: center;
+  margin-top: 1rem;
+  font-size: 0.875rem;
+  color: #ccc;
+}
+
+.login-anchor {
+  color: #00bfff;
+  font-weight: 600;
+  text-decoration: underline;
+}
+.form-frame::before {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border-radius: 18px;
+  background: linear-gradient(90deg, #00f, #0ff, #00f);
+  z-index: -1;
+  animation: pulseGlow 3s infinite linear;
+}
+
+@keyframes pulseGlow {
+  0% { opacity: 0.4; }
+  50% { opacity: 1; }
+  100% { opacity: 0.4; }
+}
+.MuiOutlinedInput-root {
+  fieldset {
+    border-color: white;
+  }
+  &:hover fieldset {
+    border-color: white;
+  }
+  &.Mui-focused fieldset {
+    border-color: white;
+  }
+}

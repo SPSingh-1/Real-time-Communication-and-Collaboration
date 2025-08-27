@@ -280,82 +280,91 @@ const VideoConference = () => {
 
     // Render Logic
     return (
-        <div className="p-6 bg-white rounded-lg shadow-md max-w-lg mx-auto my-8 font-inter">
-            <h2 className="text-2xl font-bold text-gray-800 mb-6 text-center">Jitsi Meet Integration</h2>
+        <div
+            className="relative min-h-screen flex items-center justify-center overflow-hidden"
+            style={{ perspective: "1200px" }}
+        >
+        {/* The h1 title for the page */}
+              <h1 className="w-full py-3 rounded-xl font-bold text-2xl
+                                    bg-gradient-to-r from-purple-800 to-blue-300 mt-10s
+                                    hover:scale-105 transform transition fixed top-0 text-center  text-white mt-6 drop-shadow-sm animate-fade-in z-30 font-800 font-size-2xl">
+                Video Conferencing
+              </h1>
+            {/* 3D Animated Background */}
+      <div className="absolute inset-0 bg-[url('/assets/bg-3d.png')] bg-cover bg-center animate-[scrollBackground_60s_linear_infinite] opacity-40"></div>
+      <div className="absolute inset-0 bg-gradient-to-br from-purple-900/50 via-blue-900/40 to-black/80"></div>
+
+      {/* Foreground Glass Container */}
+      <div
+        className="relative z-10 w-full max-w-4xl p-6 rounded-3xl 
+        bg-black/40 backdrop-blur-2xl border border-white/10 shadow-2xl
+        transform transition-all duration-700 hover:rotate-x-2 hover:-rotate-y-2"
+        style={{ transformStyle: "preserve-3d" }}
+      >
+            <h2 className="text-3xl font-bold text-center text-white mb-6 drop-shadow-lg">
+          🚀 Let's Connect Metting
+            </h2>
 
             {!isMeetingStarted ? (
-                <div className="space-y-4">
-                    <p className="text-gray-600 text-center">Enter a room name to create or join a Jitsi meeting.</p>
+                <div className="space-y-4 text-white">
+                    <p className="text-gray-200 text-center">Enter a room name to create or join a Meeting.</p>
                     <input
                         type="text"
-                        placeholder="e.g., MyTeamProjectSync"
+                        placeholder="Enter room name"
                         value={inputRoomName}
                         onChange={(e) => setInputRoomName(e.target.value)}
-                        className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full p-3 rounded-xl bg-white/10 text-white placeholder-gray-400 border border-white/20 focus:ring-2 focus:ring-purple-500"
                     />
-                    {error && (
-                        <p className="text-red-600 text-sm text-center bg-red-100 p-3 rounded-md border border-red-300">
-                            Error: {error}
-                        </p>
-                    )}
-                    {statusMessage && !error && (
-                        <p className="text-blue-600 text-sm text-center bg-blue-100 p-3 rounded-md border border-blue-300">
-                            Status: {statusMessage}
-                        </p>
-                    )}
+                    {error && <p className="text-red-400">{error}</p>}
+                    {statusMessage && <p className="text-blue-400">{statusMessage}</p>}
                     <button
                         onClick={handleStartMeetingClick}
                         disabled={!inputRoomName.trim() || loadingJitsi || !isJitsiScriptLoaded}
-                        className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-6 rounded-lg shadow-md transition duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-75 disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="w-full py-3 rounded-xl font-semibold text-lg
+                                    bg-gradient-to-r from-purple-600 to-blue-600 
+                                    hover:scale-105 transform transition"
                     >
-                        {loadingJitsi ? 'Processing...' : 'Start/Join Meeting'}
+                        {loadingJitsi ? 'Loading...' : 'Start/Join Meeting'}
                     </button>
                     {!isJitsiScriptLoaded && (
                         <p className="text-sm text-gray-500 text-center">
-                            Loading Jitsi API script... Please wait.
+                            Loading API... Please wait.
                         </p>
                     )}
                 </div>
             ) : (
                 <div className="space-y-4">
-                    <p className="text-green-600 font-medium text-center">Meeting in progress: <span className="font-bold">{currentMeetingRoomName}</span></p>
+                    <p className="text-green-400 font-medium text-center">Meeting: <span className="font-bold">{currentMeetingRoomName}</span></p>
                     {loadingJitsi && !jitsiApiRef.current && (
-                        <p className="text-blue-600 text-center">Loading Jitsi meeting interface... Please wait.</p>
+                        <p className="text-blue-600 text-center">Loading Meeting interface... Please wait.</p>
                     )}
-                    {error && (
-                        <p className="text-red-600 text-sm text-center bg-red-100 p-3 rounded-md border border-red-300">
-                            Error: {error}
-                        </p>
-                    )}
-                    {statusMessage && !error && (
-                        <p className="text-blue-600 text-sm text-center bg-blue-100 p-3 rounded-md border border-blue-300">
-                            Status: {statusMessage}
-                        </p>
-                    )}
+                    {error && <p className="text-red-400">{error}</p>}
+                    {statusMessage && <p className="text-blue-400">{statusMessage}</p>}
                     <div
                         ref={jitsiContainerRef}
-                        className="w-full h-[500px] border border-gray-300 rounded-lg overflow-hidden bg-gray-100 flex items-center justify-center text-gray-500"
+                        className="w-full h-[500px] rounded-2xl overflow-hidden border border-white/20 bg-black/50"
                     >
                         {!loadingJitsi && !jitsiApiRef.current && !error && (
                             <span>Meeting will load here. Grant camera/mic permissions if prompted.</span>
                         )}
                     </div>
-                    <div className="flex flex-col sm:flex-row gap-4">
+                    <div className="flex flex-col gap-4">
                         <button
                             onClick={copyMeetingLink}
-                            className="flex-1 bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2 px-4 rounded-lg shadow-md transition duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-opacity-75"
+                            className="flex-1 py-3 rounded-xl bg-gradient-to-r from-pink-500 to-purple-600 hover:scale-105 transition"
                         >
-                            Copy Meeting Link
+                            Copy Link
                         </button>
                         <button
                             onClick={endMeeting}
-                            className="flex-1 bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded-lg shadow-md transition duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-75"
+                            className="flex-1 py-3 rounded-xl bg-gradient-to-r from-pink-500 to-purple-600 hover:scale-105 transition"
                         >
                             End Meeting
                         </button>
                     </div>
                 </div>
             )}
+        </div>
         </div>
     );
 };

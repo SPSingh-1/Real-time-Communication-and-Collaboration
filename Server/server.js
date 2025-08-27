@@ -11,7 +11,6 @@ import nodemailer from 'nodemailer';
 import fs from 'fs'; // Import fs module for reading files
 import path from 'path'; // Import path module for resolving file paths
 import { fileURLToPath } from 'url'; // For __dirname equivalent in ES modules
-import scheduleEventCleanup from './jobs/deleteOldEvents.js';
 
 
 // Get __dirname equivalent for ES modules
@@ -170,7 +169,6 @@ setupSocketHandlers(io);
 // --- NEW: Mount the Video Conferencing Router ---
 app.use('/api', videoRouter);
 
-scheduleEventCleanup(); // Start the cleanup cron job
 
 // MongoDB connection
 const MONGODB_URI = process.env.MONGODB_URI;

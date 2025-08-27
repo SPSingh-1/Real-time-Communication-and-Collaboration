@@ -214,135 +214,220 @@ const FileUploader = () => {
     ];
 
     return (
-        <div className="container mx-auto p-4 bg-gray-100 min-h-screen">
+        <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 p-8 relative overflow-hidden">
+            {/* Animated background elements */}
+            <div className="absolute inset-0 overflow-hidden">
+                <div className="absolute top-20 left-20 w-72 h-72 bg-blue-500/10 rounded-full blur-3xl animate-pulse"></div>
+                <div className="absolute bottom-20 right-20 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl animate-pulse delay-1000"></div>
+                <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-indigo-500/10 rounded-full blur-3xl animate-pulse delay-500"></div>
+            </div>
             {/* Toaster component for displaying toasts */}
             <Toaster position="top-center" reverseOrder={false} />
 
-            <h1 className="text-3xl font-extrabold mb-6 text-center text-blue-700">
+            {/* Main Content */}
+            <div className="text-center mb-12 relative z-10">
+            <h1 className="text-6xl font-black mb-4 bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400 text-transparent bg-clip-text drop-shadow-2xl transform hover:scale-105 transition-transform duration-500">
                 📁 Shared Files
+                <div className="w-32 h-1 bg-gradient-to-r from-cyan-400 to-purple-400 mx-auto rounded-full shadow-lg shadow-cyan-400/50"></div>
             </h1>
+            </div>
 
             {/* Upload Section */}
-            <div className="bg-white p-6 rounded-lg shadow-md mb-6 border border-gray-200">
-                <p className="text-sm font-medium mb-4 text-gray-700">
-                    👤 Uploading as: <span className="font-semibold text-blue-600">{currentUserName}</span>
-                </p>
-                <div className="flex flex-col sm:flex-row gap-4 items-center">
-                    <input
-                        type="file"
-                        ref={fileInputRef}
-                        onChange={handleFileSelect}
-                        className="flex-1 block w-full text-sm text-gray-900
-                                 border border-gray-300 rounded-lg cursor-pointer bg-gray-50
-                                 file:mr-4 file:py-2 file:px-4
-                                 file:rounded-full file:border-0
-                                 file:text-sm file:font-semibold
-                                 file:bg-blue-50 file:text-blue-700
-                                 hover:file:bg-blue-100"
-                    />
-                    <button
-                        onClick={handleUpload}
-                        disabled={!selectedFile || uploadProgress > 0 || !currentUserId}
-                        className="w-full sm:w-auto px-6 py-2 bg-blue-600 text-white font-semibold rounded-lg
-                                 hover:bg-blue-700 transition duration-300 ease-in-out
-                                 disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
-                    >
-                        {uploadProgress > 0 ? `Uploading... ${uploadProgress}%` : 'Upload'}
-                    </button>
-                </div>
-                {uploadProgress > 0 && (
-                    <div className="w-full bg-gray-200 rounded-full h-2.5 mt-4">
-                        <div
-                            className="bg-blue-600 h-2.5 rounded-full transition-all duration-300"
-                            style={{ width: `${uploadProgress}%` }}
-                        ></div>
+            <div className="max-w-4xl mx-auto mb-12 relative z-10">
+                <div className="bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-xl p-8 rounded-3xl border border-white/20 shadow-2xl transform hover:scale-[1.02] hover:rotate-1 transition-all duration-700 hover:shadow-cyan-500/25">
+                        <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/10 to-purple-500/10 rounded-3xl blur-xl -z-10"></div>
+
+                        <div className="flex items-center justify-between mb-6">
+                            <div className="flex items-center space-x-3">
+                                <div className="w-3 h-3 bg-red-500 rounded-full shadow-lg shadow-red-500/50"></div>
+                                <div className="w-3 h-3 bg-yellow-500 rounded-full shadow-lg shadow-yellow-500/50"></div>
+                                <div className="w-3 h-3 bg-green-500 rounded-full shadow-lg shadow-green-500/50"></div>
+                            </div>
+                            <p className="text-white/90 font-semibold">
+                                👤 Uploading as: <span className="text-cyan-400">{currentUserName}</span>
+                            </p>
+                        </div>
+
+                    <div className="flex flex-col lg:flex-row gap-6 items-end">
+                            <div className="flex-1">
+                                <label className="block text-white/80 text-sm font-medium mb-3">Select File</label>
+                                <input
+                                            type="file"
+                                            ref={fileInputRef}
+                                            onChange={handleFileSelect}
+                                            className="w-full text-white bg-white/10 border border-white/30 rounded-2xl p-4 backdrop-blur-sm
+                                                    file:mr-4 file:py-2 file:px-6 file:rounded-full file:border-0
+                                                    file:text-sm file:font-semibold file:bg-gradient-to-r file:from-cyan-500 file:to-purple-500
+                                                    file:text-white file:shadow-lg hover:file:shadow-xl file:transition-all file:duration-300
+                                                    hover:bg-white/20 transition-all duration-300"
+                                />
+                            </div>
+                            <button
+                                    onClick={handleUpload}
+                                    disabled={!selectedFile || uploadProgress > 0 || !currentUserId}
+                                    className="px-8 py-4 bg-gradient-to-r from-cyan-500 to-purple-500 text-white font-bold rounded-2xl
+                                            hover:from-cyan-600 hover:to-purple-600 transform hover:scale-105 hover:rotate-1
+                                            transition-all duration-300 shadow-2xl hover:shadow-cyan-500/25
+                                            disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none
+                                            relative overflow-hidden group"
+                            >
+                            <div className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                                <span className="relative z-10">
+                                    {uploadProgress > 0 ? `Uploading... ${uploadProgress}%` : '🚀 Upload'}
+                                </span>
+                            </button>
                     </div>
-                )}
+                    {uploadProgress > 0 && (
+                            <div className="mt-6">
+                                <div className="w-full bg-white/20 rounded-full h-3 overflow-hidden">
+                                    <div
+                                        className="bg-gradient-to-r from-cyan-400 to-purple-500 h-full rounded-full transition-all duration-500 shadow-lg"
+                                        style={{ width: `${uploadProgress}%` }}
+                                    ></div>
+                                </div>
+                            </div>
+                        )}
+                </div>
             </div>
 
             {/* Filter Buttons */}
-            <div className="mb-6 flex flex-wrap gap-2 justify-center">
-                {fileTypeCategories.map((type) => (
-                    <button
-                        key={type.value}
-                        onClick={() => setCategory(type.value)}
-                        className={`px-4 py-2 rounded-full text-sm font-medium transition duration-300
-                                 ${category === type.value
-                                ? 'bg-blue-600 text-white shadow-md'
-                                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                            }`}
-                    >
-                        {type.name}
-                    </button>
+            <div className="max-w-4xl mx-auto mb-12 relative z-10">
+                <div className="flex flex-wrap justify-center gap-4">
+                    {fileTypeCategories.map((type) => (
+                        <button
+                            key={type.value}
+                            onClick={() => setCategory(type.value)}
+                            className={`px-6 py-3 rounded-2xl font-semibold transform hover:scale-110 hover:rotate-3
+                                     transition-all duration-300 shadow-lg relative overflow-hidden group
+                                     ${category === type.value
+                                    ? 'bg-gradient-to-r from-cyan-500 to-purple-500 text-white shadow-cyan-500/50'
+                                    : 'bg-white/10 text-white/90 hover:bg-white/20 backdrop-blur-sm border border-white/20'
+                                }`}
+                        >
+                            <div className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                            <span className="relative z-10">{type.name}</span>
+                        </button>
+                    ))}
+                </div>
+            </div>
+            {/* File List */}
+            <div className="max-w-6xl mx-auto relative z-10">
+                <div className="bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-xl rounded-3xl border border-white/20 shadow-2xl p-8">
+                    <h2 className="text-3xl font-bold text-white mb-8 text-center">
+                        📂 Available Files ({filteredFiles.length})
+                    </h2>
+
+                    {filteredFiles.length === 0 ? (
+                        <div className="text-center py-16">
+                            <div className="w-32 h-32 mx-auto mb-6 bg-gradient-to-br from-white/10 to-white/5 rounded-full flex items-center justify-center">
+                                <span className="text-4xl">📭</span>
+                            </div>
+                            <p className="text-white/60 text-xl">No files found in this category</p>
+                        </div>
+            ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                            {filteredFiles.map((file, index) => (
+                                <div
+                                    key={file._id}
+                                    className="group relative bg-gradient-to-br from-white/15 to-white/5 backdrop-blur-xl 
+                                             rounded-3xl border border-white/20 p-6 shadow-2xl
+                                             transform hover:scale-105 hover:rotate-2 transition-all duration-700
+                                             hover:shadow-cyan-500/20 cursor-pointer perspective-1000"
+                                    style={{ 
+                                        animationDelay: `${index * 100}ms`,
+                                        transform: 'rotateX(5deg) rotateY(-5deg)'
+                                    }}
+                                >
+                                <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/5 to-purple-500/5 rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                                    <div className="relative z-10">
+                                        <div className="flex items-start justify-between mb-4">
+                                            <div className="text-2xl">
+                                                {file.type === 'image' ? '🖼️' : 
+                                                 file.type === 'video' ? '🎥' :
+                                                 file.type === 'audio' ? '🎵' :
+                                                 file.type === 'document' ? '📄' :
+                                                 file.type === 'code' ? '💻' : '📎'}
+                                            </div>
+                                            <div className="w-3 h-3 bg-green-400 rounded-full shadow-lg shadow-green-400/50 animate-pulse"></div>
+                                        </div>
+                                        <h3 className="text-white font-bold text-lg mb-3 break-words group-hover:text-cyan-300 transition-colors duration-300">
+                                            {truncateFileName(file.filename)}
+                                        </h3>
+                                        <div className="space-y-2 text-sm text-white/70 mb-6">
+                                            <p>📤 <span className="text-cyan-300">{file.uploadedBy || 'N/A'}</span></p>
+                                            <p>📅 {formatUploadTime(file.createdAt)}</p>
+                                            <p>🗂 <span className="capitalize text-purple-300">{file.type}</span></p>
+                                        </div>
+                                        <div className="flex gap-2">
+                                            <a
+                                                href={file.fileUrl}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="flex-1 text-center bg-gradient-to-r from-blue-500 to-indigo-500 text-white py-2 px-3 rounded-xl text-xs font-medium
+                                                         hover:from-blue-600 hover:to-indigo-600 transform hover:scale-105 transition-all duration-300 shadow-lg"
+                                                onClick={() => toast.success('Opening file!')}
+                                            >
+                                                👁️ View
+                                            </a>
+                                            {/* Download Button */}
+                                            <a
+                                                href={file.fileUrl}
+                                                download={getDownloadFileName(file.fileUrl, file.filename)}
+                                                className="flex-1 text-center bg-gradient-to-r from-emerald-500 to-teal-500 text-white py-2 px-3 rounded-xl text-xs font-medium
+                                                         hover:from-emerald-600 hover:to-teal-600 transform hover:scale-105 transition-all duration-300 shadow-lg"
+                                                onClick={() => toast.success('Download started!')}
+                                            >
+                                                ⬇️ Get
+                                            </a>
+                                            {/* Delete Button */}
+                                            {currentUserId && file.uploadedById === currentUserId && (
+                                                <button
+                                                    onClick={() => handleDelete(file._id)}
+                                                    className="flex-1 bg-gradient-to-r from-red-500 to-pink-500 text-white py-2 px-3 rounded-xl text-xs font-medium
+                                                             hover:from-red-600 hover:to-pink-600 transform hover:scale-105 transition-all duration-300 shadow-lg"
+                                                >
+                                                    🗑️ Del
+                                                </button>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            </div>
+             {/* Floating particles */}
+            <div className="absolute inset-0 pointer-events-none">
+                {[...Array(20)].map((_, i) => (
+                    <div
+                        key={i}
+                        className="absolute w-1 h-1 bg-white/30 rounded-full animate-float"
+                        style={{
+                            left: `${Math.random() * 100}%`,
+                            top: `${Math.random() * 100}%`,
+                            animationDelay: `${Math.random() * 5}s`,
+                            animationDuration: `${3 + Math.random() * 4}s`
+                        }}
+                    ></div>
                 ))}
             </div>
 
-            {/* File List */}
-            <div className="bg-white p-6 rounded-lg shadow-md border border-gray-200 h-[350px] overflow-y-auto">
-                <h2 className="text-2xl font-bold mb-4 text-gray-800">Available Files ({filteredFiles.length})</h2>
-                {filteredFiles.length === 0 ? (
-                    <p className="text-gray-600 text-center py-8">No files found in this category.</p>
-                ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {filteredFiles.map((file) => (
-                            <div
-                                key={file._id}
-                                className="p-5 border border-gray-200 rounded-lg shadow-sm bg-white hover:shadow-md transition-shadow duration-200 hover:scale-105 flex flex-col justify-between"
-                            >
-                                <div>
-                                    <p className="text-[18px] font-semibold text-gray-900 mb-2 break-words">
-                                        📄 {truncateFileName(file.filename)}
-                                    </p>
-                                    <p className="text-sm text-gray-700 mb-1">
-                                        📤 Uploaded by: <span className="font-medium text-blue-700">{file.uploadedBy || 'N/A'}</span>
-                                    </p>
-                                    <p className="text-sm text-gray-600 mb-1">
-                                        📅 {formatUploadTime(file.createdAt)}
-                                    </p>
-                                    <p className="text-sm text-gray-600 mb-3">
-                                        🗂 Type: <span className="font-medium text-gray-800">{file.type}</span>
-                                    </p>
-                                </div>
-                                <div className="flex flex-wrap gap-3 mt-auto pt-3 border-t border-gray-100">
-                                    {/* View Button (opens in new tab) */}
-                                    <a
-                                        href={file.fileUrl}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="flex-1 text-center bg-indigo-500 text-white px-4 py-2 rounded-lg text-sm font-medium
-                                                 hover:bg-indigo-600 transition duration-200"
-                                        onClick={() => toast.success('Opening file in new tab!')} // Toast for View
-                                    >
-                                        View
-                                    </a>
-                                    {/* Download Button */}
-                                    <a
-                                        href={file.fileUrl}
-                                        download={getDownloadFileName(file.fileUrl, file.filename)}
-                                        className="flex-1 text-center bg-yellow-500 text-white px-4 py-2 rounded-lg text-sm font-medium
-                                                 hover:bg-yellow-600 transition duration-200"
-                                        onClick={() => toast.success('Download initiated!')} // Toast for Download
-                                    >
-                                        Download
-                                    </a>
-                                    {/* Delete Button (conditionally rendered) */}
-                                    {currentUserId && file.uploadedById === currentUserId && (
-                                        <button
-                                            onClick={() => handleDelete(file._id)}
-                                            className="flex-1 text-center bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-medium
-                                                     hover:bg-red-700 transition duration-200"
-                                        >
-                                            Delete
-                                        </button>
-                                    )}
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                )}
-            </div>
+            <style jsx>{`
+                @keyframes float {
+                    0%, 100% { transform: translateY(0px) rotate(0deg); }
+                    50% { transform: translateY(-20px) rotate(180deg); }
+                }
+                .animate-float {
+                    animation: float 6s ease-in-out infinite;
+                }
+                .perspective-1000 {
+                    perspective: 1000px;
+                }
+            `}</style>
         </div>
     );
 };
+
 
 export default FileUploader;

@@ -12,13 +12,15 @@ import RegisterPage from "./pages/RegisterPage";
 import { ToastContainer} from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import EventDetailPage from "./pages/EventDetailPage";
+import LandingPage from "./pages/LandingPage";
 
 function App() {
   return (
     <>
     <ToastContainer position="top-right" autoClose={5000} hideProgressBar={false} newestOnTop={false} closeOnClick rtl={false} pauseOnFocusLoss draggable pauseOnHover />
     <Routes>
-      <Route path="/" element={<RegisterPage />} />
+      <Route path="/" element={<LandingPage />} />
+      <Route path="/register" element={<RegisterPage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/dashboard" element={<DashboardPage />} />
       <Route path="/chat" element={<ChatPage />} />

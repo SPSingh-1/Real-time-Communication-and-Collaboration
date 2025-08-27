@@ -1,12 +1,14 @@
-import ChatBox from "../components/Chat/ChatBox";
+import React from 'react';
+import ChatBox from '../components/Chat/ChatBox';
 
 const ChatPage = () => {
   return (
-    <div className="h-screen flex flex-col p-4">
-      <h1 className="text-2xl font-bold mb-4">Team Chat</h1>
+    <div className="chat-background min-h-screen relative">
+      {/* Dark overlay */}
+      <div className="absolute inset-0 bg-black bg-opacity-60"></div>
 
-      {/* Chat container takes remaining height */}
-      <div className="flex-1 min-h-0">
+      {/* Chat container */}
+      <div className="relative z-10 flex flex-col h-screen">
         <ChatBox />
       </div>
     </div>
@@ -14,4 +16,3 @@ const ChatPage = () => {
 };
 
 export default ChatPage;
-
