@@ -52,7 +52,6 @@ const NotificationFeed = () => {
     };
 
     socket.on('notification', handleSocketNotification);
-
     socket.on('note-added', (note) => {
       const message = `${note.user} created a ${note.type} note.`;
       handleSocketNotification({
@@ -61,7 +60,6 @@ const NotificationFeed = () => {
         type: 'comment',
       });
     });
-
     socket.on('note-updated', (note) => {
       const message = `${note.user} updated a ${note.type} note.`;
       handleSocketNotification({
@@ -70,7 +68,6 @@ const NotificationFeed = () => {
         type: 'comment',
       });
     });
-
     socket.on('note-deleted', (note) => {
       const message = `${note.user} deleted a note.`;
       handleSocketNotification({
@@ -108,61 +105,68 @@ const NotificationFeed = () => {
   };
 
   return (
-    <div className="bg-white shadow-lg rounded-xl p-4 max-h-96 transition-all duration-300 ease-in-out hover:shadow-2xl">
-      <div className="flex justify-between items-center mb-4">
-        <h3 className="font-semibold text-lg text-gray-800">🔔 Notifications</h3>
-        <select
-          className="text-sm border px-3 py-1 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-          value={filterType}
-          onChange={(e) => setFilterType(e.target.value)}
-        >
-          <option value="all">All</option>
-          <option value="event">Event</option>
-          <option value="comment">Notes</option>
-          <option value="file">File</option>
-        </select>
-      </div>
+    <div className="relative p-6 rounded-3xl shadow-2xl h-[85vh] flex flex-col transition-all duration-500 hover:scale-[1.02]">
+      {/* 🔹 Gradient Background */}
+      <div className="absolute inset-0 bg-gradient-to-br from-cyan-500 via-purple-600 to-blue-500 opacity-90"></div>
 
-      <ul className="space-y-2">
-        {visibleNotifications.length === 0 ? (
-          <li className="text-gray-500 text-sm italic">No notifications found.</li>
-        ) : (
-          visibleNotifications.map((n) => (
-            <li
-              key={n._id?.toString() || `${n.text}-${n.time}`}
-              className="text-sm bg-gray-50 rounded p-3 shadow-sm flex justify-between items-start hover:bg-gray-100 transition-all"
-            >
-              <div className="w-full">
-                <span className="block text-gray-800 break-words">
+      {/* 🔹 Floating Shapes */}
+      <div className="absolute top-10 left-8 w-24 h-24 bg-gradient-to-r from-blue-300 to-teal-400 rounded-full opacity-25 animate-spin-slow"></div>
+      <div className="absolute bottom-12 right-10 w-32 h-32 bg-gradient-to-r from-green-400 to-blue-500 rounded-xl opacity-25 animate-pulse"></div>
+
+      {/* 🔹 Foreground Content */}
+      <div className="relative z-10 flex-1 overflow-y-auto pr-2">
+        {/* Header */}
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="font-semibold text-xl text-white drop-shadow-lg">🔔 Notifications</h3>
+          <select
+            className="rounded-xl px-3 py-1 text-sm bg-white shadow-md text-black focus:outline-none focus:ring-2 focus:ring-teal-400 transition-all"
+            value={filterType}
+            onChange={(e) => setFilterType(e.target.value)}
+          >
+            <option value="all">All</option>
+            <option value="event">Event</option>
+            <option value="comment">Notes</option>
+            <option value="file">File</option>
+          </select>
+        </div>
+
+        {/* Notifications List */}
+        <ul className="space-y-3">
+          {visibleNotifications.length === 0 ? (
+            <li className="text-white/80 text-sm italic">No notifications found.</li>
+          ) : (
+            visibleNotifications.map((n) => (
+              <li
+                key={n._id?.toString() || `${n.text}-${n.time}`}
+                className="bg-white/20 backdrop-blur-md rounded-xl p-4 shadow-md hover:shadow-lg transition flex flex-col"
+              >
+                <span className="text-white text-sm break-words">
                   {n.text}{' '}
                   {n.eventId && (
                     <a
                       href={`/events/${n.eventId}`}
-                      className="text-blue-500 underline ml-1 hover:text-blue-700"
+                      className="text-yellow-300 underline ml-1 hover:text-yellow-200"
                     >
                       [View Event]
                     </a>
                   )}
-                  <span className="text-gray-500 text-xs ml-1">
-                    ({new Date(n.time).toLocaleTimeString([], {
-                      hour: '2-digit',
-                      minute: '2-digit',
-                    })})
-                  </span>
+                </span>
+                <span className="text-gray-200 text-xs mt-1">
+                  ({new Date(n.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })})
                 </span>
                 {!n.readBy?.includes('me') && (
                   <button
                     onClick={() => markAsRead(n._id)}
-                    className="text-xs text-blue-600 underline mt-1 hover:text-blue-800"
+                    className="text-xs text-yellow-200 underline mt-1 hover:text-yellow-100 self-end"
                   >
                     Mark as read
                   </button>
                 )}
-              </div>
-            </li>
-          ))
-        )}
-      </ul>
+              </li>
+            ))
+          )}
+        </ul>
+      </div>
     </div>
   );
 };

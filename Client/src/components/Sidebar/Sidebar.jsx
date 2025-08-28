@@ -27,7 +27,7 @@ const Sidebar = ({ activeTab, setActiveTab }) => {
       {!collapsed && (
         <>
           <div className="sidebar-header">
-            <h2 className="sidebar-user">Welcome, {user?.name || 'Guest'}</h2>
+            <h2 className="sidebar-user"> Welcome, 👤 {user?.name ? user.name : user?.email ? user.email.split('@')[0] : 'Guest'}</h2>
             <div
               className="sidebar-toggle expanded"
               onClick={() => setCollapsed(true)}
