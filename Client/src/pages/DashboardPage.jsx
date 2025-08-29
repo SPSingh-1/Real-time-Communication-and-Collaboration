@@ -13,7 +13,7 @@ const DashboardPage = () => {
 
   return (
     <div
-      className="flex min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black overflow-hidden relative"
+      className="flex min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black overflow-hidden overflow-y-hidden relative"
     >
       {/* Background Glow */}
       <div className="absolute inset-0 bg-gradient-to-tr from-purple-700/30 via-blue-600/20 to-transparent blur-3xl"></div>

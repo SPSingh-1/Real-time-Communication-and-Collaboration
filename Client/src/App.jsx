@@ -13,6 +13,8 @@ import { ToastContainer} from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import EventDetailPage from "./pages/EventDetailPage";
 import LandingPage from "./pages/LandingPage";
+import About from "./pages/About";
+import Legal from "./pages/Legal";
 
 function App() {
   return (
@@ -33,6 +35,10 @@ function App() {
       
       {/* 🆕 Event Detail Page */}
       <Route path="/events/:id" element={<EventDetailPage />} />
+
+      {/* Footer Landing page*/}
+      <Route path="/company" element={<About />} />
+      <Route path="/legal" element={<Legal />} />
     </Routes>
     </>
   );

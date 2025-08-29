@@ -1,233 +1,844 @@
-import React, { useEffect } from "react";
-import "./LandingPage.css";
+import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { FaFacebookF } from "react-icons/fa";
+import { FaSquareXTwitter } from "react-icons/fa6";
+import { FaInstagramSquare } from "react-icons/fa";
+import { CiLinkedin } from "react-icons/ci";
+import { FaGithub } from "react-icons/fa";
 
-const features = [
-  {
-    title: "Intuitive Dashboard",
-    description: "Get a complete overview of your workspace with customizable widgets, notifications, and quick access to all features.",
-    icon: "📊",
-  },
-  {
-    title: "Group Chat",
-    description: "Create channels for teams, projects, or topics with rich text formatting, file sharing, and thread replies.",
-    icon: "💬",
-  },
-  {
-    title: "File Management",
-    description: "Store, organize, and collaborate on files with version history, comments, and powerful search capabilities.",
-    icon: "📁",
-  },
-  {
-    title: "Task Management",
-    description: "Track projects with customizable boards, lists, and cards. Set deadlines, assign tasks, and monitor progress.",
-    icon: "✅",
-  },
-  {
-    title: "Figma Integration",
-    description: "Seamlessly integrate with Figma to collaborate on designs directly within your workspace.",
-    icon: "🎨",
-  },
-  {
-    title: "Video Conferencing",
-    description: "Host HD video meetings with screen sharing, recording, and interactive whiteboard capabilities.",
-    icon: "🎥",
-  },
-  {
-    title: "Calendar & Events",
-    description: "Sync your calendars, schedule meetings, and set reminders to stay organized and on track.",
-    icon: "📅",
-  },
-];
 
 const LandingPage = () => {
+  const [isVisible, setIsVisible] = useState({});
+
+  // Features data
+  const features = [
+    {
+      title: "Intuitive Dashboard",
+      description: "Get a complete overview of your workspace with customizable widgets, notifications, and quick access to all features.",
+      icon: "📊",
+    },
+    {
+      title: "Group Chat",
+      description: "Create channels for teams, projects, or topics with rich text formatting, file sharing, and thread replies.",
+      icon: "💬",
+    },
+    {
+      title: "File Management",
+      description: "Store, organize, and collaborate on files with version history, comments, and powerful search capabilities.",
+      icon: "📁",
+    },
+    {
+      title: "Task Management",
+      description: "Track projects with customizable boards, lists, and cards. Set deadlines, assign tasks, and monitor progress.",
+      icon: "✅",
+    },
+    {
+      title: "Figma Integration",
+      description: "Seamlessly integrate with Figma to collaborate on designs directly within your workspace.",
+      icon: "🎨",
+    },
+    {
+      title: "Video Conferencing",
+      description: "Host HD video meetings with screen sharing, recording, and interactive whiteboard capabilities.",
+      icon: "🎥",
+    },
+  ];
+
+  // Intersection Observer for animations
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
           if (entry.isIntersecting) {
-            entry.target.classList.add("visible");
-            observer.unobserve(entry.target);
+            setIsVisible(prev => ({
+              ...prev,
+              [entry.target.id]: true
+            }));
           }
         });
       },
       { threshold: 0.1 }
     );
 
-    document.querySelectorAll("section").forEach((section) => {
-      observer.observe(section);
-    });
+    const sections = document.querySelectorAll('.observe-section');
+    sections.forEach((section) => observer.observe(section));
 
     return () => observer.disconnect();
   }, []);
 
+  // Dashboard mockup component
+  const DashboardMockup = () => (
+    <div className="dashboard-mockup">
+      <div className="mockup-header">
+        <div className="header-item"></div>
+        <div className="header-item"></div>
+        <div className="header-item"></div>
+      </div>
+      <div className="mockup-content">
+        <div className="sidebar">
+          {[...Array(5)].map((_, i) => (
+            <div key={i} className="sidebar-item"></div>
+          ))}
+        </div>
+        <div className="main-content">
+          <div className="chart-area">
+            {[...Array(8)].map((_, i) => (
+              <div 
+                key={i} 
+                className="chart-bar" 
+                style={{ height: `${20 + Math.random() * 60}%` }}
+              ></div>
+            ))}
+          </div>
+          <div className="content-cards">
+            {[...Array(4)].map((_, i) => (
+              <div key={i} className="content-card"></div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
   return (
-    <div className="landing-page">
+    <div style={{
+      fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
+      margin: 0,
+      padding: 0,
+      overflow: 'hidden',
+      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+      minHeight: '100vh'
+    }}>
+      
       {/* Header */}
-      <header className="header">
-        <div className="logo">ConnectWise</div>
-        <nav>
-          <a href="#">Product</a>
-          <a href="#">Pricing</a>
-          <a href="#">Contact</a>
+      <header style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        zIndex: 1000,
+        background: 'rgba(255, 255, 255, 0.1)',
+        backdropFilter: 'blur(20px)',
+        borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+        padding: '1rem 2rem',
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        transition: 'all 0.3s ease'
+      }}>
+        <div style={{
+          fontSize: '1.8rem',
+          fontWeight: 800,
+          background: 'linear-gradient(45deg, #ffffff, #f0f9ff)',
+          WebkitBackgroundClip: 'text',
+          WebkitTextFillColor: 'transparent',
+          backgroundClip: 'text'
+        }}>
+          ConnectWise
+        </div>
+        
+        <nav style={{ display: 'flex', gap: '2rem' }}>
+          <a href="#hero" style={{
+            color: 'white',
+            textDecoration: 'none',
+            fontWeight: 500,
+            padding: '0.5rem 1rem',
+            borderRadius: '8px',
+            transition: 'all 0.3s ease'
+          }}>Home</a>
+          <a href="#features" style={{
+            color: 'white',
+            textDecoration: 'none',
+            fontWeight: 500,
+            padding: '0.5rem 1rem',
+            borderRadius: '8px',
+            transition: 'all 0.3s ease'
+          }}>Features</a>
+          <a href="#join" style={{
+            color: 'white',
+            textDecoration: 'none',
+            fontWeight: 500,
+            padding: '0.5rem 1rem',
+            borderRadius: '8px',
+            transition: 'all 0.3s ease'
+          }}>Join</a>
+          <a href="#footer" style={{
+            color: 'white',
+            textDecoration: 'none',
+            fontWeight: 500,
+            padding: '0.5rem 1rem',
+            borderRadius: '8px',
+            transition: 'all 0.3s ease'
+          }}>Contact</a>
         </nav>
-        <div className="flex gap-2">
-            <button className="login-btn"><Link to="/register">Sign up</Link></button>
-            <button className="login-btn"><Link to="/login">Log In</Link></button>
+        
+        <div style={{ display: 'flex', gap: '1rem' }}>
+          <button style={{
+            padding: '0.75rem 1.5rem',
+            borderRadius: '50px',
+            fontWeight: 600,
+            border: '2px solid white',
+            color: 'white',
+            background: 'transparent',
+            cursor: 'pointer',
+            transition: 'all 0.3s ease'
+          }}><Link to="/register">Sign up</Link></button>
+          <button style={{
+            padding: '0.75rem 1.5rem',
+            borderRadius: '50px',
+            fontWeight: 600,
+            background: 'linear-gradient(45deg, #667eea, #764ba2)',
+            color: 'white',
+            border: 'none',
+            cursor: 'pointer',
+            transition: 'all 0.3s ease'
+          }}><Link to="/login">Log In</Link></button>
         </div>
       </header>
 
       {/* Hero Section */}
-      <section className="hero">
-        <h1 className="animate-in">Real-time Collaboration Made Simple</h1>
-        <p className="animate-in delay-1">
-          Connect, communicate, and collaborate with your team in one powerful platform
-        </p>
-        <button className="get-started animate-in delay-2">Get Started Free</button>
-        <div className="mockup-container">
-          <div className="mockup-card-3d">
-            <div className="mockup-inner-content">
-              <h2>Real-time Collaboration</h2>
-              <p>Communicate and collaborate with your team in real-time.</p>
-              <img src="/mockup-content.png" alt="Dashboard Mockup" className="mockup-image" />
+      <section 
+        id="hero"
+        className="observe-section"
+        style={{
+          minHeight: '100vh',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          textAlign: 'center',
+          padding: '2rem',
+          position: 'relative',
+          background: 'radial-gradient(ellipse at center, rgba(255,255,255,0.1) 0%, transparent 70%)',
+          transform: isVisible.hero ? 'translateY(0) scale(1)' : 'translateY(50px) scale(0.95)',
+          opacity: isVisible.hero ? 1 : 0,
+          transition: 'all 0.8s cubic-bezier(0.23, 1, 0.32, 1)'
+        }}
+      >
+        <div style={{ maxWidth: '800px', zIndex: 2 }}>
+          <h1 style={{
+            fontSize: 'clamp(3rem, 8vw, 6rem)',
+            fontWeight: 800,
+            color: 'white',
+            marginBottom: '1.5rem',
+            background: 'linear-gradient(45deg, #ffffff, #f0f9ff)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            backgroundClip: 'text',
+            transform: 'translateZ(30px)'
+          }}>
+            Real-time Collaboration Made Simple
+          </h1>
+          
+          <p style={{
+            fontSize: '1.4rem',
+            color: 'rgba(255, 255, 255, 0.9)',
+            marginBottom: '3rem',
+            lineHeight: 1.6
+          }}>
+            Connect, communicate, and collaborate with your team in one powerful platform
+          </p>
+          
+          <button style={{
+            fontSize: '1.2rem',
+            padding: '1.2rem 3rem',
+            background: 'linear-gradient(45deg, #667eea, #764ba2)',
+            color: 'white',
+            border: 'none',
+            borderRadius: '50px',
+            cursor: 'pointer',
+            transition: 'all 0.4s cubic-bezier(0.23, 1, 0.32, 1)',
+            boxShadow: '0 10px 30px rgba(102, 126, 234, 0.3)',
+            position: 'relative',
+            overflow: 'hidden',
+            transform: 'translateZ(40px)'
+          }}>
+            Get Started Free
+          </button>
+        </div>
+        
+        {/* 3D Mockup */}
+        <div style={{
+          marginTop: '4rem',
+          perspective: '1500px',
+          transformStyle: 'preserve-3d'
+        }}>
+          <div style={{
+            width: '90vw',
+            maxWidth: '1000px',
+            height: '600px',
+            background: 'linear-gradient(145deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05))',
+            borderRadius: '20px',
+            backdropFilter: 'blur(20px)',
+            border: '1px solid rgba(255,255,255,0.1)',
+            boxShadow: '0 30px 80px rgba(0,0,0,0.3)',
+            transformStyle: 'preserve-3d',
+            transition: 'all 0.6s cubic-bezier(0.23, 1, 0.32, 1)',
+            position: 'relative',
+            overflow: 'hidden',
+            transform: 'rotateY(5deg) rotateX(2deg)',
+            cursor: 'pointer'
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.transform = 'rotateY(10deg) rotateX(5deg) translateZ(50px)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.transform = 'rotateY(5deg) rotateX(2deg)';
+          }}>
+            <div style={{ padding: '2rem', height: '100%' }}>
+              <DashboardMockup />
             </div>
           </div>
         </div>
       </section>
 
       {/* Features Section */}
-      <section className="features-section">
-        <h2 className="animate-in">Powerful Features</h2>
-        <div className="features-grid">
+      <section
+        id="features"
+        className="observe-section"
+        style={{
+          padding: '8rem 2rem',
+          background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)',
+          position: 'relative',
+          transform: isVisible.features ? 'translateY(0)' : 'translateY(50px)',
+          opacity: isVisible.features ? 1 : 0,
+          transition: 'all 0.8s cubic-bezier(0.23, 1, 0.32, 1) 0.2s'
+        }}
+      >
+        <div style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          height: '200px',
+          background: 'linear-gradient(180deg, #764ba2, transparent)'
+        }}></div>
+        
+        <h2 style={{
+          fontSize: '3.5rem',
+          fontWeight: 800,
+          textAlign: 'center',
+          marginBottom: '4rem',
+          background: 'linear-gradient(45deg, #334155, #475569)',
+          WebkitBackgroundClip: 'text',
+          WebkitTextFillColor: 'transparent',
+          backgroundClip: 'text',
+          position: 'relative',
+          zIndex: 2
+        }}>
+          Powerful Features
+        </h2>
+        
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))',
+          gap: '2rem',
+          maxWidth: '1400px',
+          margin: '0 auto',
+          position: 'relative',
+          zIndex: 2
+        }}>
           {features.map((feature, index) => (
-            <div className="feature-card animate-in" key={index} style={{ transitionDelay: `${index * 0.1}s` }}>
-              <div className="feature-icon">{feature.icon}</div>
-              <h3>{feature.title}</h3>
-              <p>{feature.description}</p>
+            <div
+              key={index}
+              style={{
+                background: 'rgba(255, 255, 255, 0.9)',
+                backdropFilter: 'blur(20px)',
+                borderRadius: '20px',
+                padding: '2.5rem',
+                boxShadow: '0 20px 50px rgba(0,0,0,0.1)',
+                border: '1px solid rgba(255,255,255,0.2)',
+                transformStyle: 'preserve-3d',
+                transition: 'all 0.5s cubic-bezier(0.23, 1, 0.32, 1)',
+                position: 'relative',
+                overflow: 'hidden',
+                cursor: 'pointer',
+                transform: isVisible.features ? 'translateY(0)' : 'translateY(30px)',
+                opacity: isVisible.features ? 1 : 0,
+                transitionDelay: `${index * 0.1}s`
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'translateY(-10px) rotateY(5deg) rotateX(5deg)';
+                e.currentTarget.style.boxShadow = '0 30px 70px rgba(0,0,0,0.2)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = '0 20px 50px rgba(0,0,0,0.1)';
+              }}
+            >
+              <div style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                height: '4px',
+                background: 'linear-gradient(45deg, #667eea, #764ba2)'
+              }}></div>
+              
+              <div style={{
+                width: '80px',
+                height: '80px',
+                marginBottom: '1.5rem',
+                background: 'linear-gradient(45deg, #667eea, #764ba2)',
+                borderRadius: '20px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                boxShadow: '0 10px 30px rgba(102, 126, 234, 0.3)',
+                fontSize: '2rem'
+              }}>
+                {feature.icon}
+              </div>
+              
+              <h3 style={{
+                fontSize: '1.5rem',
+                fontWeight: 700,
+                marginBottom: '1rem',
+                color: '#1e293b'
+              }}>
+                {feature.title}
+              </h3>
+              
+              <p style={{
+                color: '#64748b',
+                lineHeight: 1.6,
+                fontSize: '1rem',
+                margin: 0
+              }}>
+                {feature.description}
+              </p>
             </div>
           ))}
         </div>
       </section>
 
-      {/* Dashboard Showcase Section */}
-      <section className="dashboard-showcase">
-        <div className="dashboard-grid">
-          <div className="showcase-card">
-            <h3>Dashboard</h3>
-            <img src="/dashboard.png" alt="Dashboard" />
-          </div>
-          <div className="showcase-card">
-            <h3>Group Chat</h3>
-            <img src="/group-chat.png" alt="Group Chat" />
-          </div>
-          <div className="showcase-card">
-            <h3>File Management</h3>
-            <img src="/file-management.png" alt="File Management" />
-          </div>
-          <div className="showcase-card">
-            <h3>Task Management</h3>
-            <img src="/task-management.png" alt="Task Management" />
-          </div>
-          <div className="showcase-card">
-            <h3>Figma Integration</h3>
-            <img src="/figma-integration.png" alt="Figma Integration" />
-          </div>
-          <div className="showcase-card">
-            <h3>Video Conferencing</h3>
-            <img src="/video-conferencing.png" alt="Video Conferencing" />
-          </div>
-        </div>
-      </section>
-
       {/* Join Section */}
-      <section className="join-section">
-        <div className="join-content">
-          <h2 className="animate-in">Join Thousands of Teams</h2>
-          <p className="animate-in delay-1">
+      <section
+        id="join"
+        className="observe-section"
+        style={{
+          padding: '8rem 2rem',
+          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+          textAlign: 'center',
+          color: 'white',
+          position: 'relative',
+          overflow: 'hidden',
+          transform: isVisible.join ? 'translateY(0)' : 'translateY(50px)',
+          opacity: isVisible.join ? 1 : 0,
+          transition: 'all 0.8s cubic-bezier(0.23, 1, 0.32, 1)'
+        }}
+      >
+        <div style={{ maxWidth: '800px', margin: '0 auto', position: 'relative', zIndex: 2 }}>
+          <h2 style={{
+            fontSize: '3.5rem',
+            fontWeight: 800,
+            marginBottom: '1.5rem'
+          }}>
+            Join Thousands of Teams
+          </h2>
+          
+          <p style={{
+            fontSize: '1.3rem',
+            marginBottom: '3rem',
+            opacity: 0.9
+          }}>
             Sign up for free and start collaborating with your team today. No credit card required.
           </p>
-          <div className="join-stats animate-in delay-2">
-            <div>
-              <h3>100k+</h3>
-              <p>Active Users</p>
-            </div>
-            <div>
-              <h3>50+</h3>
-              <p>Integrations</p>
-            </div>
-            <div>
-              <h3>99.9%</h3>
-              <p>Uptime</p>
-            </div>
+          
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(3, 1fr)',
+            gap: '2rem',
+            margin: '3rem 0'
+          }}>
+            {[
+              { number: '100k+', label: 'Active Users' },
+              { number: '50+', label: 'Integrations' },
+              { number: '99.9%', label: 'Uptime' }
+            ].map((stat, index) => (
+              <div
+                key={index}
+                style={{
+                  textAlign: 'center',
+                  padding: '2rem',
+                  background: 'rgba(255, 255, 255, 0.1)',
+                  backdropFilter: 'blur(20px)',
+                  borderRadius: '20px',
+                  border: '1px solid rgba(255, 255, 255, 0.2)',
+                  transition: 'all 0.3s ease',
+                  cursor: 'pointer'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = 'translateY(-5px)';
+                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.15)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
+                }}
+              >
+                <h3 style={{
+                  fontSize: '2.5rem',
+                  fontWeight: 800,
+                  marginBottom: '0.5rem',
+                  margin: 0
+                }}>
+                  {stat.number}
+                </h3>
+                <p style={{ opacity: 0.8, margin: 0 }}>{stat.label}</p>
+              </div>
+            ))}
           </div>
+          
+          <button style={{
+            fontSize: '1.2rem',
+            padding: '1.2rem 3rem',
+            background: 'rgba(255, 255, 255, 0.2)',
+            color: 'white',
+            border: '2px solid white',
+            borderRadius: '50px',
+            cursor: 'pointer',
+            transition: 'all 0.4s cubic-bezier(0.23, 1, 0.32, 1)',
+            backdropFilter: 'blur(20px)'
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = 'white';
+            e.currentTarget.style.color = '#667eea';
+            e.currentTarget.style.transform = 'translateY(-3px) scale(1.05)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.2)';
+            e.currentTarget.style.color = 'white';
+            e.currentTarget.style.transform = 'translateY(0) scale(1)';
+          }}><Link to="/register">
+            Sign Up Now
+            </Link>
+          </button>
         </div>
-        <Link to="/register" className="signup-button animate-in delay-3">Sign Up Now</Link>
       </section>
 
       {/* Footer */}
-      <footer className="footer">
-        <div className="footer-columns">
-          <div className="footer-col">
-            <div className="logo">ConnectWise</div>
-            <div className="social-media">
-              <a href="#">
-                <i className="fab fa-facebook-f"></i>
-              </a>
-              <a href="#">
-                <i className="fab fa-twitter"></i>
-              </a>
-              <a href="#">
-                <i className="fab fa-instagram"></i>
-              </a>
-              <a href="#">
-                <i className="fab fa-linkedin-in"></i>
-              </a>
+      <footer
+        id="footer"
+        className="observe-section"
+        style={{
+          padding: '4rem 2rem 2rem',
+          background: 'linear-gradient(135deg, #1e293b 0%, #334155 100%)',
+          color: 'white',
+          transform: isVisible.footer ? 'translateY(0)' : 'translateY(50px)',
+          opacity: isVisible.footer ? 1 : 0,
+          transition: 'all 0.8s cubic-bezier(0.23, 1, 0.32, 1)'
+        }}
+      >
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
+          gap: '3rem',
+          maxWidth: '1200px',
+          margin: '0 auto 3rem'
+        }}>
+          <div>
+            <div style={{
+              fontSize: '1.8rem',
+              fontWeight: 800,
+              background: 'linear-gradient(45deg, #667eea, #764ba2)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              backgroundClip: 'text',
+              marginBottom: '1.5rem'
+            }}>
+              ConnectWise
+            </div>
+            <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
+              {[
+                { icon: <FaFacebookF/>, label: 'Facebook', url: 'https://www.facebook.com/' },
+                { icon: <FaSquareXTwitter/>, label: 'Twitter', url: 'https://x.com/Sp_rajjput' },
+                { icon: <FaInstagramSquare/>, label: 'Instagram', url: 'https://www.instagram.com/sp_singh.1' },
+                { icon: <CiLinkedin/>, label: 'LinkedIn', url: 'https://www.linkedin.com/in/' },
+                { icon: <FaGithub/>, label: 'GitHub', url: 'https://github.com/SPSingh-1' }
+              ].map((social, index) => (
+                <Link
+                  key={index}
+                  to={social.url} // Use the specific URL here
+                  style={{
+                    width: '40px',
+                    height: '40px',
+                    background: 'rgba(255, 255, 255, 0.1)',
+                    borderRadius: '10px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    transition: 'all 0.3s ease',
+                    textDecoration: 'none',
+                    fontSize: '1.2rem'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.2)';
+                    e.currentTarget.style.transform = 'translateY(-2px)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
+                    e.currentTarget.style.transform = 'translateY(0)';
+                  }}
+                >
+                  {social.icon}
+                </Link>
+              ))}
             </div>
           </div>
-          <div className="footer-col">
-            <h4>Product</h4>
-            <ul>
-              <li>
-                <a href="#">Features</a>
-              </li>
-              <li>
-                <a href="#">Pricing</a>
-              </li>
-              <li>
-                <a href="#">Integrations</a>
-              </li>
+          
+          <div>
+            <h4 style={{
+              fontSize: '1.2rem',
+              fontWeight: 700,
+              marginBottom: '1.5rem',
+              color: 'white'
+            }}>
+              Product
+            </h4>
+            <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+              {['Home', 'Features', 'Join'].map((item, index) => (
+                <li key={index} style={{ marginBottom: '0.75rem' }}>
+                  <a
+                    href="#hero"
+                    style={{
+                      color: 'rgba(255, 255, 255, 0.7)',
+                      textDecoration: 'none',
+                      transition: 'color 0.3s ease'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.color = 'white';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.color = 'rgba(255, 255, 255, 0.7)';
+                    }}
+                  >
+                    {item}
+                  </a>
+                </li>
+              ))}
             </ul>
           </div>
-          <div className="footer-col">
-            <h4>Company</h4>
-            <ul>
-              <li>
-                <a href="#">About Us</a>
-              </li>
-              <li>
-                <a href="#">Careers</a>
-              </li>
-              <li>
-                <a href="#">Blog</a>
-              </li>
+          
+          <div>
+            <h4 style={{
+              fontSize: '1.2rem',
+              fontWeight: 700,
+              marginBottom: '1.5rem',
+              color: 'white'
+            }}>
+              Company
+            </h4>
+            <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+              {['About Us', 'Careers', 'Blog'].map((item, index) => (
+                <li key={index} style={{ marginBottom: '0.75rem' }}>
+                  <Link
+                    to="/company"
+                    style={{
+                      color: 'rgba(255, 255, 255, 0.7)',
+                      textDecoration: 'none',
+                      transition: 'color 0.3s ease'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.color = 'white';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.color = 'rgba(255, 255, 255, 0.7)';
+                    }}
+                  >
+                    {item}
+                  </Link>
+                </li>
+              ))}
             </ul>
           </div>
-          <div className="footer-col">
-            <h4>Legal</h4>
-            <ul>
-              <li>
-                <a href="#">Privacy Policy</a>
-              </li>
-              <li>
-                <a href="#">Terms of Service</a>
-              </li>
+          
+          <div>
+            <h4 style={{
+              fontSize: '1.2rem',
+              fontWeight: 700,
+              marginBottom: '1.5rem',
+              color: 'white'
+            }}>
+              Legal
+            </h4>
+            <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+              {['Privacy Policy', 'Terms of Service'].map((item, index) => (
+                <li key={index} style={{ marginBottom: '0.75rem' }}>
+                  <Link
+                    to="/legal"
+                    style={{
+                      color: 'rgba(255, 255, 255, 0.7)',
+                      textDecoration: 'none',
+                      transition: 'color 0.3s ease'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.color = 'white';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.color = 'rgba(255, 255, 255, 0.7)';
+                    }}
+                  >
+                    {item}
+                  </Link>
+                </li>
+              ))}
             </ul>
           </div>
         </div>
-        <div className="footer-bottom">
-          <p>&copy; 2024 ConnectWise. All rights reserved.</p>
+        
+        <div style={{
+          textAlign: 'center',
+          paddingTop: '2rem',
+          borderTop: '1px solid rgba(255, 255, 255, 0.1)',
+          color: 'rgba(255, 255, 255, 0.7)'
+        }}>
+          <p style={{ margin: 0 }}>
+            &copy; 2024 ConnectWise. All rights reserved.
+          </p>
         </div>
       </footer>
+
+      {/* CSS for Dashboard Mockup */}
+      <style>{`
+        .dashboard-mockup {
+          width: 100%;
+          height: 100%;
+          background: linear-gradient(145deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05));
+          border-radius: 15px;
+          padding: 1.5rem;
+          display: flex;
+          flex-direction: column;
+          gap: 1rem;
+        }
+
+        .mockup-header {
+          display: flex;
+          gap: 1rem;
+          margin-bottom: 1rem;
+        }
+
+        .header-item {
+          height: 40px;
+          background: rgba(255,255,255,0.2);
+          border-radius: 8px;
+          flex: 1;
+          position: relative;
+          overflow: hidden;
+        }
+
+        .header-item::after {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: -100%;
+          width: 100%;
+          height: 100%;
+          background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+          animation: shimmer 2s infinite;
+        }
+
+        @keyframes shimmer {
+          0% { left: -100%; }
+          100% { left: 100%; }
+        }
+
+        .mockup-content {
+          display: flex;
+          gap: 1.5rem;
+          flex: 1;
+        }
+
+        .sidebar {
+          width: 200px;
+          display: flex;
+          flex-direction: column;
+          gap: 0.75rem;
+        }
+
+        .sidebar-item {
+          height: 50px;
+          background: rgba(255,255,255,0.15);
+          border-radius: 8px;
+          position: relative;
+          overflow: hidden;
+        }
+
+        .sidebar-item:nth-child(1) { background: rgba(102, 126, 234, 0.3); }
+        .sidebar-item:nth-child(2) { background: rgba(16, 185, 129, 0.3); }
+        .sidebar-item:nth-child(3) { background: rgba(245, 158, 11, 0.3); }
+
+        .main-content {
+          flex: 1;
+          display: flex;
+          flex-direction: column;
+          gap: 1.5rem;
+        }
+
+        .chart-area {
+          height: 200px;
+          background: rgba(255,255,255,0.1);
+          border-radius: 12px;
+          padding: 1rem;
+          display: flex;
+          align-items: flex-end;
+          gap: 0.5rem;
+        }
+
+        .chart-bar {
+          flex: 1;
+          background: linear-gradient(45deg, #667eea, #764ba2);
+          border-radius: 4px 4px 0 0;
+          min-height: 20%;
+          animation: growBar 2s ease-out;
+          box-shadow: 0 0 10px rgba(102, 126, 234, 0.3);
+        }
+
+        @keyframes growBar {
+          0% { height: 0; }
+          100% { height: var(--final-height, 50%); }
+        }
+
+        .content-cards {
+          display: grid;
+          grid-template-columns: repeat(2, 1fr);
+          gap: 1rem;
+          flex: 1;
+        }
+
+        .content-card {
+          background: rgba(255,255,255,0.1);
+          border-radius: 10px;
+          position: relative;
+          overflow: hidden;
+        }
+
+        .content-card::before {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          height: 4px;
+          background: linear-gradient(45deg, #667eea, #764ba2);
+        }
+
+        @media (max-width: 768px) {
+          .mockup-content {
+            flex-direction: column;
+          }
+          
+          .sidebar {
+            width: 100%;
+            flex-direction: row;
+            overflow-x: auto;
+          }
+          
+          .content-cards {
+            grid-template-columns: 1fr;
+          }
+        }
+      `}</style>
     </div>
   );
 };
