@@ -1,32 +1,35 @@
 // backend/models/Task.js
-import mongoose from 'mongoose'; // Changed from const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 const taskSchema = new mongoose.Schema({
-  // Only the 8 specified fields
-  taskTitle: { type: String, required: true, trim: true }, // Name of the task (brief and clear)
-  projectName: { type: String, required: true, trim: true }, // The project under which this task falls
+  taskTitle: { type: String, required: true, trim: true },
+  projectName: { type: String, required: true, trim: true },
   priority: {
     type: String,
     enum: ['High', 'Medium', 'Low'],
     default: 'Medium',
-    required: true // Importance level (e.g., High, Medium, Low)
+    required: true
   },
   taskStatus: {
     type: String,
     enum: ['To Do', 'In Progress', 'Completed', 'Blocked'],
     default: 'To Do',
-    required: true // Current state (To Do, In Progress, Completed, Blocked)
+    required: true
   },
-  assignedTo: [{ type: String, required: true, trim: true }], // Team member responsible for the task
-  dueDate: { type: Date, required: true }, // The deadline for task completion
-  taskDescription: { type: String, required: true, trim: true }, // Detailed explanation of the task
-  projectManagerName: { type: String, required: true, trim: true }, // The manager or lead overseeing the task/project
+  assignedTo: [{ type: String, required: true, trim: true }],
+  dueDate: { type: Date, required: true },
+  taskDescription: { type: String, required: true, trim: true },
+  projectManagerName: { type: String, required: true, trim: true },
 
-  // Auto-filled field (not part of the 8, but useful for tracking)
-  createdBy: { type: String, trim: true }, // Auto-filled by frontend
+  // Tracking fields
+  createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'user', required: true },
 
-}, { timestamps: true }); // Mongoose option to auto-add createdAt and updatedAt fields
+  // Role-specific fields
+  teamId: { type: mongoose.Schema.Types.ObjectId, ref: 'Team', default: null },
+  globalId: { type: String, default: null }, // will store "GLOBAL123" for global tasks
+  scope: { type: String, enum: ['single', 'team', 'global'], default: 'single' }
 
-// Changed from module.exports = mongoose.model('Task', taskSchema);
+}, { timestamps: true });
+
 const Task = mongoose.model('Task', taskSchema);
 export default Task;

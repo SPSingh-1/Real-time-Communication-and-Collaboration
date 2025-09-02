@@ -8,7 +8,9 @@ import cron from 'node-cron';
 const router = express.Router();
 
 export default function createEventRoutes(io) {
-  // ✅ AUTO-CLEANUP JOB: Delete events older than last month
+  // ======================
+  // CRON: Cleanup old events (older than last month)
+  // ======================
   cron.schedule('0 2 * * *', async () => {
     try {
       const now = new Date();
@@ -26,7 +28,9 @@ export default function createEventRoutes(io) {
     }
   });
 
-  // ✅ CREATE EVENT
+  // ======================
+  // CREATE EVENT
+  // ======================
   router.post('/', fetchUser, async (req, res) => {
     try {
       const { title, date, time, description } = req.body;
@@ -36,24 +40,24 @@ export default function createEventRoutes(io) {
         date,
         time,
         description: description || '',
-        user: req.user.id
+        user: req.user.id,
+        teamId: req.user.role === 'team' ? req.user.teamId : null,
+        scope: req.user.role   // "single" | "team" | "global"
       });
-
-      console.log('📥 Incoming event payload:', req.body);
 
       const populated = await Events.findById(event._id).populate('user', 'name email');
 
       io.emit('newEvent', populated);
 
-      const notification = await Notification.create({
+      await Notification.create({
         type: 'event',
         text: `${populated.user.name} created event "${populated.title}"`,
         user: populated.user._id,
         eventId: populated._id,
-        time: new Date()
+        time: new Date(),
+        scope: req.user.role,
+        teamId: req.user.role === 'team' ? req.user.teamId : null
       });
-
-      io.emit('notification', notification);
 
       res.status(201).json(populated);
     } catch (err) {
@@ -62,54 +66,76 @@ export default function createEventRoutes(io) {
     }
   });
 
-  // ✅ UPDATE EVENT
+  // ======================
+  // UPDATE EVENT
+  // ======================
   router.put('/:id', fetchUser, async (req, res) => {
     try {
       const { title, time, description } = req.body;
 
-      const updated = await Events.findOneAndUpdate(
-        { _id: req.params.id, user: req.user.id },
-        { title, time, description },
-        { new: true }
-      ).populate('user', 'name email');
+      let event = await Events.findById(req.params.id);
+      if (!event) return res.status(404).json({ error: 'Event not found' });
 
-      if (!updated) return res.status(404).json({ error: 'Event not found' });
+      // 🔒 Authorization
+      if (
+        (req.user.role === 'single' && (event.scope !== 'single' || event.user.toString() !== req.user.id)) ||
+        (req.user.role === 'team' && (event.scope !== 'team' || event.teamId?.toString() !== req.user.teamId)) ||
+        (req.user.role === 'global' && event.scope !== 'global')
+      ) {
+        return res.status(403).json({ error: 'Not authorized to update this event' });
+      }
 
-      io.emit('updatedEvent', updated);
+      event.title = title || event.title;
+      event.time = time || event.time;
+      event.description = description || event.description;
+      const updated = await event.save();
 
-      const notification = await Notification.create({
+      const populated = await Events.findById(updated._id).populate('user', 'name email');
+      io.emit('updatedEvent', populated);
+
+      await Notification.create({
         type: 'event',
-        text: `${updated.user.name} updated event "${updated.title}"`,
-        user: updated.user._id,
-        eventId: updated._id,
-        time: new Date()
+        text: `${populated.user.name} updated event "${populated.title}"`,
+        user: populated.user._id,
+        eventId: populated._id,
+        time: new Date(),
+        scope: req.user.role,
+        teamId: req.user.role === 'team' ? req.user.teamId : null
       });
 
-      io.emit('notification', notification);
-
-      res.status(200).json(updated);
+      res.status(200).json(populated);
     } catch (err) {
       console.error('❌ Event update error:', err.message);
       res.status(500).json({ error: 'Failed to update event' });
     }
   });
 
-  // ✅ DELETE EVENT
+  // ======================
+  // DELETE EVENT
+  // ======================
   router.delete('/:id', fetchUser, async (req, res) => {
     try {
       const event = await Events.findById(req.params.id).populate('user', 'name email');
       if (!event) return res.status(404).json({ error: 'Event not found' });
 
-      const deletedEventNotification = {
+      // 🔒 Authorization
+      if (
+        (req.user.role === 'single' && (event.scope !== 'single' || event.user.toString() !== req.user.id)) ||
+        (req.user.role === 'team' && (event.scope !== 'team' || event.teamId?.toString() !== req.user.teamId)) ||
+        (req.user.role === 'global' && event.scope !== 'global')
+      ) {
+        return res.status(403).json({ error: 'Not authorized to delete this event' });
+      }
+
+      await Notification.create({
         type: 'event',
         text: `${event.user.name} deleted event "${event.title}"`,
         user: event.user._id,
         eventId: event._id,
-        time: new Date()
-      };
-
-      await Notification.create(deletedEventNotification);
-      io.emit('notification', deletedEventNotification);
+        time: new Date(),
+        scope: req.user.role,
+        teamId: req.user.role === 'team' ? req.user.teamId : null
+      });
 
       await event.deleteOne();
 
@@ -125,10 +151,17 @@ export default function createEventRoutes(io) {
     }
   });
 
-  // ✅ GET ALL EVENTS
+  // ======================
+  // GET ALL EVENTS (role-based)
+  // ======================
   router.get('/', fetchUser, async (req, res) => {
     try {
-      const events = await Events.find().populate('user', 'name email');
+      let filter = {};
+      if (req.user.role === 'single') filter = { user: req.user.id, scope: 'single' };
+      if (req.user.role === 'team') filter = { teamId: req.user.teamId, scope: 'team' };
+      if (req.user.role === 'global') filter = { scope: 'global' };
+
+      const events = await Events.find(filter).populate('user', 'name email');
       res.json(events);
     } catch (err) {
       console.error('❌ Event fetch error:', err.message);
@@ -136,11 +169,23 @@ export default function createEventRoutes(io) {
     }
   });
 
-  // ✅ GET EVENT BY ID
+  // ======================
+  // GET EVENT BY ID
+  // ======================
   router.get('/:id', fetchUser, async (req, res) => {
     try {
       const event = await Events.findById(req.params.id).populate('user', 'name email');
       if (!event) return res.status(404).json({ error: 'Event not found' });
+
+      // 🔒 Authorization
+      if (
+        (req.user.role === 'single' && (event.scope !== 'single' || event.user.toString() !== req.user.id)) ||
+        (req.user.role === 'team' && (event.scope !== 'team' || event.teamId?.toString() !== req.user.teamId)) ||
+        (req.user.role === 'global' && event.scope !== 'global')
+      ) {
+        return res.status(403).json({ error: 'Not authorized to view this event' });
+      }
+
       res.json(event);
     } catch (err) {
       console.error('❌ Error fetching event by ID:', err.message);

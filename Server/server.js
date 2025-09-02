@@ -1,6 +1,26 @@
 // backend/server.js
-import dotenv from 'dotenv'; // Using ES module import syntax
-dotenv.config(); // This line should be at the very top to load .env variables first
+import dotenv from 'dotenv';
+
+// Load environment variables FIRST before any other imports
+dotenv.config();
+
+// Validate critical environment variables
+const JWT_SECRET = process.env.JWT_SECRET;
+const MONGODB_URI = process.env.MONGODB_URI;
+
+if (!JWT_SECRET) {
+    console.error('❌ CRITICAL ERROR: JWT_SECRET is not defined in your .env file.');
+    console.error('Please add JWT_SECRET=your_secret_key to your .env file');
+    process.exit(1);
+}
+
+if (!MONGODB_URI) {
+    console.error('❌ CRITICAL ERROR: MONGODB_URI is not defined in your .env file.');
+    process.exit(1);
+}
+
+console.log("✅ JWT_SECRET loaded successfully:", JWT_SECRET);
+console.log("✅ Environment variables validated");
 
 import express from 'express';
 import http from 'http';
@@ -8,76 +28,70 @@ import { Server } from 'socket.io';
 import cors from 'cors';
 import mongoose from 'mongoose';
 import nodemailer from 'nodemailer';
-import fs from 'fs'; // Import fs module for reading files
-import path from 'path'; // Import path module for resolving file paths
-import { fileURLToPath } from 'url'; // For __dirname equivalent in ES modules
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
-
-// Get __dirname equivalent for ES modules
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// --- NEW: Import the Video Router ---
+// Import video router
 import videoRouter, { initVideoRouter } from './routes/videoRouter.js';
 
-// Routes (existing)
+// Import routes
 import authRoutes from './routes/auth.js';
 import createEventRoutes from './routes/events.js';
 import notificationRoutes from './routes/notification.js';
 import noteRouter from './routes/noteRouter.js';
-import upload from './routes/upload.js';
 import attendeeRoutes from './routes/attendeeRouter.js';
 import setupSocketHandlers from './routes/messageRouter.js';
-import fileUploadRoutes from './routes/fileUpload.js';
-import fileRoutes from './routes/fileRoutes.js';
+import uploadRouter from './routes/fileUpload.js';
+import { fileRouter } from './routes/fileRoutes.js';
 import taskRouter from './routes/taskRouter.js';
+import chatUploadRouter from './routes/chatUpload.js'; // New chat upload route
 
 // Middleware and Models
-import './models/User.js'; // Ensure your models are loaded
+import './models/User.js';
 
 const app = express();
 const server = http.createServer(app);
 
 const io = new Server(server, {
     cors: {
-        origin: ['http://localhost:5173', 'https://the-real-time-intraction.netlify.app'], // Your frontend origin
+        origin: ['http://localhost:5173', 'https://the-real-time-intraction.netlify.app'],
         methods: ['GET', 'POST', 'PUT', 'DELETE'],
-        credentials: true, // Allow cookies/authorization headers
+        credentials: true,
     }
 });
 
-// --- Configuration for Google API (from .env) ---
-// Use default empty strings if not provided, for cleaner conditional checks
+// Google API Configuration
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || '';
 const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET || '';
 const GOOGLE_REDIRECT_URI = process.env.GOOGLE_REDIRECT_URI || '';
 
-// --- Configuration for Jitsi Jaas (from .env and file) ---
+// Jitsi Configuration
 const JITSI_APP_ID = process.env.JITSI_APP_ID;
 const JITSI_KID = process.env.JITSI_KID;
-const JITSI_DOMAIN = process.env.JITSI_DOMAIN; // Added JITSI_DOMAIN
+const JITSI_DOMAIN = process.env.JITSI_DOMAIN;
 
-// Read the Jitsi Private Key from a file
-let JITSI_PRIVATE_KEY_CONTENT; // Renamed to avoid confusion with path
+// Read Jitsi Private Key
+let JITSI_PRIVATE_KEY_CONTENT;
 try {
     const privateKeyPath = process.env.JITSI_PRIVATE_KEY_PATH;
     if (!privateKeyPath) {
         throw new Error('JITSI_PRIVATE_KEY_PATH is not defined in your .env file.');
     }
-    // Resolve the path correctly. Assumes private_key.pem is in the same directory as server.js
     const resolvedPrivateKeyPath = path.resolve(__dirname, privateKeyPath);
     JITSI_PRIVATE_KEY_CONTENT = fs.readFileSync(resolvedPrivateKeyPath, 'utf8');
-    console.log(`Jitsi Private Key loaded successfully from ${resolvedPrivateKeyPath}.`);
+    console.log(`✅ Jitsi Private Key loaded successfully from ${resolvedPrivateKeyPath}.`);
 } catch (error) {
-    console.error('CRITICAL ERROR: Could not load Jitsi Private Key.');
+    console.error('❌ CRITICAL ERROR: Could not load Jitsi Private Key.');
     console.error(`Please ensure the "private_key.pem" file exists at the specified path (${process.env.JITSI_PRIVATE_KEY_PATH}) relative to the server.js file, and it contains your Jitsi private key.`);
     console.error(error.message);
-    // It's critical for Jitsi JWT generation, so we should exit or disable related features.
-    process.exit(1); // Exit if private key is not found
+    process.exit(1);
 }
 
-
-// Define the OAuth scopes your application needs
+// OAuth scopes
 const GOOGLE_SCOPES = [
     'https://www.googleapis.com/auth/meetings.spaces.create',
     'https://www.googleapis.com/auth/meetings',
@@ -85,23 +99,20 @@ const GOOGLE_SCOPES = [
     'https://www.googleapis.com/auth/calendar',
 ];
 
-// Initialize the video router with the loaded Google and Jitsi configuration
-// This must happen after all necessary env variables and the private key are loaded
+// Initialize video router
 initVideoRouter({
     CLIENT_ID: GOOGLE_CLIENT_ID,
     CLIENT_SECRET: GOOGLE_CLIENT_SECRET,
     REDIRECT_URI: GOOGLE_REDIRECT_URI,
     SCOPES: GOOGLE_SCOPES,
-    // Pass Jitsi Jaas credentials and the loaded private key content
     JITSI_APP_ID: JITSI_APP_ID,
     JITSI_KID: JITSI_KID,
-    JITSI_PRIVATE_KEY: JITSI_PRIVATE_KEY_CONTENT, // Pass the read key content
-    JITSI_DOMAIN: JITSI_DOMAIN // Pass the domain
+    JITSI_PRIVATE_KEY: JITSI_PRIVATE_KEY_CONTENT,
+    JITSI_DOMAIN: JITSI_DOMAIN
 });
-console.log('Video Router initialized with Google and Jitsi configurations.');
+console.log('✅ Video Router initialized with Google and Jitsi configurations.');
 
-
-// --- Middleware ---
+// Middleware
 app.use(cors({
     origin: ['http://localhost:5173', 'https://the-real-time-intraction.netlify.app'],
     credentials: true
@@ -109,23 +120,32 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// --- Existing Routes ---
+// Routes
 app.get('/', (req, res) => {
     res.send('API is running...');
 });
-app.use('/upload', upload);
+
+// Test endpoint to verify JWT_SECRET is accessible
+app.get('/api/test/jwt', (req, res) => {
+    res.json({
+        jwtSecretLoaded: !!process.env.JWT_SECRET,
+        timestamp: new Date().toISOString(),
+        message: 'JWT Secret validation endpoint'
+    });
+});
+
 app.use('/api/auth', authRoutes);
 app.use('/notifications', notificationRoutes);
 app.use('/notes', noteRouter);
 app.use('/attendees', attendeeRoutes);
-app.use('/uploads', express.static(path.join(__dirname, 'uploads'))); // Use path.join for static serving
 
-app.use('/collab_uploads', fileUploadRoutes);
-app.use('/files', fileRoutes);
+// File management routes
+app.use('/collab_uploads', uploadRouter);  // For regular file uploads
+app.use('/files', fileRouter);             // For regular file management
+app.use('/api/chat', chatUploadRouter);    // For chat file uploads and management
 app.use('/api/tasks', taskRouter);
 
-// Email Reminder Endpoint
-// IMPORTANT: REMOVE OR CONFIGURE GMAIL_USER and GMAIL_APP_PASSWORD IN .env
+// Email notification endpoint
 app.post('/notify', async (req, res) => {
     const { email, events } = req.body;
 
@@ -133,11 +153,11 @@ app.post('/notify', async (req, res) => {
     const GMAIL_APP_PASSWORD = process.env.GMAIL_APP_PASSWORD;
 
     if (!GMAIL_USER || !GMAIL_APP_PASSWORD) {
-        console.error('Email sending failed: GMAIL_USER or GMAIL_APP_PASSWORD not configured in .env');
+        console.error('❌ Email sending failed: GMAIL_USER or GMAIL_APP_PASSWORD not configured in .env');
         return res.status(500).json({ error: 'Email sender not configured.' });
     }
 
-    const transporter = nodemailer.createTransport({
+    const transporter = nodemailer.createTransporter({
         service: 'gmail',
         auth: {
             user: GMAIL_USER,
@@ -163,31 +183,30 @@ app.post('/notify', async (req, res) => {
     }
 });
 
+// Event and message handling
 app.use('/events', createEventRoutes(io));
 setupSocketHandlers(io);
 
-// --- NEW: Mount the Video Conferencing Router ---
+// Video conferencing routes
 app.use('/api', videoRouter);
 
-
 // MongoDB connection
-const MONGODB_URI = process.env.MONGODB_URI;
-if (!MONGODB_URI) {
-    console.error('CRITICAL ERROR: MONGODB_URI is not defined in your .env file.');
-    process.exit(1);
-}
 mongoose.connect(MONGODB_URI)
     .then(() => console.log('✅ Connected to MongoDB'))
     .catch(err => {
         console.error('❌ MongoDB connection error:', err);
-        process.exit(1); // Exit process with failure
+        process.exit(1);
     });
 
 // Start server
-const PORT = process.env.PORT || 3001; // Use PORT from .env or default
+const PORT = process.env.PORT || 3001;
 server.listen(PORT, () => {
     console.log(`🚀 Server running at http://localhost:${PORT}`);
-    console.log(`Frontend expected at http://localhost:5173`);
-    console.log(`Google OAuth Client ID: ${GOOGLE_CLIENT_ID ? 'Loaded' : 'NOT LOADED (commented out in .env?)'}`);
-    console.log(`Jitsi App ID: ${JITSI_APP_ID ? 'Loaded' : 'NOT LOADED - Check .env'}`);
+    console.log(`🌐 Frontend expected at http://localhost:5173`);
+    console.log(`🔐 JWT_SECRET: ${JWT_SECRET ? 'Loaded ✅' : 'NOT LOADED ❌'}`);
+    console.log(`🔍 Google OAuth Client ID: ${GOOGLE_CLIENT_ID ? 'Loaded ✅' : 'NOT LOADED ❌ (commented out in .env?)'}`);
+    console.log(`📹 Jitsi App ID: ${JITSI_APP_ID ? 'Loaded ✅' : 'NOT LOADED ❌ - Check .env'}`);
+    console.log(`💬 Chat Upload Route: /api/chat/upload - Ready ✅`);
+    console.log(`📁 Chat Files Route: /api/chat/files - Ready ✅`);
+    console.log('===============================================');
 });

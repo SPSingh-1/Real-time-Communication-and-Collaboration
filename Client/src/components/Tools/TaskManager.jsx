@@ -11,42 +11,95 @@ const TaskManager = () => {
     const [currentView, setCurrentView] = useState('list');
     const [editingTask, setEditingTask] = useState(null);
 
-    // State to hold the current logged-in user's name
-    const [currentUserName, setCurrentUserName] = useState('Guest');
+    // State to hold the current logged-in user's info including role
+    const [currentUser, setCurrentUser] = useState({
+        name: 'Guest',
+        id: null,
+        role: 'single',
+        teamId: null,
+        globalId: null
+    });
 
-    // --- New Effect to decode token and set current user info ---
+    // --- Enhanced Effect to decode token and set current user info with role support ---
     useEffect(() => {
         const token = localStorage.getItem('token');
         if (token) {
             try {
                 const decodedToken = jwtDecode(token);
-                // Adjust these property names based on your actual JWT payload structure
-                setCurrentUserName(decodedToken.name || decodedToken.username || 'Guest');
-                // You might also want to set currentUserId here if needed for backend validation
-                // For this scenario, we only strictly need the name for the frontend display.
+                console.log("Full decoded token:", decodedToken);
+                
+                // Handle different token structures more comprehensively
+                const userId = decodedToken.user?.id || decodedToken.id || null;
+                const userRole = decodedToken.user?.role || decodedToken.role || 'single';
+                const teamId = decodedToken.user?.teamId || decodedToken.teamId || null;
+                const globalId = decodedToken.user?.globalId || decodedToken.globalId || null;
+                const userName = decodedToken.user?.name || decodedToken.name || decodedToken.username || 'Guest';
+
+                setCurrentUser({
+                    name: userName,
+                    id: userId,
+                    role: userRole,
+                    teamId: teamId,
+                    globalId: globalId
+                });
+
                 console.log("Decoded Token in TaskManager:", {
-                    name: decodedToken.name || decodedToken.username,
-                    // id: decodedToken.user?.id || decodedToken.id // Uncomment if you need the ID here
+                    name: userName,
+                    id: userId,
+                    role: userRole,
+                    teamId: teamId,
+                    globalId: globalId
                 });
             } catch (error) {
                 console.error("Error decoding token in TaskManager:", error);
-                setCurrentUserName('Guest'); // Fallback in case of invalid token
-                // You could also show a toast here if you wanted, similar to FileUploader
+                setCurrentUser({
+                    name: 'Guest',
+                    id: null,
+                    role: 'single',
+                    teamId: null,
+                    globalId: null
+                });
             }
         } else {
-            setCurrentUserName('Guest'); // No token found, default to Guest
+            console.log("No token found in localStorage");
+            setCurrentUser({
+                name: 'Guest',
+                id: null,
+                role: 'single',
+                teamId: null,
+                globalId: null
+            });
         }
-    }, []); // Empty dependency array means this runs once on component mount
+    }, []);
 
-    // Function to fetch all tasks from the backend
+    // Function to fetch all tasks from the backend with authentication
     const fetchTasks = useCallback(async () => {
         try {
-            const response = await fetch(MONGODB_API_BASE_URL);
+            const token = localStorage.getItem('token');
+            if (!token) {
+                console.error('No authentication token found');
+                return;
+            }
+
+            console.log('Fetching tasks with token:', token.substring(0, 20) + '...');
+
+            const response = await fetch(MONGODB_API_BASE_URL, {
+                method: 'GET',
+                headers: {
+                    'auth-token': token, // Changed from 'Authorization': `Bearer ${token}`
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            console.log('Fetch response status:', response.status);
+
             if (!response.ok) {
                 const errorData = await response.json();
-                throw new Error(`Failed to fetch tasks: ${errorData.message || response.statusText}`);
+                console.error('Fetch error details:', errorData);
+                throw new Error(`Failed to fetch tasks: ${errorData.message || errorData.error || response.statusText}`);
             }
             const data = await response.json();
+            console.log('Fetched tasks:', data);
             setTasks(data);
         } catch (error) {
             console.error("Error fetching tasks:", error);
@@ -60,31 +113,44 @@ const TaskManager = () => {
         }
     }, [currentView, fetchTasks]);
 
-    // Handle saving a task (add or update)
+    // Handle saving a task (add or update) with authentication
     const handleSaveTask = async (taskData) => {
         try {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                console.error('No authentication token found');
+                return;
+            }
+
+            console.log('Saving task data:', taskData);
+
             let response;
             if (taskData._id) {
                 // This is an update operation because _id exists
                 response = await fetch(`${MONGODB_API_BASE_URL}/${taskData._id}`, {
                     method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'auth-token': token // Changed from 'Authorization': `Bearer ${token}`
+                    },
                     body: JSON.stringify(taskData),
                 });
             } else {
-                // This is an add operation
-                // --- Automatically add currentUserName to the new task data ---
-                const newTaskData = { ...taskData, createdBy: currentUserName };
+                // This is an add operation - the backend will handle setting the correct scope and IDs
                 response = await fetch(MONGODB_API_BASE_URL, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(newTaskData),
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'auth-token': token // Changed from 'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify(taskData),
                 });
             }
 
             if (!response.ok) {
                 const errorData = await response.json();
-                throw new Error(`Failed to save task: ${errorData.message || JSON.stringify(errorData) || response.statusText}`);
+                console.error('Save task error:', errorData);
+                throw new Error(`Failed to save task: ${errorData.message || errorData.error || JSON.stringify(errorData) || response.statusText}`);
             }
 
             console.log('Task saved successfully!');
@@ -93,23 +159,40 @@ const TaskManager = () => {
             setEditingTask(null); // Clear editing state after save
         } catch (error) {
             console.error("Error saving task:", error);
+            alert(`Error saving task: ${error.message}`);
         }
     };
 
-    // Handle deleting a task (requires DELETE route in backend)
+    // Handle deleting a task with authentication
     const handleDeleteTask = async (taskId) => {
+        if (!window.confirm('Are you sure you want to delete this task?')) {
+            return;
+        }
+
         try {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                console.error('No authentication token found');
+                return;
+            }
+
             const response = await fetch(`${MONGODB_API_BASE_URL}/${taskId}`, {
                 method: 'DELETE',
+                headers: {
+                    'auth-token': token // Changed from 'Authorization': `Bearer ${token}`
+                }
             });
+
             if (!response.ok) {
                 const errorData = await response.json();
-                throw new Error(`Failed to delete task: ${errorData.message || response.statusText}`);
+                console.error('Delete task error:', errorData);
+                throw new Error(`Failed to delete task: ${errorData.message || errorData.error || response.statusText}`);
             }
             console.log('Task deleted successfully!');
             await fetchTasks(); // Re-fetch tasks to update the list
         } catch (error) {
             console.error("Error deleting task:", error);
+            alert(`Error deleting task: ${error.message}`);
         }
     };
 
@@ -129,6 +212,22 @@ const TaskManager = () => {
         setCurrentView('list');
         setEditingTask(null); // Clear editing state when navigating back
     };
+
+    // Get role display information
+    const getRoleDisplayInfo = () => {
+        switch (currentUser.role) {
+            case 'single':
+                return { icon: '👤', label: 'Personal', color: 'from-blue-400 to-cyan-400' };
+            case 'team':
+                return { icon: '👥', label: 'Team', color: 'from-emerald-400 to-teal-400' };
+            case 'global':
+                return { icon: '🌍', label: 'Global', color: 'from-purple-400 to-pink-400' };
+            default:
+                return { icon: '👤', label: 'Personal', color: 'from-blue-400 to-cyan-400' };
+        }
+    };
+
+    const roleInfo = getRoleDisplayInfo();
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 relative overflow-hidden">
@@ -175,12 +274,54 @@ const TaskManager = () => {
                     <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/20 via-purple-500/20 to-pink-500/20 rounded-3xl blur-xl animate-pulse-glow"></div>
                     
                     <div className="relative z-10 p-6">
-                        {/* 3D Header */}
+                        {/* Enhanced 3D Header with Role Information */}
                         <div className="mb-6 transform-gpu transition-all duration-700 hover:translate-z-4">
-                            <h2 className="text-4xl font-black bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400 text-transparent bg-clip-text mb-2 animate-text-shimmer">
-                                🚀 Task Manager
-                            </h2>
-                            <div className="h-1 w-32 bg-gradient-to-r from-cyan-400 to-purple-400 rounded-full animate-width-expand"></div>
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <h2 className="text-4xl font-black bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400 text-transparent bg-clip-text mb-2 animate-text-shimmer">
+                                        🚀 Task Manager
+                                    </h2>
+                                    <div className="h-1 w-32 bg-gradient-to-r from-cyan-400 to-purple-400 rounded-full animate-width-expand"></div>
+                                </div>
+                                
+                                {/* Role Badge */}
+                                <div className="flex items-center space-x-4">
+                                    <div className="text-right">
+                                        <div className="text-sm text-white/60">Welcome back,</div>
+                                        <div className="text-lg font-bold text-white/90">{currentUser.name}</div>
+                                    </div>
+                                    <div className={`px-4 py-2 rounded-xl bg-gradient-to-r ${roleInfo.color} text-white font-bold shadow-lg transform-gpu transition-all duration-500 hover:scale-110 hover:rotate-y-6`}>
+                                        <div className="flex items-center space-x-2">
+                                            <span className="text-lg">{roleInfo.icon}</span>
+                                            <span>{roleInfo.label} Mode</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Role-based Information Panel */}
+                        <div className="mb-6 p-4 bg-gradient-to-r from-white/10 to-white/5 rounded-2xl border border-white/20 transform-gpu transition-all duration-500 hover:scale-105">
+                            <div className="text-sm text-white/70">
+                                {currentUser.role === 'single' && (
+                                    <div className="flex items-center space-x-2">
+                                        <span>📝</span>
+                                        <span>You can create and manage your personal tasks</span>
+                                    </div>
+                                )}
+                                {currentUser.role === 'team' && (
+                                    <div className="flex items-center space-x-2">
+                                        <span>👥</span>
+                                        <span>You can create and manage tasks for your team {currentUser.teamId ? `(Team ID: ${currentUser.teamId})` : ''}</span>
+                                    </div>
+                                )}
+                                {currentUser.role === 'global' && (
+                                    <div className="flex items-center space-x-2">
+                                        <span>🌍</span>
+                                        <span>You can create and manage global organization tasks {currentUser.globalId ? `(Global ID: ${currentUser.globalId})` : ''}</span>
+                                    </div>
+                                )}
+                            </div>
                         </div>
 
                         {/* 3D Navigation Buttons */}
@@ -194,7 +335,7 @@ const TaskManager = () => {
                                     <div className="absolute inset-0 bg-gradient-to-r from-emerald-600 to-teal-600 rounded-2xl transform translate-z-[-4px] group-hover:translate-z-[-8px] transition-transform duration-500"></div>
                                     <div className="relative z-10 font-bold flex items-center space-x-2">
                                         <span className="text-xl">✨</span>
-                                        <span>Add New Task</span>
+                                        <span>Add New {roleInfo.label} Task</span>
                                     </div>
                                     <div className="absolute inset-0 bg-white/20 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                                 </button>
@@ -215,7 +356,6 @@ const TaskManager = () => {
                                 </button>
                             )}
                         </div>
-
                         {/* 3D Content Container with transition effects */}
                         <div 
                             className={`transform-gpu transition-all duration-1000 ${
@@ -235,7 +375,7 @@ const TaskManager = () => {
                                         task={editingTask}
                                         onSave={handleSaveTask}
                                         onCancel={handleBackToListClick}
-                                        loggedInUserName={currentUserName}
+                                        currentUser={currentUser}
                                     />
                                 </div>
                             ) : (
@@ -244,6 +384,7 @@ const TaskManager = () => {
                                         tasks={tasks}
                                         onEdit={handleEditTaskClick}
                                         onDelete={handleDeleteTask}
+                                        currentUser={currentUser}
                                     />
                                 </div>
                             )}
@@ -252,7 +393,7 @@ const TaskManager = () => {
                 </div>
             </div>
 
-            <style jsx>{`
+            <style>{`
                 @keyframes spin-slow {
                     from { transform: rotate(0deg) rotateY(0deg); }
                     to { transform: rotate(360deg) rotateY(360deg); }
@@ -349,6 +490,9 @@ const TaskManager = () => {
                 }
                 .hover\\:rotate-y-12:hover {
                     animation: rotate-y-12 0.5s ease-out forwards;
+                }
+                .hover\\:rotate-y-6:hover {
+                    transform: rotateY(6deg);
                 }
                 .hover\\:translate-z-4:hover {
                     transform: translateZ(16px);

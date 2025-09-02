@@ -11,7 +11,10 @@ const attendeeSchema = new mongoose.Schema({
   },
   reason: {
     type: String,
-  }
+  },
+  teamId: { type: mongoose.Schema.Types.ObjectId, ref: 'Team', default: null },
+  scope: { type: String, enum: ['single', 'team', 'global'], default: 'single' }
 }, { timestamps: true });
 
-export default mongoose.model('Attendee', attendeeSchema);
+const Attendee = mongoose.model('Attendee', attendeeSchema);
+export default Attendee;

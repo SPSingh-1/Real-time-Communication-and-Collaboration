@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Sidebar from '../components/Sidebar/Sidebar';
 import ChatBox from '../components/Chat/ChatBox';
 import Dashboard from '../components/Dashboard/Dashboard';
@@ -7,42 +8,135 @@ import FileManager from '../components/Tools/FileManager';
 import CalendarTool from '../components/Tools/CalendarTool';
 import FigmaTool from '../components/Tools/FigmaTool';
 import VideoConferenc from '../components/Tools/VideoConferenc';
+import useAppContext from "../context/useAppContext";
+import CircularProgress from '@mui/material/CircularProgress';
 
 const DashboardPage = () => {
+  const navigate = useNavigate();
+  const { user, loading, authChecked, isAuthenticated } = useAppContext();
   const [activeTab, setActiveTab] = useState('Dashboard');
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+
+  // Redirect to login if not authenticated
+  useEffect(() => {
+    if (authChecked && !isAuthenticated) {
+      navigate('/login');
+    }
+  }, [authChecked, isAuthenticated, navigate]);
+
+  // Show loading screen while checking authentication
+  if (loading || !authChecked) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black">
+        <div className="text-center text-white">
+          <CircularProgress sx={{ color: 'white', mb: 2 }} size={60} />
+          <div className="text-xl font-semibold mt-4">Loading Dashboard...</div>
+          <div className="text-gray-400 mt-2">Please wait while we prepare your workspace</div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error if user not found
+  if (!user) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black">
+        <div className="text-center text-white">
+          <div className="text-6xl mb-4">⚠️</div>
+          <div className="text-xl font-semibold mb-2">Authentication Error</div>
+          <div className="text-gray-400 mb-6">Unable to load user data</div>
+          <button
+            onClick={() => navigate('/login')}
+            className="bg-blue-600 hover:bg-blue-700 px-6 py-3 rounded-lg transition"
+          >
+            Go to Login
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  const getRoleDisplayInfo = () => {
+    switch (user.role) {
+      case 'single':
+        return {
+          title: 'Personal Workspace',
+          subtitle: 'Your private dashboard',
+          gradient: 'from-blue-600/20 to-purple-600/20'
+        };
+      case 'team':
+        return {
+          title: 'Team Workspace',
+          subtitle: user.teamId ? `Team: ${user.teamId}` : 'Team Dashboard',
+          gradient: 'from-green-600/20 to-blue-600/20'
+        };
+      case 'global':
+        return {
+          title: 'Global Community',
+          subtitle: 'Connected worldwide',
+          gradient: 'from-purple-600/20 to-pink-600/20'
+        };
+      default:
+        return {
+          title: 'Dashboard',
+          subtitle: 'Welcome',
+          gradient: 'from-gray-600/20 to-gray-700/20'
+        };
+    }
+  };
+
+  const roleInfo = getRoleDisplayInfo();
 
   return (
-    <div
-      className="flex min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black overflow-hidden overflow-y-hidden relative"
-    >
-      {/* Background Glow */}
-      <div className="absolute inset-0 bg-gradient-to-tr from-purple-700/30 via-blue-600/20 to-transparent blur-3xl"></div>
+    <div className="flex min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black overflow-hidden relative">
+      {/* ANIMATED BACKGROUND */}
+      <div className={`absolute inset-0 bg-gradient-to-tr ${roleInfo.gradient} blur-3xl opacity-50`}></div>
+      <div className="absolute inset-0 bg-gradient-to-bl from-blue-600/10 via-transparent to-purple-600/10"></div>
 
-      {/* Sidebar with 3D tilt */}
-      <div
-        className="relative z-20 transform transition-all duration-500 hover:rotate-y-6"
-        style={{
-          transformStyle: "preserve-3d",
-        }}
-      >
-        <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
+      {/* SIDEBAR */}
+      <div className={`relative z-20 transition-all duration-500 ${sidebarCollapsed ? 'w-16' : 'w-64'}`}>
+        <Sidebar 
+          activeTab={activeTab} 
+          setActiveTab={setActiveTab}
+          collapsed={sidebarCollapsed}
+          setCollapsed={setSidebarCollapsed}
+          userRole={user.role}
+        />
       </div>
 
-      {/* Main Content */}
-      <main
-        className="flex-1 h-screen flex flex-col relative z-20 
-        bg-gray-900/70 backdrop-blur-xl 
-        shadow-2xl rounded-tl-3xl border border-gray-700/40 
-        transform transition-all duration-700 hover:rotate-x-3 hover:-rotate-y-3"
-      >
-        <div className="p-6 flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-transparent">
-          {activeTab === 'Dashboard' && <Dashboard />}
-          {activeTab === 'chat' && <ChatBox />}
-          {activeTab === 'tasks' && <TaskManager />}
-          {activeTab === 'files' && <FileManager />}
-          {activeTab === 'calendar' && <CalendarTool />}
-          {activeTab === 'figma' && <FigmaTool />}
-          {activeTab === 'VideoConferenc' && <VideoConferenc />}
+      {/* MAIN CONTENT */}
+      <main className="flex-1 h-screen flex flex-col relative z-20 bg-gray-900/40 backdrop-blur-xl shadow-2xl border-l border-gray-700/40">
+        {/* HEADER */}
+        <header className="bg-gradient-to-r from-gray-800/50 to-gray-900/50 backdrop-blur-sm border-b border-gray-700/50 p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-bold text-white">{roleInfo.title}</h1>
+              <p className="text-gray-400">{roleInfo.subtitle}</p>
+            </div>
+            <div className="flex items-center gap-4">
+              <div className="text-right">
+                <div className="text-white font-medium">{user.name}</div>
+                <div className="text-gray-400 text-sm">{user.email}</div>
+              </div>
+              <div className={`w-3 h-3 rounded-full ${
+                user.role === 'single' ? 'bg-blue-500' :
+                user.role === 'team' ? 'bg-green-500' : 'bg-purple-500'
+              }`}></div>
+            </div>
+          </div>
+        </header>
+
+        {/* CONTENT AREA */}
+        <div className="flex-1 overflow-hidden">
+          <div className="h-full p-6 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-transparent">
+            {activeTab === 'Dashboard' && <Dashboard />}
+            {activeTab === 'chat' && <ChatBox />}
+            {activeTab === 'tasks' && <TaskManager />}
+            {activeTab === 'files' && <FileManager />}
+            {activeTab === 'calendar' && <CalendarTool />}
+            {activeTab === 'figma' && <FigmaTool />}
+            {activeTab === 'VideoConferenc' && <VideoConferenc />}
+          </div>
         </div>
       </main>
     </div>

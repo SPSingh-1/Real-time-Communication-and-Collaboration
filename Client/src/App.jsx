@@ -1,45 +1,177 @@
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 import DashboardPage from "./pages/DashboardPage";
 import ChatPage from "./pages/ChatPage";
 import LoginPage from "./pages/LoginPage";
+import RegisterPage from "./pages/RegisterPage";
+import LandingPage from "./pages/LandingPage";
+import EventDetailPage from "./pages/EventDetailPage";
+import About from "./pages/About";
+import Legal from "./pages/Legal";
 
-// 🆕 Import new tool components
+// Tools
 import FigmaTool from "./components/Tools/FigmaTool";
 import CalendarTool from "./components/Tools/CalendarTool";
 import TaskManager from "./components/Tools/TaskManager";
 import FileManager from "./components/Tools/FileManager";
-import RegisterPage from "./pages/RegisterPage";
-import { ToastContainer} from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
-import EventDetailPage from "./pages/EventDetailPage";
-import LandingPage from "./pages/LandingPage";
-import About from "./pages/About";
-import Legal from "./pages/Legal";
+import VideoCallTool from "./components/Tools/VideoConferenc";
+
+// Helpers
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import ProtectedRoute from "./components/ProtectedRoute";
+import useAppContext from "./context/useAppContext";
+import { useNavigate } from "react-router-dom";
 
 function App() {
+  const { isAuthenticated, loading, authChecked } = useAppContext();
+  const navigate = useNavigate();
+
+  // Show loading screen while checking authentication
+  if (loading || !authChecked) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black">
+        <div className="text-center text-white">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4"></div>
+          <div className="text-xl">Loading...</div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <>
-    <ToastContainer position="top-right" autoClose={5000} hideProgressBar={false} newestOnTop={false} closeOnClick rtl={false} pauseOnFocusLoss draggable pauseOnHover />
-    <Routes>
-      <Route path="/" element={<LandingPage />} />
-      <Route path="/register" element={<RegisterPage />} />
-      <Route path="/login" element={<LoginPage />} />
-      <Route path="/dashboard" element={<DashboardPage />} />
-      <Route path="/chat" element={<ChatPage />} />
-
-      {/* 🆕 Tool Routes */}
-      <Route path="/tools/figma" element={<FigmaTool />} />
-      <Route path="/tools/calendar" element={<CalendarTool />} />
-      <Route path="/tools/tasks" element={<TaskManager />} />
-      <Route path="/tools/files" element={<FileManager />} />
+      <ToastContainer 
+        position="top-right" 
+        autoClose={5000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="dark"
+      />
       
-      {/* 🆕 Event Detail Page */}
-      <Route path="/events/:id" element={<EventDetailPage />} />
+      <Routes>
+        {/* Public Routes */}
+        <Route 
+          path="/" 
+          element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <LandingPage />} 
+        />
+        <Route 
+          path="/register" 
+          element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <RegisterPage />} 
+        />
+        <Route 
+          path="/login" 
+          element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <LoginPage />} 
+        />
+        <Route path="/company" element={<About />} />
+        <Route path="/legal" element={<Legal />} />
 
-      {/* Footer Landing page*/}
-      <Route path="/company" element={<About />} />
-      <Route path="/legal" element={<Legal />} />
-    </Routes>
+        {/* Protected Routes - All logged-in users */}
+        <Route
+          path="/dashboard"
+          element={
+            <ProtectedRoute roles={["single", "team", "global"]}>
+              <DashboardPage />
+            </ProtectedRoute>
+          }
+        />
+        
+        <Route
+          path="/chat"
+          element={
+            <ProtectedRoute roles={["single", "team", "global"]}>
+              <ChatPage />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Tool Routes - All roles can access */}
+        <Route
+          path="/tools/figma"
+          element={
+            <ProtectedRoute roles={["single", "team", "global"]}>
+              <FigmaTool />
+            </ProtectedRoute>
+          }
+        />
+        
+        <Route
+          path="/tools/calendar"
+          element={
+            <ProtectedRoute roles={["single", "team", "global"]}>
+              <CalendarTool />
+            </ProtectedRoute>
+          }
+        />
+        
+        <Route
+          path="/tools/tasks"
+          element={
+            <ProtectedRoute roles={["single", "team", "global"]}>
+              <TaskManager />
+            </ProtectedRoute>
+          }
+        />
+        
+        <Route
+          path="/tools/files"
+          element={
+            <ProtectedRoute roles={["single", "team", "global"]}>
+              <FileManager />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Events - All roles */}
+        <Route
+          path="/events/:id"
+          element={
+            <ProtectedRoute roles={["single", "team", "global"]}>
+              <EventDetailPage />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Video Calls - Team and Global only */}
+        <Route
+          path="/tools/video"
+          element={
+            <ProtectedRoute roles={["team", "global"]}>
+              <VideoCallTool />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Catch-all route */}
+        <Route 
+          path="*" 
+          element={
+            <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black text-white">
+              <div className="text-center">
+                <div className="text-6xl mb-4">404</div>
+                <div className="text-xl mb-4">Page Not Found</div>
+                <div className="text-gray-400 mb-6">The page you're looking for doesn't exist.</div>
+                <button
+                  onClick={() => window.history.back()}
+                  className="bg-blue-600 hover:bg-blue-700 px-6 py-3 rounded-lg transition mr-4"
+                >
+                  Go Back
+                </button>
+                <button
+                  onClick={() => navigate('/dashboard')}
+                  className="bg-gray-600 hover:bg-gray-700 px-6 py-3 rounded-lg transition"
+                >
+                  Dashboard
+                </button>
+              </div>
+            </div>
+          } 
+        />
+      </Routes>
     </>
   );
 }

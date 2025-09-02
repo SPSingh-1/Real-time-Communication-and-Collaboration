@@ -27,7 +27,9 @@ const Sidebar = ({ activeTab, setActiveTab }) => {
       {!collapsed && (
         <>
           <div className="sidebar-header">
-            <h2 className="sidebar-user"> Welcome, 👤 {user?.name ? user.name : user?.email ? user.email.split('@')[0] : 'Guest'}</h2>
+            <h2 className="sidebar-user">
+              Welcome, 👤 {user?.name ? user.name : user?.email ? user.email.split('@')[0] : 'Guest'}
+            </h2>
             <div
               className="sidebar-toggle expanded"
               onClick={() => setCollapsed(true)}
@@ -44,7 +46,11 @@ const Sidebar = ({ activeTab, setActiveTab }) => {
             <SidebarButton icon={<FaFileAlt />} label="Files" tab="files" activeTab={activeTab} setActiveTab={setActiveTab} />
             <SidebarButton icon={<FaCalendarAlt />} label="Calendar" tab="calendar" activeTab={activeTab} setActiveTab={setActiveTab} />
             <SidebarButton icon={<FaClipboardList />} label="Figma Tool" tab="figma" activeTab={activeTab} setActiveTab={setActiveTab} />
-            <SidebarButton icon={<FaClipboardList />} label="Video Conference" tab="VideoConferenc" activeTab={activeTab} setActiveTab={setActiveTab} />
+
+            {/* 🚫 Only show Video Conference if role is NOT "user" */}
+            {user?.role !== "user" && (
+              <SidebarButton icon={<FaClipboardList />} label="Video Conference" tab="VideoConferenc" activeTab={activeTab} setActiveTab={setActiveTab} />
+            )}
           </nav>
 
           <button onClick={logout} className="sidebar-logout">

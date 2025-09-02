@@ -165,7 +165,7 @@ InputField.propTypes = {
     required: PropTypes.bool,
 };
 
-const TaskForm = ({ task, onSave, onCancel, loggedInUserName }) => {
+const TaskForm = ({ task, onSave, onCancel, currentUser }) => {
     // Determine if the form is in edit mode (true if 'task' prop is provided)
     const isEditMode = !!task;
 
@@ -191,13 +191,12 @@ const TaskForm = ({ task, onSave, onCancel, loggedInUserName }) => {
                 dueDate: '',
                 taskDescription: '',
                 projectManagerName: '',
-                // Set 'createdBy' to the loggedInUserName for new tasks
-                createdBy: loggedInUserName || 'Unknown User',
+                // The backend will handle setting createdBy, teamId, globalId, and scope based on the authenticated user
             };
         }
     });
 
-    // Effect to update form data when 'task' prop changes or when 'loggedInUserName' changes
+    // Effect to update form data when 'task' prop changes or when 'currentUser' changes
     useEffect(() => {
         if (isEditMode && task) {
             setFormData({
@@ -216,11 +215,9 @@ const TaskForm = ({ task, onSave, onCancel, loggedInUserName }) => {
                 dueDate: '',
                 taskDescription: '',
                 projectManagerName: '',
-                // Ensure 'createdBy' is correctly set for a new task when the view changes
-                createdBy: loggedInUserName || 'Unknown User',
             });
         }
-    }, [task, isEditMode, loggedInUserName]); // Dependency array: re-run if task or loggedInUserName changes
+    }, [task, isEditMode, currentUser]); // Dependency array: re-run if task or currentUser changes
 
     // Handle input changes
     const handleChange = (e) => {
@@ -269,9 +266,45 @@ const TaskForm = ({ task, onSave, onCancel, loggedInUserName }) => {
         }
 
         // Call the onSave prop with the current form data
-        // The parent component (TaskManager) will determine if it's an add or update based on formData._id
+        // The backend will determine the correct scope, teamId, globalId based on the authenticated user
         onSave(formData);
     };
+
+    // Get role-specific styling and information
+    const getRoleInfo = () => {
+        switch (currentUser.role) {
+            case 'single':
+                return { 
+                    icon: '👤', 
+                    label: 'Personal', 
+                    color: 'from-blue-500 to-cyan-500',
+                    description: 'This task will be created as a personal task visible only to you.'
+                };
+            case 'team':
+                return { 
+                    icon: '👥', 
+                    label: 'Team', 
+                    color: 'from-emerald-500 to-teal-500',
+                    description: `This task will be created for your team and visible to all team members.`
+                };
+            case 'global':
+                return { 
+                    icon: '🌍', 
+                    label: 'Global', 
+                    color: 'from-purple-500 to-pink-500',
+                    description: 'This task will be created as a global task visible to the entire organization.'
+                };
+            default:
+                return { 
+                    icon: '👤', 
+                    label: 'Personal', 
+                    color: 'from-blue-500 to-cyan-500',
+                    description: 'This task will be created as a personal task.'
+                };
+        }
+    };
+
+    const roleInfo = getRoleInfo();
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 p-8 relative overflow-hidden">
@@ -316,7 +349,7 @@ const TaskForm = ({ task, onSave, onCancel, loggedInUserName }) => {
                     {/* Enhanced glowing border */}
                     <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/30 via-purple-500/30 to-pink-500/30 rounded-3xl blur-2xl animate-pulse-rainbow -z-10"></div>
                     
-                    {/* 3D Header with window controls */}
+                    {/* 3D Header with window controls and role info */}
                     <div className="flex items-center justify-between mb-8 transform-gpu transition-all duration-700 hover:translate-z-2">
                         <div className="flex items-center space-x-4">
                             {/* Animated window controls */}
@@ -324,10 +357,30 @@ const TaskForm = ({ task, onSave, onCancel, loggedInUserName }) => {
                             <div className="w-4 h-4 bg-yellow-500 rounded-full shadow-lg shadow-yellow-500/50 animate-pulse delay-200 transform-gpu hover:scale-125 transition-transform duration-300"></div>
                             <div className="w-4 h-4 bg-green-500 rounded-full shadow-lg shadow-green-500/50 animate-pulse delay-400 transform-gpu hover:scale-125 transition-transform duration-300"></div>
                         </div>
-                        <h3 className="text-4xl font-black bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400 text-transparent bg-clip-text animate-text-glow">
-                            {isEditMode ? '✏️ Edit Task' : '➕ Add New Task'}
-                        </h3>
+                        <div className="text-center">
+                            <h3 className="text-4xl font-black bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400 text-transparent bg-clip-text animate-text-glow">
+                                {isEditMode ? '✏️ Edit Task' : '➕ Add New Task'}
+                            </h3>
+                            {/* Role indicator */}
+                            <div className={`mt-2 inline-flex items-center px-3 py-1 rounded-full bg-gradient-to-r ${roleInfo.color} text-white text-sm font-medium shadow-lg`}>
+                                <span className="mr-1">{roleInfo.icon}</span>
+                                <span>{roleInfo.label} Mode</span>
+                            </div>
+                        </div>
                     </div>
+
+                    {/* Role Information Panel */}
+                    {!isEditMode && (
+                        <div className="mb-8 p-4 bg-gradient-to-r from-white/10 to-white/5 rounded-2xl border border-white/20 transform-gpu transition-all duration-500 hover:scale-105">
+                            <div className="flex items-center space-x-3">
+                                <div className="text-2xl">{roleInfo.icon}</div>
+                                <div>
+                                    <div className="text-white/90 font-medium">Creating {roleInfo.label} Task</div>
+                                    <div className="text-white/70 text-sm">{roleInfo.description}</div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
 
                     {/* Enhanced 3D form */}
                     <form onSubmit={handleSubmit} className="space-y-8">
@@ -339,7 +392,6 @@ const TaskForm = ({ task, onSave, onCancel, loggedInUserName }) => {
                                 onChange={handleChange}
                                 placeholder="e.g., Implement User Auth"
                                 required={true}
-                                disabled={isEditMode}
                             />
                             <InputField
                                 label="🚀 Project Name"
@@ -348,7 +400,6 @@ const TaskForm = ({ task, onSave, onCancel, loggedInUserName }) => {
                                 onChange={handleChange}
                                 placeholder="e.g., Project Hansel"
                                 required={true}
-                                disabled={isEditMode}
                             />
                             <InputField
                                 label="⚡ Priority"
@@ -373,7 +424,7 @@ const TaskForm = ({ task, onSave, onCancel, loggedInUserName }) => {
                                 name="assignedTo"
                                 value={formData.assignedTo}
                                 onChange={handleChange}
-                                placeholder="e.g., Alice, Bob"
+                                placeholder={currentUser.role === 'single' ? "e.g., Just yourself" : "e.g., Alice, Bob"}
                                 required={true}
                             />
                             <InputField
@@ -392,11 +443,12 @@ const TaskForm = ({ task, onSave, onCancel, loggedInUserName }) => {
                                 placeholder="e.g., Mary Cassatt"
                                 required={true}
                             />
+                            {/* Show user info field for reference */}
                             <InputField
                                 label="👤 Created By"
                                 name="createdBy"
-                                value={formData.createdBy}
-                                onChange={handleChange}
+                                value={currentUser.name}
+                                onChange={() => {}} // No-op since this is read-only
                                 disabled={true}
                             />
                         </div>
@@ -410,6 +462,23 @@ const TaskForm = ({ task, onSave, onCancel, loggedInUserName }) => {
                             placeholder="Detailed overview of the task..."
                             required={true}
                         />
+
+                        {/* Role-based scope information */}
+                        {!isEditMode && (
+                            <div className="p-4 bg-gradient-to-r from-gray-800/30 to-gray-900/30 rounded-2xl border border-white/10">
+                                <div className="flex items-center space-x-2 text-white/80">
+                                    <span className="text-lg">ℹ️</span>
+                                    <div>
+                                        <div className="font-medium">Task Scope: {roleInfo.label}</div>
+                                        <div className="text-sm text-white/60">
+                                            {currentUser.role === 'single' && 'Only you will be able to see and edit this task.'}
+                                            {currentUser.role === 'team' && `All members of your team will be able to see and edit this task.`}
+                                            {currentUser.role === 'global' && 'All users in your organization will be able to see and edit this task.'}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
 
                         {/* Enhanced 3D action buttons */}
                         <div className="flex justify-end space-x-8 mt-12">
@@ -435,19 +504,19 @@ const TaskForm = ({ task, onSave, onCancel, loggedInUserName }) => {
                                          hover:scale-110 hover:rotate-y-6 shadow-2xl overflow-hidden focus:outline-none focus:ring-4
                                          ${isEditMode ? 
                                            'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 hover:shadow-blue-500/50 focus:ring-blue-500/50' : 
-                                           'bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 hover:shadow-emerald-500/50 focus:ring-emerald-500/50'
+                                           `bg-gradient-to-r ${roleInfo.color} hover:shadow-emerald-500/50 focus:ring-emerald-500/50`
                                          } text-white`}
                                 style={{ transformStyle: 'preserve-3d' }}
                             >
                                 <div className={`absolute inset-0 rounded-3xl transform translate-z-[-6px] group-hover:translate-z-[-12px] transition-transform duration-500
-                                    ${isEditMode ? 'bg-gradient-to-r from-blue-700 to-indigo-700' : 'bg-gradient-to-r from-emerald-700 to-teal-700'}`}></div>
+                                    ${isEditMode ? 'bg-gradient-to-r from-blue-700 to-indigo-700' : `bg-gradient-to-r ${roleInfo.color.replace('500', '600')}`}`}></div>
                                 <div className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-3xl"></div>
                                 <div className="relative z-10 flex items-center space-x-2">
                                     <span className="text-2xl animate-pulse">
-                                        {isEditMode ? '💫' : '✨'}
+                                        {isEditMode ? '💫' : roleInfo.icon}
                                     </span>
                                     <span>
-                                        {isEditMode ? 'Update Task' : 'Add Task'}
+                                        {isEditMode ? 'Update Task' : `Add ${roleInfo.label} Task`}
                                     </span>
                                 </div>
                             </button>
@@ -456,7 +525,7 @@ const TaskForm = ({ task, onSave, onCancel, loggedInUserName }) => {
                 </div>
             </div>
 
-            <style jsx>{`
+            <style>{`
                 @keyframes float-3d {
                     0%, 100% { 
                         transform: translateY(0px) translateX(0px) rotateX(0deg) rotateY(0deg) rotateZ(0deg); 
@@ -580,7 +649,13 @@ TaskForm.propTypes = {
     task: PropTypes.object,
     onSave: PropTypes.func.isRequired,
     onCancel: PropTypes.func.isRequired,
-    loggedInUserName: PropTypes.string.isRequired,
+    currentUser: PropTypes.shape({
+        name: PropTypes.string.isRequired,
+        id: PropTypes.string,
+        role: PropTypes.string.isRequired,
+        teamId: PropTypes.string,
+        globalId: PropTypes.string
+    }).isRequired,
 };
 
 export default TaskForm;

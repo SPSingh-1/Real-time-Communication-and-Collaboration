@@ -1,17 +1,28 @@
 import express from 'express'; // Use import for ES Modules
 const router = express.Router();
 import Task from '../models/Task.js'; // Use import and .js extension for ES Modules
+import fetchUser from '../middleware/fetchUser.js';
 
 // --- API Routes for Tasks ---
 
 /**
  * @route GET /api/tasks
- * @description Get all tasks, sorted by creation date.
- * @access Public
+ * @description Get all tasks, filtered by user role/team/global, sorted by creation date.
+ * @access Private
  */
-router.get('/', async (req, res) => {
+router.get('/', fetchUser, async (req, res) => {
     try {
-        const tasks = await Task.find().sort({ createdAt: 1 });
+        let filter = {};
+
+        if (req.user.role === 'single') {
+            filter = { createdBy: req.user.id, scope: 'single' };
+        } else if (req.user.role === 'team') {
+            filter = { teamId: req.user.teamId, scope: 'team' };
+        } else if (req.user.role === 'global') {
+            filter = { globalId: req.user.globalId, scope: 'global' };
+        }
+
+        const tasks = await Task.find(filter).sort({ createdAt: 1 });
         res.status(200).json(tasks);
     } catch (err) {
         console.error('Error fetching tasks:', err);
@@ -22,17 +33,22 @@ router.get('/', async (req, res) => {
 /**
  * @route POST /api/tasks
  * @description Create a new task.
- * @access Public
+ * @access Private
  */
-router.post('/', async (req, res) => {
+router.post('/', fetchUser, async (req, res) => {
     try {
-        const newTask = new Task(req.body);
+        const newTask = new Task({
+            ...req.body,
+            createdBy: req.user.id,
+            teamId: req.user.role === 'team' ? req.user.teamId : null,
+            globalId: req.user.role === 'global' ? req.user.globalId : null,
+            scope: req.user.role
+        });
         const savedTask = await newTask.save();
         res.status(201).json(savedTask);
     } catch (err) {
         console.error('Error creating task:', err);
         if (err.name === 'ValidationError') {
-            // Send detailed validation errors to the client
             const errors = Object.keys(err.errors).map(key => ({
                 field: key,
                 message: err.errors[key].message
@@ -46,19 +62,29 @@ router.post('/', async (req, res) => {
 /**
  * @route GET /api/tasks/:id
  * @description Get a single task by ID.
- * @access Public
+ * @access Private
  */
-router.get('/:id', async (req, res) => {
+router.get('/:id', fetchUser, async (req, res) => {
     try {
         const task = await Task.findById(req.params.id);
+        if (!task) return res.status(404).json({ message: 'Task not found' });
 
-        if (!task) {
-            return res.status(404).json({ message: 'Task not found' });
+        // Authorization check
+        if (req.user.role === 'single' && task.createdBy.toString() !== req.user.id) {
+            return res.status(403).json({ message: 'Not authorized to view this task' });
         }
+
+        if (req.user.role === 'team' && task.teamId?.toString() !== req.user.teamId?.toString()) {
+            return res.status(403).json({ message: 'Not authorized to view this task' });
+        }
+
+        if (req.user.role === 'global' && task.globalId?.toString() !== req.user.globalId?.toString()) {
+            return res.status(403).json({ message: 'Not authorized to view this task' });
+        }
+
         res.json(task);
     } catch (err) {
         console.error('Error fetching single task:', err.message);
-        // Check for Mongoose CastError if ID is invalid format
         if (err.name === 'CastError') {
             return res.status(400).json({ message: 'Invalid task ID format' });
         }
@@ -69,19 +95,32 @@ router.get('/:id', async (req, res) => {
 /**
  * @route PUT /api/tasks/:id
  * @description Update an existing task by ID.
- * @access Public
+ * @access Private
  */
-router.put('/:id', async (req, res) => {
-    // Destructure fields you expect to update from req.body
+router.put('/:id', fetchUser, async (req, res) => {
     const { taskTitle, priority, taskStatus, assignedTo, dueDate, taskDescription, projectManagerName } = req.body;
 
-    // Basic validation: You might want to adjust which fields are strictly required for an update
-    if (!taskTitle || !dueDate) { // Example: requiring at least title and due date
+    if (!taskTitle || !dueDate) {
         return res.status(400).json({ message: 'Task title and due date are required for updating a task.' });
     }
 
     try {
-        // Create an object with the fields to update
+        let task = await Task.findById(req.params.id);
+        if (!task) return res.status(404).json({ message: 'Task not found' });
+
+        // Authorization check
+        if (req.user.role === 'single' && task.createdBy.toString() !== req.user.id) {
+            return res.status(403).json({ message: 'Not authorized to update this task' });
+        }
+
+        if (req.user.role === 'team' && task.teamId?.toString() !== req.user.teamId?.toString()) {
+            return res.status(403).json({ message: 'Not authorized to update this task' });
+        }
+
+        if (req.user.role === 'global' && task.globalId?.toString() !== req.user.globalId?.toString()) {
+            return res.status(403).json({ message: 'Not authorized to update this task' });
+        }
+
         const updateFields = {
             taskTitle,
             priority,
@@ -90,20 +129,11 @@ router.put('/:id', async (req, res) => {
             dueDate,
             taskDescription,
             projectManagerName,
-            updatedAt: Date.now() // Always update the timestamp
+            updatedAt: Date.now()
         };
 
-        const updatedTask = await Task.findByIdAndUpdate(
-            req.params.id,
-            updateFields, // Use the object with your specific fields
-            { new: true, runValidators: true } // Return the updated document and run schema validators
-        );
-
-        if (!updatedTask) {
-            return res.status(404).json({ message: 'Task not found' });
-        }
+        const updatedTask = await Task.findByIdAndUpdate(req.params.id, updateFields, { new: true, runValidators: true });
         res.json(updatedTask);
-
     } catch (err) {
         console.error('Error updating task:', err.message);
         if (err.name === 'CastError') {
@@ -123,17 +153,28 @@ router.put('/:id', async (req, res) => {
 /**
  * @route DELETE /api/tasks/:id
  * @description Delete a task by ID.
- * @access Public
+ * @access Private
  */
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', fetchUser, async (req, res) => {
     try {
-        const deletedTask = await Task.findByIdAndDelete(req.params.id);
+        const task = await Task.findById(req.params.id);
+        if (!task) return res.status(404).json({ message: 'Task not found' });
 
-        if (!deletedTask) {
-            return res.status(404).json({ message: 'Task not found' });
+        // Authorization check
+        if (req.user.role === 'single' && task.createdBy.toString() !== req.user.id) {
+            return res.status(403).json({ message: 'Not authorized to delete this task' });
         }
-        res.json({ message: 'Task removed successfully' });
 
+        if (req.user.role === 'team' && task.teamId?.toString() !== req.user.teamId?.toString()) {
+            return res.status(403).json({ message: 'Not authorized to delete this task' });
+        }
+
+        if (req.user.role === 'global' && task.globalId?.toString() !== req.user.globalId?.toString()) {
+            return res.status(403).json({ message: 'Not authorized to delete this task' });
+        }
+
+        await task.deleteOne();
+        res.json({ message: 'Task removed successfully' });
     } catch (err) {
         console.error('Error deleting task:', err.message);
         if (err.name === 'CastError') {
