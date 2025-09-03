@@ -95,14 +95,31 @@ router.get('/all-decisions', fetchUser, async (req, res) => {
  */
 router.get('/pending-events', fetchUser, async (req, res) => {
   try {
+    console.log('Fetching pending events for user:', req.user.id, 'role:', req.user.role, 'teamId:', req.user.teamId);
+    
+    // Get events user has already responded to
     const decidedEvents = await Attendee.find({ user: req.user.id }).distinct('event');
+    console.log('User has responded to events:', decidedEvents);
 
     let eventFilter = { _id: { $nin: decidedEvents } };
-    if (req.user.role === 'single') eventFilter.user = req.user.id;
-    if (req.user.role === 'team') eventFilter.teamId = req.user.teamId;
-    if (req.user.role === 'global') eventFilter.scope = 'global';
+    
+    // Updated logic to show team events to ALL team members
+    if (req.user.role === 'single') {
+      eventFilter.user = req.user.id;
+      eventFilter.scope = 'single';
+    } else if (req.user.role === 'team') {
+      // Show events created by ANY team member to ALL team members
+      eventFilter.teamId = req.user.teamId;
+      eventFilter.scope = 'team';
+    } else if (req.user.role === 'global') {
+      eventFilter.scope = 'global';
+    }
+
+    console.log('Event filter:', eventFilter);
 
     const pendingEvents = await Event.find(eventFilter).sort({ date: 1 });
+    console.log('Found pending events:', pendingEvents.length);
+    
     res.json(pendingEvents);
   } catch (err) {
     console.error('❌ Pending events fetch error:', err);

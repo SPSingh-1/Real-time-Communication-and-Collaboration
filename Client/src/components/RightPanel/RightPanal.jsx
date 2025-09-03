@@ -1,92 +1,8 @@
 import React, { useState } from 'react';
 import { Bell, FileText, Users, Settings, Sparkles } from 'lucide-react';
-
-// Mock components for demonstration
-const NotificationFeed = () => (
-  <div className="p-6 space-y-4">
-    <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-2xl p-4 border border-blue-200 dark:border-blue-800">
-      <div className="flex items-start gap-3">
-        <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 animate-pulse"></div>
-        <div>
-          <p className="text-gray-800 dark:text-gray-200 font-medium">New event created</p>
-          <p className="text-gray-600 dark:text-gray-400 text-sm mt-1">Team meeting scheduled for tomorrow at 2 PM</p>
-          <span className="text-xs text-blue-600 dark:text-blue-400">2 minutes ago</span>
-        </div>
-      </div>
-    </div>
-    <div className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-2xl p-4 border border-green-200 dark:border-green-800">
-      <div className="flex items-start gap-3">
-        <div className="w-2 h-2 bg-green-500 rounded-full mt-2"></div>
-        <div>
-          <p className="text-gray-800 dark:text-gray-200 font-medium">Note added</p>
-          <p className="text-gray-600 dark:text-gray-400 text-sm mt-1">New daily note: "Remember to review quarterly reports"</p>
-          <span className="text-xs text-green-600 dark:text-green-400">15 minutes ago</span>
-        </div>
-      </div>
-    </div>
-  </div>
-);
-
-const DailyNotes = () => (
-  <div className="p-6 space-y-4">
-    <div className="bg-white/80 dark:bg-slate-700/80 rounded-2xl p-4 border border-gray-200 dark:border-gray-600 backdrop-blur-sm">
-      <div className="flex items-center gap-2 mb-3">
-        <FileText className="text-emerald-500" size={16} />
-        <span className="font-semibold text-gray-800 dark:text-gray-200">Meeting Notes</span>
-        <span className="px-2 py-1 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 rounded-full text-xs">Important</span>
-      </div>
-      <p className="text-gray-700 dark:text-gray-300 text-sm leading-relaxed">
-        Discussed project timeline and resource allocation. Need to follow up on budget approval by Friday.
-      </p>
-      <div className="mt-3 text-xs text-gray-500 dark:text-gray-400">Today, 10:30 AM</div>
-    </div>
-    
-    <div className="bg-white/80 dark:bg-slate-700/80 rounded-2xl p-4 border border-gray-200 dark:border-gray-600 backdrop-blur-sm">
-      <div className="flex items-center gap-2 mb-3">
-        <FileText className="text-blue-500" size={16} />
-        <span className="font-semibold text-gray-800 dark:text-gray-200">Quick Note</span>
-        <span className="px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-full text-xs">Comment</span>
-      </div>
-      <p className="text-gray-700 dark:text-gray-300 text-sm leading-relaxed">
-        Great presentation today! The new design concepts really resonated with the client.
-      </p>
-      <div className="mt-3 text-xs text-gray-500 dark:text-gray-400">Today, 2:15 PM</div>
-    </div>
-  </div>
-);
-
-const AttendeeList = () => (
-  <div className="p-6 space-y-4">
-    <div className="bg-gradient-to-r from-emerald-50 to-green-50 dark:from-emerald-900/20 dark:to-green-900/20 rounded-2xl p-4 border border-emerald-200 dark:border-emerald-800">
-      <div className="flex items-center justify-between mb-2">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-emerald-500 rounded-full flex items-center justify-center text-white text-sm font-medium">J</div>
-          <span className="font-medium text-gray-800 dark:text-gray-200">John Smith</span>
-        </div>
-        <span className="px-3 py-1 bg-emerald-500 text-white rounded-full text-xs font-medium flex items-center gap-1">
-          <div className="w-2 h-2 bg-white rounded-full"></div>
-          Going
-        </span>
-      </div>
-      <p className="text-sm text-emerald-700 dark:text-emerald-300">Weekly Team Sync - Tomorrow 2:00 PM</p>
-    </div>
-    
-    <div className="bg-gradient-to-r from-yellow-50 to-amber-50 dark:from-yellow-900/20 dark:to-amber-900/20 rounded-2xl p-4 border border-yellow-200 dark:border-yellow-800">
-      <div className="flex items-center justify-between mb-2">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-amber-500 rounded-full flex items-center justify-center text-white text-sm font-medium">M</div>
-          <span className="font-medium text-gray-800 dark:text-gray-200">Mary Johnson</span>
-        </div>
-        <span className="px-3 py-1 bg-yellow-500 text-white rounded-full text-xs font-medium flex items-center gap-1">
-          <div className="w-2 h-2 bg-white rounded-full"></div>
-          Busy
-        </span>
-      </div>
-      <p className="text-sm text-yellow-700 dark:text-yellow-300">Project Review - Friday 10:00 AM</p>
-      <p className="text-xs text-yellow-600 dark:text-yellow-400 mt-1">Reason: Client meeting conflict</p>
-    </div>
-  </div>
-);
+import NotificationFeed from '../RightTabs/NotificationFeed';
+import DailyNotes from '../RightTabs/DailyNotes';
+import AttendeeList from '../RightTabs/AttendeeList';
 
 const RightPanel = () => {
   const [activeTab, setActiveTab] = useState('notifications');
@@ -98,8 +14,7 @@ const RightPanel = () => {
       icon: Bell, 
       component: NotificationFeed,
       color: 'text-blue-500',
-      gradient: 'from-blue-500 to-indigo-600',
-      count: 3
+      gradient: 'from-blue-500 to-indigo-600'
     },
     { 
       id: 'notes', 
@@ -107,8 +22,7 @@ const RightPanel = () => {
       icon: FileText, 
       component: DailyNotes,
       color: 'text-emerald-500',
-      gradient: 'from-emerald-500 to-green-600',
-      count: 5
+      gradient: 'from-emerald-500 to-green-600'
     },
     { 
       id: 'attendees', 
@@ -116,8 +30,7 @@ const RightPanel = () => {
       icon: Users, 
       component: AttendeeList,
       color: 'text-purple-500',
-      gradient: 'from-purple-500 to-pink-600',
-      count: 8
+      gradient: 'from-purple-500 to-pink-600'
     }
   ];
 
@@ -172,17 +85,6 @@ const RightPanel = () => {
                 />
                 <span className="hidden sm:inline relative z-10 font-medium">{tab.label}</span>
                 
-                {/* Count Badge */}
-                {tab.count > 0 && (
-                  <span className={`relative z-10 px-2 py-1 rounded-full text-xs font-bold ${
-                    isActive 
-                      ? 'bg-gradient-to-r ' + tab.gradient + ' text-white shadow-lg' 
-                      : 'bg-gray-400/20 text-gray-600 dark:text-gray-400'
-                  }`}>
-                    {tab.count}
-                  </span>
-                )}
-                
                 {/* Hover Glow Effect */}
                 <div className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-white/10 dark:bg-slate-600/10"></div>
               </button>
@@ -201,7 +103,7 @@ const RightPanel = () => {
             <div>
               <h4 className="font-semibold text-gray-800 dark:text-gray-100">{activeTabData.label}</h4>
               <p className="text-xs text-gray-600 dark:text-gray-400">
-                {activeTabData.count} {activeTabData.count === 1 ? 'item' : 'items'}
+                Manage your {activeTabData.label.toLowerCase()}
               </p>
             </div>
           </div>
@@ -211,7 +113,7 @@ const RightPanel = () => {
       {/* Content Area */}
       <div className="relative z-10 flex-1 overflow-hidden">
         <div className="h-full transition-all duration-500 transform overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-slate-600 scrollbar-track-transparent">
-          {ActiveComponent && <ActiveComponent />}
+          {ActiveComponent && <ActiveComponent date={new Date().toISOString().split('T')[0]} />}
         </div>
       </div>
 

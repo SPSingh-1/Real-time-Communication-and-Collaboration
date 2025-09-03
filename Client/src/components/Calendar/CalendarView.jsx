@@ -46,53 +46,58 @@ const CalendarView = () => {
   };
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (!token) return;
-    
-    axios.post('http://localhost:3001/api/auth/getuser', {}, {
-      headers: { 'auth-token': token },
-    })
-      .then((res) => {
-        setUserInfo({
-          email: res.data.email,
-          name: res.data.name || res.data.email,
-          role: res.data.role || 'single',
-          teamId: res.data.teamId,
-          globalId: res.data.globalId
-        });
-        setEventScope(res.data.role || 'single');
-      })
-      .catch((err) => {
-        console.error('Failed to fetch user:', err);
-        toast.error('Failed to load user information');
+  const token = localStorage.getItem('token');
+  if (!token) return;
+  
+  axios.post('http://localhost:3001/api/auth/getuser', {}, {
+    headers: { 'auth-token': token },
+  })
+    .then((res) => {
+      // Extract user data properly from nested structure
+      const userData = res.data.user || res.data;
+      setUserInfo({
+        email: userData.email,
+        name: userData.name || userData.email,
+        role: userData.role || 'single',
+        teamId: userData.teamId,
+        globalId: userData.globalId,
+        id: userData._id || userData.id  // Handle both _id and id
       });
-  }, []);
-
-  useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (!token || !userInfo.email) return;
-    
-    setLoading(true);
-    axios.get('http://localhost:3001/events', {
-      headers: { 'auth-token': token },
+      setEventScope(userData.role || 'single');
     })
-      .then((res) => {
-        const grouped = {};
-        res.data.forEach((ev) => {
-          const key = new Date(ev.date).toDateString();
-          if (!grouped[key]) grouped[key] = [];
-          grouped[key].push(ev);
-        });
-        setEvents(grouped);
-        NotificationEvent(grouped, userInfo.email);
-      })
-      .catch((err) => {
-        console.error('Error fetching events:', err.message);
-        toast.error('Failed to load events');
-      })
-      .finally(() => setLoading(false));
-  }, [userInfo.email]);
+    .catch((err) => {
+      console.error('Failed to fetch user:', err);
+      toast.error('Failed to load user information');
+    });
+}, []);
 
+useEffect(() => {
+  const token = localStorage.getItem('token');
+  if (!token || !userInfo.id) return;  // Added userInfo.id check
+  
+  console.log('Fetching events for user:', userInfo); // Debug log
+  
+  setLoading(true);
+  axios.get('http://localhost:3001/events', {
+    headers: { 'auth-token': token },
+  })
+    .then((res) => {
+      console.log('Received events:', res.data); // Debug log
+      const grouped = {};
+      res.data.forEach((ev) => {
+        const key = new Date(ev.date).toDateString();
+        if (!grouped[key]) grouped[key] = [];
+        grouped[key].push(ev);
+      });
+      setEvents(grouped);
+      NotificationEvent(grouped, userInfo.email);
+    })
+    .catch((err) => {
+      console.error('Error fetching events:', err.message);
+      toast.error('Failed to load events');
+    })
+    .finally(() => setLoading(false));
+}, [userInfo.id,userInfo, userInfo.role, userInfo.teamId]); // Updated dependencies
   useEffect(() => {
     const socket = io('http://localhost:3001');
     
@@ -299,119 +304,189 @@ const CalendarView = () => {
         </div>
       </div>
 
-      {/* Main Content */}
-      <div className="relative z-10 flex flex-col xl:flex-row gap-6">
-        
-        {/* Event List */}
-        <div className="bg-white/70 dark:bg-slate-800/70 backdrop-blur-xl shadow-2xl rounded-3xl p-6 w-full xl:w-80 h-[75vh] overflow-y-auto border border-gray-200/50 dark:border-gray-700/50">
-          {selectedDate ? (
-            <div>
-              <div className="flex items-center justify-between mb-4">
-                <h4 className="text-lg font-bold text-gray-800 dark:text-gray-200 flex items-center gap-2">
-                  <FiCalendar className="text-blue-500" />
-                  {isPastDate(selectedDate) ? 'Past Events' : 'Upcoming Events'}
-                </h4>
-                <span className="text-sm text-gray-500 dark:text-gray-400">
-                  {selectedDate.toLocaleDateString()}
-                </span>
+      {/* Main Content Layout - Calendar with Event View on Right */}
+      <div className="relative z-10 mb-8">
+        <div className="flex flex-col lg:flex-row gap-6">
+          
+          {/* Calendar Section */}
+          <div className="bg-white/70 dark:bg-slate-800/70 backdrop-blur-xl shadow-2xl rounded-3xl p-6 flex-1 border border-gray-200/50 dark:border-gray-700/50 relative overflow-hidden">
+            {/* Calendar Header */}
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h3 className="text-xl font-bold text-gray-800 dark:text-gray-200">Calendar View</h3>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">Select a date to manage events</p>
               </div>
-              
-              <div className="space-y-3">
-                {(events[selectedDate.toDateString()] || [])
-                  .sort((a, b) => a.time.localeCompare(b.time))
-                  .map((ev) => (
-                    <div 
-                      key={ev._id} 
-                      className="group bg-white/80 dark:bg-slate-700/80 rounded-2xl p-4 shadow-lg border border-gray-100 dark:border-gray-600 hover:shadow-xl hover:scale-[1.02] transition-all duration-200"
-                    >
-                      <div className="flex items-start justify-between mb-2">
-                        <div className="flex items-center gap-2">
-                          {getScopeIcon(ev.scope)}
-                          <h5 className="font-semibold text-gray-800 dark:text-gray-200 line-clamp-1">
-                            {ev.title}
-                          </h5>
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-gray-500 dark:text-gray-400">Today</span>
+                <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+              </div>
+            </div>
+
+            {/* Calendar Container with Enhanced Styling */}
+            <div className="calendar-container relative">
+              <Calendar
+                onClickDay={handleDateClick}
+                value={value}
+                onChange={setValue}
+                tileContent={tileContent}
+                className="modern-calendar w-full border-0 bg-transparent rounded-2xl"
+                tileClassName={({ date }) => {
+                  const hasEvents = events[date.toDateString()]?.length > 0;
+                  const isSelected = selectedDate && date.toDateString() === selectedDate.toDateString();
+                  return `calendar-tile ${hasEvents ? 'has-events' : ''} ${isSelected ? 'selected-date' : ''}`;
+                }}
+              />
+            </div>
+
+            {/* Quick Actions Overlay */}
+            {selectedDate && (
+              <div className="absolute bottom-6 right-6">
+                <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl p-1 shadow-lg">
+                  <button
+                    onClick={() => setShowPrompt(true)}
+                    className="bg-white/90 dark:bg-slate-800/90 backdrop-blur-sm text-blue-600 dark:text-blue-400 px-4 py-2 rounded-xl font-medium hover:bg-white dark:hover:bg-slate-700 transition-all duration-200 flex items-center gap-2 text-sm"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                    </svg>
+                    Add Event
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Calendar Legend */}
+            <div className="mt-6 pt-4 border-t border-gray-200/50 dark:border-gray-700/50">
+              <div className="flex items-center justify-between text-xs">
+                <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-green-400 rounded-full"></div>
+                    <span className="text-gray-600 dark:text-gray-400">Personal</span>
+                  </div>
+                  {userInfo.role !== 'single' && (
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
+                      <span className="text-gray-600 dark:text-gray-400">Team</span>
+                    </div>
+                  )}
+                  {userInfo.role === 'global' && (
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 bg-purple-400 rounded-full"></div>
+                      <span className="text-gray-600 dark:text-gray-400">Global</span>
+                    </div>
+                  )}
+                </div>
+                <div className="text-gray-500 dark:text-gray-500">
+                  Click date to view/add events
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Event View Section - Now on the Right */}
+          <div className="bg-white/70 dark:bg-slate-800/70 backdrop-blur-xl shadow-2xl rounded-3xl p-6 w-full lg:w-96 border border-gray-200/50 dark:border-gray-700/50">
+            {selectedDate ? (
+              <div>
+                <div className="flex items-center justify-between mb-4">
+                  <h4 className="text-lg font-bold text-gray-800 dark:text-gray-200 flex items-center gap-2">
+                    <FiCalendar className="text-blue-500" />
+                    {isPastDate(selectedDate) ? 'Past Events' : 'Upcoming Events'}
+                  </h4>
+                  <span className="text-sm text-gray-500 dark:text-gray-400">
+                    {selectedDate.toLocaleDateString()}
+                  </span>
+                </div>
+                
+                <div className="space-y-3 max-h-[60vh] overflow-y-auto">
+                  {(events[selectedDate.toDateString()] || [])
+                    .sort((a, b) => a.time.localeCompare(b.time))
+                    .map((ev) => (
+                      <div 
+                        key={ev._id} 
+                        className="group bg-white/80 dark:bg-slate-700/80 rounded-2xl p-4 shadow-lg border border-gray-100 dark:border-gray-600 hover:shadow-xl hover:scale-[1.02] transition-all duration-200"
+                      >
+                        <div className="flex items-start justify-between mb-2">
+                          <div className="flex items-center gap-2">
+                            {getScopeIcon(ev.scope)}
+                            <h5 className="font-semibold text-gray-800 dark:text-gray-200 line-clamp-1">
+                              {ev.title}
+                            </h5>
+                          </div>
+                          <span className="text-xs px-2 py-1 rounded-full bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300">
+                            {getScopeLabel(ev.scope)}
+                          </span>
                         </div>
-                        <span className="text-xs px-2 py-1 rounded-full bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300">
-                          {getScopeLabel(ev.scope)}
-                        </span>
-                      </div>
-                      
-                      <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400 mb-2">
-                        <span className="flex items-center gap-1">
-                          <FiClock size={14} />
-                          {ev.time}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <FiUser size={14} />
-                          {ev.user?.name || ev.user?.email || 'Unknown'}
-                        </span>
-                      </div>
-                      
-                      {ev.description && (
-                        <p className="text-sm text-gray-700 dark:text-gray-300 mb-3 line-clamp-2">
-                          {ev.description}
-                        </p>
-                      )}
-                      
-                      {!isPastDate(selectedDate) && canManageEvent(ev) && (
-                        <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <button 
-                            onClick={() => handleEdit(ev)} 
-                            className="flex items-center gap-1 px-3 py-1 text-xs bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
-                            disabled={loading}
-                          >
-                            <MdEditCalendar size={14} />
-                            Edit
-                          </button>
-                          <button 
-                            onClick={() => deleteEvent(ev._id)} 
-                            className="flex items-center gap-1 px-3 py-1 text-xs bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
-                            disabled={loading}
-                          >
-                            <MdDeleteForever size={14} />
-                            Delete
-                          </button>
+                        
+                        <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400 mb-2">
+                          <span className="flex items-center gap-1">
+                            <FiClock size={14} />
+                            {ev.time}
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <FiUser size={14} />
+                            {ev.user?.name || ev.user?.email || 'Unknown'}
+                          </span>
                         </div>
+                        
+                        {ev.description && (
+                          <p className="text-sm text-gray-700 dark:text-gray-300 mb-3 line-clamp-2">
+                            {ev.description}
+                          </p>
+                        )}
+                        
+                        {!isPastDate(selectedDate) && canManageEvent(ev) && (
+                          <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button 
+                              onClick={() => handleEdit(ev)} 
+                              className="flex items-center gap-1 px-3 py-1 text-xs bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+                              disabled={loading}
+                            >
+                              <MdEditCalendar size={14} />
+                              Edit
+                            </button>
+                            <button 
+                              onClick={() => deleteEvent(ev._id)} 
+                              className="flex items-center gap-1 px-3 py-1 text-xs bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
+                              disabled={loading}
+                            >
+                              <MdDeleteForever size={14} />
+                              Delete
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  
+                  {(!events[selectedDate?.toDateString()] || events[selectedDate.toDateString()].length === 0) && (
+                    <div className="text-center py-8">
+                      <FiCalendar className="mx-auto text-gray-400 dark:text-gray-600 mb-2" size={48} />
+                      <p className="text-gray-500 dark:text-gray-400">No events for this date</p>
+                      {!isPastDate(selectedDate) && (
+                        <button
+                          onClick={() => setShowPrompt(true)}
+                          className="mt-4 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-sm"
+                        >
+                          Create Event
+                        </button>
                       )}
                     </div>
-                  ))}
-                
-                {(!events[selectedDate?.toDateString()] || events[selectedDate.toDateString()].length === 0) && (
-                  <div className="text-center py-8">
-                    <FiCalendar className="mx-auto text-gray-400 dark:text-gray-600 mb-2" size={48} />
-                    <p className="text-gray-500 dark:text-gray-400">No events for this date</p>
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
-            </div>
-          ) : (
-            <div className="text-center py-8">
-              <FiCalendar className="mx-auto text-gray-400 dark:text-gray-600 mb-4" size={64} />
-              <h4 className="text-lg font-medium text-gray-600 dark:text-gray-400 mb-2">Select a Date</h4>
-              <p className="text-sm text-gray-500 dark:text-gray-500">Click on a date to view events</p>
-            </div>
-          )}
-        </div>
-
-        {/* Calendar */}
-        <div className="bg-white/70 dark:bg-slate-800/70 backdrop-blur-xl shadow-2xl rounded-3xl p-6 flex-1 border border-gray-200/50 dark:border-gray-700/50">
-          <div className="calendar-container">
-            <Calendar
-              onClickDay={handleDateClick}
-              value={value}
-              onChange={setValue}
-              tileContent={tileContent}
-              className="modern-calendar w-full border-0 bg-transparent rounded-2xl"
-              tileClassName={({ date }) => {
-                const hasEvents = events[date.toDateString()]?.length > 0;
-                return `calendar-tile ${hasEvents ? 'has-events' : ''}`;
-              }}
-            />
+            ) : (
+              <div className="text-center py-8">
+                <FiCalendar className="mx-auto text-gray-400 dark:text-gray-600 mb-4" size={64} />
+                <h4 className="text-lg font-medium text-gray-600 dark:text-gray-400 mb-2">Select a Date</h4>
+                <p className="text-sm text-gray-500 dark:text-gray-500">Click on a date to view events</p>
+              </div>
+            )}
           </div>
         </div>
+      </div>
 
-        {/* Right Panel */}
-        <div className="w-full xl:w-96 h-[75vh]">
+      {/* Right Panel - Now Below Calendar with Full Width */}
+      <div className="relative z-10">
+        <div className="bg-white/70 dark:bg-slate-800/70 backdrop-blur-xl shadow-2xl rounded-3xl p-6 border border-gray-200/50 dark:border-gray-700/50">
           <RightPanel />
         </div>
       </div>
@@ -509,50 +584,152 @@ const CalendarView = () => {
         </div>
       )}
       
-      <style jsx>{`
+      <style>{`
         .modern-calendar {
           font-family: inherit;
         }
         
         .modern-calendar .react-calendar__navigation {
-          @apply mb-4;
+          @apply mb-6;
+          background: linear-gradient(135deg, rgba(59, 130, 246, 0.05), rgba(147, 51, 234, 0.05));
+          border-radius: 16px;
+          padding: 12px;
+          border: 1px solid rgba(59, 130, 246, 0.1);
         }
         
         .modern-calendar .react-calendar__navigation button {
-          @apply text-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-slate-700 rounded-lg px-3 py-2 font-medium transition-colors;
+          @apply text-gray-700 dark:text-gray-300 hover:bg-gradient-to-r hover:from-blue-500 hover:to-purple-500 hover:text-white rounded-xl px-4 py-2 font-semibold transition-all duration-300 transform hover:scale-105;
+          border: none;
+          background: rgba(255, 255, 255, 0.8);
+          backdrop-filter: blur(10px);
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
         }
         
         .modern-calendar .react-calendar__navigation button:enabled:hover,
         .modern-calendar .react-calendar__navigation button:enabled:focus {
-          @apply bg-blue-50 dark:bg-slate-700;
+          @apply shadow-lg;
         }
         
         .modern-calendar .react-calendar__month-view__weekdays {
-          @apply text-sm font-semibold text-gray-600 dark:text-gray-400;
+          @apply text-sm font-bold text-gray-600 dark:text-gray-300 mb-2;
+          background: linear-gradient(135deg, rgba(59, 130, 246, 0.08), rgba(147, 51, 234, 0.08));
+          border-radius: 12px;
+          padding: 8px;
         }
         
         .modern-calendar .react-calendar__month-view__weekdays__weekday {
-          @apply p-2;
+          @apply p-3 text-center;
         }
         
         .modern-calendar .calendar-tile {
-          @apply relative p-3 text-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-slate-700 rounded-lg transition-all duration-200 border-0;
+          @apply relative p-4 text-gray-700 dark:text-gray-300 hover:bg-gradient-to-br hover:from-blue-50 hover:to-purple-50 dark:hover:from-slate-700 dark:hover:to-slate-600 rounded-xl transition-all duration-300 border-0 m-1;
+          background: rgba(255, 255, 255, 0.6);
+          backdrop-filter: blur(10px);
+          border: 1px solid rgba(255, 255, 255, 0.2);
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
         }
         
         .modern-calendar .calendar-tile:enabled:hover {
-          @apply bg-blue-50 dark:bg-slate-700 scale-105;
+          @apply transform scale-110 shadow-xl;
+          border: 1px solid rgba(59, 130, 246, 0.3);
         }
         
         .modern-calendar .react-calendar__tile--now {
-          @apply bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 font-semibold;
+          @apply bg-gradient-to-br from-blue-500 to-purple-600 text-white font-bold shadow-lg;
+          border: 2px solid rgba(255, 255, 255, 0.3);
+          animation: pulse 2s infinite;
         }
         
-        .modern-calendar .react-calendar__tile--active {
-          @apply bg-blue-500 text-white shadow-lg scale-105;
+        @keyframes pulse {
+          0%, 100% { transform: scale(1); }
+          50% { transform: scale(1.05); }
+        }
+        
+        .modern-calendar .react-calendar__tile--active,
+        .modern-calendar .calendar-tile.selected-date {
+          @apply bg-gradient-to-r from-indigo-500 to-purple-600 text-white shadow-2xl transform scale-110;
+          border: 2px solid rgba(255, 255, 255, 0.4);
         }
         
         .modern-calendar .calendar-tile.has-events {
-          @apply font-medium;
+          @apply font-bold;
+          background: linear-gradient(135deg, rgba(34, 197, 94, 0.1), rgba(59, 130, 246, 0.1));
+          border: 2px solid rgba(34, 197, 94, 0.3);
+        }
+        
+        .modern-calendar .calendar-tile.has-events:hover {
+          background: linear-gradient(135deg, rgba(34, 197, 94, 0.2), rgba(59, 130, 246, 0.2));
+        }
+        
+        /* Enhanced event dots styling */
+        .modern-calendar .calendar-tile .event-dots {
+          position: absolute;
+          bottom: 4px;
+          left: 50%;
+          transform: translateX(-50%);
+          display: flex;
+          gap: 2px;
+          z-index: 10;
+        }
+        
+        .modern-calendar .calendar-tile .event-dot {
+          width: 6px;
+          height: 6px;
+          border-radius: 50%;
+          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+        }
+        
+        /* Animation for event interaction */
+        .calendar-tile {
+          position: relative;
+          overflow: hidden;
+        }
+        
+        .calendar-tile::before {
+          content: '';
+          position: absolute;
+          top: -50%;
+          left: -50%;
+          width: 200%;
+          height: 200%;
+          background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+          transform: rotate(45deg);
+          transition: all 0.5s;
+          opacity: 0;
+        }
+        
+        .calendar-tile:hover::before {
+          animation: shimmer 0.6s ease-in-out;
+        }
+        
+        @keyframes shimmer {
+          0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); opacity: 0; }
+          50% { opacity: 1; }
+          100% { transform: translateX(100%) translateY(100%) rotate(45deg); opacity: 0; }
+        }
+        
+        /* Modern scrollbar for calendar container */
+        .calendar-container {
+          scrollbar-width: thin;
+          scrollbar-color: rgba(59, 130, 246, 0.3) rgba(0, 0, 0, 0.1);
+        }
+        
+        .calendar-container::-webkit-scrollbar {
+          width: 6px;
+        }
+        
+        .calendar-container::-webkit-scrollbar-track {
+          background: rgba(0, 0, 0, 0.1);
+          border-radius: 3px;
+        }
+        
+        .calendar-container::-webkit-scrollbar-thumb {
+          background: linear-gradient(to bottom, #3b82f6, #8b5cf6);
+          border-radius: 3px;
+        }
+        
+        .calendar-container::-webkit-scrollbar-thumb:hover {
+          background: linear-gradient(to bottom, #2563eb, #7c3aed);
         }
       `}</style>
     </div>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { 
   CheckCircle, 
   XCircle, 
@@ -15,7 +15,8 @@ import {
   Search,
   Sparkles,
   TrendingUp,
-  Activity
+  Activity,
+  RefreshCw
 } from 'lucide-react';
 
 const AttendeeList = () => {
@@ -24,116 +25,268 @@ const AttendeeList = () => {
   const [status, setStatus] = useState('going');
   const [reason, setReason] = useState('');
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
   const [mode, setMode] = useState('add');
   const [selectedEvent, setSelectedEvent] = useState('');
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
-  const [setUserInfo] = useState({ role: 'single', name: 'Loading...', id: '' });
+  const [userInfo, setUserInfo] = useState({ role: 'single', name: 'Loading...', id: '' });
+  const [fetchingEvents, setFetchingEvents] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
+  // Debug states
+  const [debugInfo, setDebugInfo] = useState({
+    tokenExists: false,
+    userLoaded: false,
+    apiCallsMade: [],
+    lastError: null
+  });
+
+  // Get token from localStorage
   const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+
+  // API Base URL - adjust if needed
+  const API_BASE = 'http://localhost:3001';
+
+  // Debug function
+  const addDebugInfo = useCallback((info) => {
+    setDebugInfo(prev => ({
+      ...prev,
+      apiCallsMade: [...prev.apiCallsMade, `${new Date().toLocaleTimeString()}: ${info}`]
+    }));
+  }, []);
+
+  // Clear messages after delay
+  useEffect(() => {
+    if (error) {
+      const timer = setTimeout(() => setError(''), 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [error]);
+
+  useEffect(() => {
+    if (success) {
+      const timer = setTimeout(() => setSuccess(''), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [success]);
+
+  // Update debug info when token changes
+  useEffect(() => {
+    setDebugInfo(prev => ({
+      ...prev,
+      tokenExists: !!token
+    }));
+    addDebugInfo(`Token exists: ${!!token}`);
+  }, [token, addDebugInfo]);
 
   // Fetch user info
   useEffect(() => {
     const fetchUserInfo = async () => {
-      if (!token) return;
+      if (!token) {
+        setError('Please login to continue');
+        addDebugInfo('No token found - user needs to login');
+        return;
+      }
       
+      addDebugInfo('Fetching user info...');
       try {
-        const response = await fetch('http://localhost:3001/api/auth/getuser', {
+        const response = await fetch(`${API_BASE}/api/auth/getuser`, {
           method: 'POST',
-          headers: { 'auth-token': token }
+          headers: { 
+            'auth-token': token,
+            'Content-Type': 'application/json'
+          }
         });
+        
+        addDebugInfo(`User info response: ${response.status}`);
+        
         if (response.ok) {
           const userData = await response.json();
-          setUserInfo({
-            ...userData,
-            role: userData.role || 'single'
-          });
+          // Fix: Extract user data from nested structure
+        const user = userData.user || userData;
+        setUserInfo({
+          id: user._id || user.id,
+          name: user.name,
+          email: user.email,
+          role: user.role || 'single',
+          teamId: user.teamId,
+          globalId: user.globalId
+        });
+          setDebugInfo(prev => ({ ...prev, userLoaded: true }));
+          addDebugInfo(`User loaded: ${user.name || user.email} (ID: ${user._id || user.id})`);
+        } else {
+          const errorText = await response.text();
+          addDebugInfo(`User info error: ${errorText}`);
+          throw new Error('Failed to fetch user info');
         }
       } catch (err) {
         console.error('Failed to fetch user info:', err);
+        addDebugInfo(`User info catch error: ${err.message}`);
+        setError('Failed to load user information. Please check your connection.');
       }
     };
 
     fetchUserInfo();
-  }, [token, setUserInfo]);
+  }, [token, addDebugInfo, API_BASE]);
 
   // Fetch pending events
-  useEffect(() => {
-    const fetchPendingEvents = async () => {
-      if (!token) return;
-      
-      try {
-        const response = await fetch('http://localhost:3001/attendee/pending-events', {
-          headers: { 'auth-token': token }
-        });
-        
-        if (response.ok) {
-          const events = await response.json();
-          setPendingEvents(events);
+  const fetchPendingEvents = useCallback(async (showLoader = true) => {
+    if (!token) {
+      addDebugInfo(`Cannot fetch events - no token`);
+      return;
+    }
+    
+    if (!userInfo.id) {
+      addDebugInfo(`Cannot fetch events - no user ID (userInfo: ${JSON.stringify(userInfo)})`);
+      return;
+    }
+    
+    addDebugInfo('Fetching pending events...');
+    if (showLoader) setFetchingEvents(true);
+    try {
+      const response = await fetch(`${API_BASE}/attendees/pending-events`, {
+        headers: { 
+          'auth-token': token,
+          'Content-Type': 'application/json'
         }
-      } catch (err) {
-        console.error('Failed to fetch pending events:', err);
+      });
+      
+      addDebugInfo(`Pending events response: ${response.status}`);
+      
+      if (response.ok) {
+        const events = await response.json();
+        console.log('Received pending events:', events);
+        setPendingEvents(events);
+        addDebugInfo(`Loaded ${events.length} pending events`);
+      } else {
+        const errorText = await response.text();
+        addDebugInfo(`Pending events error: ${errorText}`);
+        console.error('Pending events error response:', errorText);
+        throw new Error(errorText || 'Failed to fetch pending events');
       }
-    };
+    } catch (err) {
+      console.error('Failed to fetch pending events:', err);
+      addDebugInfo(`Pending events catch error: ${err.message}`);
+      setError(`Failed to load pending events: ${err.message}`);
+    } finally {
+      if (showLoader) setFetchingEvents(false);
+    }
+  }, [token,userInfo,API_BASE, addDebugInfo]);
 
-    fetchPendingEvents();
-  }, [token]);
+  useEffect(() => {
+    if (userInfo.id) {
+      fetchPendingEvents();
+    }
+  }, [fetchPendingEvents, userInfo.id]);
 
   // Fetch my decisions
-  useEffect(() => {
-    const fetchMyDecisions = async () => {
-      if (!token) return;
-      
-      try {
-        const response = await fetch('http://localhost:3001/attendee/all-decisions', {
-          headers: { 'auth-token': token }
-        });
-        
-        if (response.ok) {
-          const decisions = await response.json();
-          setMyDecisions(decisions);
-        }
-      } catch (err) {
-        console.error('Failed to fetch decisions:', err);
-      }
-    };
-
-    if (mode === 'view') {
-      fetchMyDecisions();
+  const fetchMyDecisions = useCallback(async (showLoader = false) => {
+    if (!token || !userInfo.id) {
+      addDebugInfo(`Cannot fetch decisions - token: ${!!token}, userID: ${userInfo.id}`);
+      return;
     }
-  }, [token, mode]);
+    
+    addDebugInfo('Fetching my decisions...');
+    try {
+      const response = await fetch(`${API_BASE}/attendees/all-decisions`, {
+        headers: { 
+          'auth-token': token,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      addDebugInfo(`My decisions response: ${response.status}`);
+      
+      if (response.ok) {
+        const decisions = await response.json();
+        setMyDecisions(decisions);
+        addDebugInfo(`Loaded ${decisions.length} decisions`);
+      } else {
+        const errorData = await response.json();
+        addDebugInfo(`My decisions error: ${JSON.stringify(errorData)}`);
+        throw new Error(errorData.error || 'Failed to fetch decisions');
+      }
+    } catch (err) {
+      console.error('Failed to fetch decisions:', err);
+      addDebugInfo(`My decisions catch error: ${err.message}`);
+      if (showLoader) {
+        setError('Failed to load your responses. Please try again.');
+      }
+    }
+  }, [token, userInfo.id, API_BASE, addDebugInfo]);
+
+  useEffect(() => {
+    if (mode === 'view' && userInfo.id) {
+      fetchMyDecisions(true);
+    }
+  }, [fetchMyDecisions, mode, userInfo.id]);
+
+  // Refresh data
+  const refreshData = async () => {
+    setRefreshing(true);
+    setError('');
+    addDebugInfo('Refreshing data...');
+    try {
+      if (mode === 'add') {
+        await fetchPendingEvents(false);
+      } else {
+        await fetchMyDecisions(false);
+      }
+      setSuccess('Data refreshed successfully');
+    } catch (err) {
+      setError('Failed to refresh data');
+      addDebugInfo(`Refresh error: ${err.message}`);
+    } finally {
+      setRefreshing(false);
+    }
+  };
 
   const addDecision = async () => {
+    addDebugInfo(`Submit clicked - Event: ${selectedEvent}, Status: ${status}`);
+    
+    // Validation
     if (!selectedEvent) {
       setError('Please select an event.');
+      addDebugInfo('Validation failed: No event selected');
       return;
     }
     
     if ((status === 'busy' || status === 'declined') && !reason.trim()) {
       setError('Please provide a reason for not attending.');
+      addDebugInfo('Validation failed: No reason provided for busy/declined');
       return;
     }
 
     setLoading(true);
     setError('');
+    setSuccess('');
+    addDebugInfo('Starting submission...');
     
     try {
-      const response = await fetch('http://localhost:3001/attendee', {
+      const requestBody = {
+        event: selectedEvent,
+        status,
+        reason: (status === 'busy' || status === 'declined') ? reason.trim() : ''
+      };
+      
+      addDebugInfo(`Request body: ${JSON.stringify(requestBody)}`);
+      
+      const response = await fetch(`${API_BASE}/attendees`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'auth-token': token
         },
-        body: JSON.stringify({
-          event: selectedEvent,
-          status,
-          reason: (status === 'busy' || status === 'declined') ? reason.trim() : ''
-        })
+        body: JSON.stringify(requestBody)
       });
+
+      addDebugInfo(`Submit response: ${response.status}`);
 
       if (response.ok) {
         const newDecision = await response.json();
+        addDebugInfo('Decision submitted successfully');
         
         // Remove the event from pending and add to decisions
         setPendingEvents(prev => prev.filter(e => e._id !== selectedEvent));
@@ -143,14 +296,20 @@ const AttendeeList = () => {
         setSelectedEvent('');
         setReason('');
         setStatus('going');
-        setError('');
+        setSuccess('Response submitted successfully!');
+        
+        // Auto-refresh pending events to ensure consistency
+        setTimeout(() => fetchPendingEvents(false), 1000);
+        
       } else {
         const errorData = await response.json();
-        setError(errorData.error || 'Failed to submit response');
+        addDebugInfo(`Submit error: ${JSON.stringify(errorData)}`);
+        throw new Error(errorData.error || 'Failed to submit response');
       }
     } catch (err) {
       console.error('Failed to add decision:', err);
-      setError('Network error occurred');
+      addDebugInfo(`Submit catch error: ${err.message}`);
+      setError(err.message || 'Failed to submit response. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -222,8 +381,39 @@ const AttendeeList = () => {
     maybe: myDecisions.filter(d => d.status === 'maybe').length
   };
 
+  // Show login message if no token
+  if (!token) {
+    return (
+      <div className="p-6 h-full flex flex-col items-center justify-center bg-gradient-to-br from-slate-50/50 to-white dark:from-slate-900/50 dark:to-slate-800">
+        <div className="text-center">
+          <div className="bg-gradient-to-br from-red-100 to-red-200 dark:from-red-900/20 dark:to-red-800/20 rounded-full w-24 h-24 mx-auto flex items-center justify-center mb-4">
+            <AlertCircle className="text-red-500" size={32} />
+          </div>
+          <h4 className="text-lg font-semibold text-gray-700 dark:text-gray-300 mb-2">Authentication Required</h4>
+          <p className="text-gray-500 dark:text-gray-400">Please log in to manage your event responses</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="p-6 h-full flex flex-col bg-gradient-to-br from-slate-50/50 to-white dark:from-slate-900/50 dark:to-slate-800">
+      {/* Debug Panel - Remove this in production */}
+      <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-xs">
+        <p><strong>Debug Info:</strong></p>
+        <p>Token: {debugInfo.tokenExists ? '✅ Exists' : '❌ Missing'}</p>
+        <p>User: {debugInfo.userLoaded ? `✅ ${userInfo.name} (${userInfo.id})` : '❌ Not loaded'}</p>
+        <p>User Role: {userInfo.role}</p>
+        <p>Team ID: {userInfo.teamId || 'None'}</p>
+        <p>Pending Events: {pendingEvents.length}</p>
+        <p>Mode: {mode}</p>
+        <div className="max-h-20 overflow-y-auto mt-2">
+          {debugInfo.apiCallsMade.slice(-3).map((call, index) => (
+            <p key={index}>{call}</p>
+          ))}
+        </div>
+      </div>
+
       {/* Enhanced Header */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
@@ -232,14 +422,31 @@ const AttendeeList = () => {
           </div>
           <div>
             <h3 className="text-xl font-bold text-gray-800 dark:text-gray-100">Event Responses</h3>
-            <p className="text-sm text-gray-600 dark:text-gray-400">Manage your event attendance</p>
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              Welcome, {userInfo.name} • {userInfo.role} user
+            </p>
           </div>
           <Sparkles className="text-yellow-500 animate-pulse" size={18} />
         </div>
         
         <div className="flex gap-2">
           <button
-            onClick={() => setMode('add')}
+            onClick={refreshData}
+            disabled={refreshing || loading}
+            className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium bg-white/80 dark:bg-slate-700/80 text-gray-700 dark:text-gray-300 hover:bg-white dark:hover:bg-slate-600 border border-gray-200 dark:border-gray-600 transition-all disabled:opacity-50"
+          >
+            <RefreshCw size={16} className={refreshing ? 'animate-spin' : ''} />
+            Refresh
+          </button>
+          
+          <button
+            onClick={() => {
+              console.log('Respond button clicked'); // Debug log
+              addDebugInfo('Respond button clicked');
+              setMode('add');
+              setError('');
+              setSuccess('');
+            }}
             className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all duration-300 ${
               mode === 'add'
                 ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-lg transform scale-105'
@@ -247,11 +454,17 @@ const AttendeeList = () => {
             }`}
           >
             <Plus size={16} />
-            Respond
+            Respond ({pendingEvents.length})
           </button>
           
           <button
-            onClick={() => setMode('view')}
+            onClick={() => {
+              console.log('My Responses button clicked'); // Debug log
+              addDebugInfo('My Responses button clicked');
+              setMode('view');
+              setError('');
+              setSuccess('');
+            }}
             className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all duration-300 ${
               mode === 'view'
                 ? 'bg-gradient-to-r from-purple-500 to-pink-600 text-white shadow-lg transform scale-105'
@@ -259,10 +472,18 @@ const AttendeeList = () => {
             }`}
           >
             <Eye size={16} />
-            My Responses
+            My Responses ({myDecisions.length})
           </button>
         </div>
       </div>
+
+      {/* Success Message */}
+      {success && (
+        <div className="mb-4 flex items-center gap-3 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-xl p-4">
+          <CheckCircle className="text-emerald-500" size={20} />
+          <p className="text-emerald-700 dark:text-emerald-400 font-medium">{success}</p>
+        </div>
+      )}
 
       {/* Stats Dashboard */}
       {mode === 'view' && (
@@ -321,19 +542,28 @@ const AttendeeList = () => {
 
       {/* Content */}
       <div className="flex-1 overflow-y-auto space-y-6">
-        {loading && (
+        {/* Global Loading State */}
+        {(loading || fetchingEvents) && (
           <div className="text-center py-12">
             <div className="relative">
               <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-200 border-t-blue-600 mx-auto"></div>
               <Sparkles className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-blue-500 animate-pulse" size={16} />
             </div>
-            <p className="text-gray-600 dark:text-gray-400 mt-4 font-medium">Processing your response...</p>
+            <p className="text-gray-600 dark:text-gray-400 mt-4 font-medium">
+              {loading ? 'Processing your response...' : 'Loading events...'}
+            </p>
           </div>
         )}
 
         {/* Add Decision Mode */}
-        {mode === 'add' && !loading && (
+        {mode === 'add' && !loading && !fetchingEvents && (
           <div className="space-y-6">
+            <div className="text-center p-4 bg-blue-50 rounded-lg">
+              <p className="text-sm text-blue-700">
+                <strong>Current Mode:</strong> Add Response | <strong>Pending Events:</strong> {pendingEvents.length}
+              </p>
+            </div>
+            
             {pendingEvents.length === 0 ? (
               <div className="text-center py-12">
                 <div className="bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900 rounded-full w-24 h-24 mx-auto flex items-center justify-center mb-4">
@@ -341,6 +571,12 @@ const AttendeeList = () => {
                 </div>
                 <h4 className="text-lg font-semibold text-gray-700 dark:text-gray-300 mb-2">All caught up!</h4>
                 <p className="text-gray-500 dark:text-gray-400">No pending events to respond to</p>
+                <button 
+                  onClick={() => fetchPendingEvents(true)}
+                  className="mt-4 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+                >
+                  Refresh Events
+                </button>
               </div>
             ) : (
               <div className="bg-white/80 dark:bg-slate-800/80 rounded-3xl p-6 border border-gray-200 dark:border-gray-700 shadow-xl backdrop-blur-sm">
@@ -357,7 +593,7 @@ const AttendeeList = () => {
                 <div className="space-y-4">
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
-                      Select Event *
+                      Select Event * ({pendingEvents.length} available)
                     </label>
                     <div className="space-y-3">
                       {pendingEvents.map((event) => (
@@ -368,7 +604,11 @@ const AttendeeList = () => {
                               ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 shadow-lg transform scale-[1.02]'
                               : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 bg-white/50 dark:bg-slate-700/50'
                           }`}
-                          onClick={() => setSelectedEvent(event._id)}
+                          onClick={() => {
+                            console.log('Event selected:', event._id); // Debug log
+                            addDebugInfo(`Event selected: ${event.title}`);
+                            setSelectedEvent(event._id);
+                          }}
                         >
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-3">
@@ -408,12 +648,21 @@ const AttendeeList = () => {
                           { value: 'declined', label: 'Declined', icon: XCircle, color: 'red' }
                         ].map(option => {
                           const Icon = option.icon;
+                          const isSelected = status === option.value;
                           return (
                             <button
                               key={option.value}
-                              onClick={() => setStatus(option.value)}
+                              onClick={() => {
+                                console.log('Status selected:', option.value); // Debug log
+                                addDebugInfo(`Status selected: ${option.value}`);
+                                setStatus(option.value);
+                                // Clear reason when switching to going/maybe
+                                if (option.value === 'going' || option.value === 'maybe') {
+                                  setReason('');
+                                }
+                              }}
                               className={`w-full flex items-center gap-3 p-3 rounded-xl border-2 transition-all duration-300 ${
-                                status === option.value
+                                isSelected
                                   ? `border-${option.color}-500 bg-${option.color}-50 dark:bg-${option.color}-900/20 shadow-lg transform scale-[1.02]`
                                   : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 bg-white/50 dark:bg-slate-700/50'
                               }`}
@@ -433,18 +682,34 @@ const AttendeeList = () => {
                         </label>
                         <textarea
                           className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-slate-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all resize-none"
-                          placeholder="Please explain why you can't attend..."
+                          placeholder={`Please explain why you ${status === 'busy' ? 'will be busy' : 'are declining'}...`}
                           value={reason}
-                          onChange={(e) => setReason(e.target.value)}
+                          onChange={(e) => {
+                            setReason(e.target.value);
+                            addDebugInfo(`Reason updated: ${e.target.value.length} chars`);
+                          }}
                           rows={4}
+                          maxLength={500}
                         />
+                        <p className="text-xs text-gray-500 mt-1">{reason.length}/500 characters</p>
                       </div>
                     )}
                   </div>
 
+                  <div className="bg-gray-50 p-4 rounded-lg text-sm">
+                    <p><strong>Selected Event:</strong> {selectedEvent || 'None'}</p>
+                    <p><strong>Status:</strong> {status}</p>
+                    <p><strong>Reason Required:</strong> {(status === 'busy' || status === 'declined') ? 'Yes' : 'No'}</p>
+                    <p><strong>Reason Length:</strong> {reason.length}</p>
+                    <p><strong>Can Submit:</strong> {(!selectedEvent || ((status === 'busy' || status === 'declined') && !reason.trim())) ? 'No' : 'Yes'}</p>
+                  </div>
+
                   <button
-                    onClick={addDecision}
-                    disabled={loading || !selectedEvent}
+                    onClick={() => {
+                      console.log('Submit button clicked'); // Debug log
+                      addDecision();
+                    }}
+                    disabled={loading || !selectedEvent || ((status === 'busy' || status === 'declined') && !reason.trim())}
                     className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 disabled:from-gray-400 disabled:to-gray-500 text-white py-4 rounded-xl font-semibold shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 hover:scale-[1.02] flex items-center justify-center gap-2"
                   >
                     {loading ? (
@@ -473,8 +738,14 @@ const AttendeeList = () => {
         )}
 
         {/* View Decisions Mode */}
-        {mode === 'view' && !loading && (
+        {mode === 'view' && !loading && !fetchingEvents && (
           <div className="space-y-6">
+            <div className="text-center p-4 bg-purple-50 rounded-lg">
+              <p className="text-sm text-purple-700">
+                <strong>Current Mode:</strong> View Responses | <strong>My Decisions:</strong> {myDecisions.length}
+              </p>
+            </div>
+            
             {/* Filters */}
             <div className="flex flex-col sm:flex-row gap-4">
               <div className="relative flex-1">
@@ -570,6 +841,14 @@ const AttendeeList = () => {
                 ))}
               </div>
             )}
+          </div>
+        )}
+
+        {/* Error Message at bottom */}
+        {error && (
+          <div className="flex items-center gap-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-4">
+            <AlertCircle className="text-red-500" size={20} />
+            <p className="text-red-700 dark:text-red-400 font-medium">{error}</p>
           </div>
         )}
       </div>

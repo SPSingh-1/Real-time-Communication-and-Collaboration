@@ -151,23 +151,36 @@ export default function createEventRoutes(io) {
     }
   });
 
-  // ======================
-  // GET ALL EVENTS (role-based)
-  // ======================
-  router.get('/', fetchUser, async (req, res) => {
-    try {
-      let filter = {};
-      if (req.user.role === 'single') filter = { user: req.user.id, scope: 'single' };
-      if (req.user.role === 'team') filter = { teamId: req.user.teamId, scope: 'team' };
-      if (req.user.role === 'global') filter = { scope: 'global' };
-
-      const events = await Events.find(filter).populate('user', 'name email');
-      res.json(events);
-    } catch (err) {
-      console.error('❌ Event fetch error:', err.message);
-      res.status(500).json({ error: 'Failed to fetch events' });
+// ======================
+// GET ALL EVENTS (role-based)
+// ======================
+router.get('/', fetchUser, async (req, res) => {
+  try {
+    let filter = {};
+    
+    // Updated logic to show proper events based on role
+    if (req.user.role === 'single') {
+      // Single users see only their own personal events
+      filter = { user: req.user.id, scope: 'single' };
+    } else if (req.user.role === 'team') {
+      // Team users see all team events from their team
+      filter = { teamId: req.user.teamId, scope: 'team' };
+    } else if (req.user.role === 'global') {
+      // Global users see all global events
+      filter = { scope: 'global' };
     }
-  });
+
+    console.log('Event filter for user:', req.user.id, 'role:', req.user.role, 'filter:', filter);
+
+    const events = await Events.find(filter).populate('user', 'name email');
+    console.log('Found events:', events.length);
+    
+    res.json(events);
+  } catch (err) {
+    console.error('❌ Event fetch error:', err.message);
+    res.status(500).json({ error: 'Failed to fetch events' });
+  }
+});
 
   // ======================
   // GET EVENT BY ID
