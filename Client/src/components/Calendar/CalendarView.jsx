@@ -23,6 +23,9 @@ const CalendarView = () => {
   const [userInfo, setUserInfo] = useState({ email: '', name: '', role: 'single' });
   const [eventScope, setEventScope] = useState('single');
   const [loading, setLoading] = useState(false);
+  const [pageLoaded, setPageLoaded] = useState(false);
+  const [scrollY, setScrollY] = useState(0);
+
 
   const isPastDate = (date) => {
     const today = new Date();
@@ -44,6 +47,19 @@ const CalendarView = () => {
       default: return 'Personal';
     }
   };
+
+  // Add useEffect for page load animation
+  useEffect(() => {
+    const timer = setTimeout(() => setPageLoaded(true), 100);
+    return () => clearTimeout(timer);
+  }, []);
+
+  // Add scroll effect
+  useEffect(() => {
+    const handleScroll = () => setScrollY(window.scrollY);
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   useEffect(() => {
   const token = localStorage.getItem('token');
@@ -278,24 +294,43 @@ useEffect(() => {
   };
 
   return (
-    <div className="relative min-h-screen p-6 rounded-3xl overflow-hidden bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
+    <div className={`relative min-h-screen p-6 rounded-3xl overflow-hidden bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 transition-all duration-1000 ${
+    pageLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
+    }`}>
       {/* Background Elements */}
-      <div className="absolute inset-0 bg-gradient-to-br from-blue-600/10 via-purple-600/10 to-cyan-600/10"></div>
-      <div className="absolute top-20 left-10 w-40 h-40 bg-gradient-to-r from-pink-500/20 to-purple-600/20 rounded-full blur-3xl animate-pulse"></div>
-      <div className="absolute bottom-20 right-10 w-44 h-44 bg-gradient-to-r from-blue-400/20 to-cyan-500/20 rounded-xl blur-3xl animate-pulse delay-1000"></div>
-
+      <div className={`absolute inset-0 bg-gradient-to-br from-blue-600/10 via-purple-600/10 to-cyan-600/10 transition-all duration-1200 delay-200 ${
+        pageLoaded ? 'opacity-100' : 'opacity-0'
+      }`}></div>
+      <div 
+        className={`absolute top-20 left-10 w-40 h-40 bg-gradient-to-r from-pink-500/20 to-purple-600/20 rounded-full blur-3xl animate-pulse transition-all duration-1200 delay-400 ${
+          pageLoaded ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-8'
+        }`}
+        style={{ transform: `translateY(${scrollY * 0.1}px)` }}
+      ></div>
+      <div 
+        className={`absolute bottom-20 right-10 w-44 h-44 bg-gradient-to-r from-blue-400/20 to-cyan-500/20 rounded-xl blur-3xl animate-pulse delay-1000 transition-all duration-1200 ${
+          pageLoaded ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-8'
+        }`}
+        style={{ transform: `translateY(${scrollY * -0.15}px)` }}
+      ></div>
       {/* Header */}
-      <div className="relative z-10 mb-8">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-              Calendar Hub
-            </h1>
-            <p className="text-gray-600 dark:text-gray-400 mt-2">
-              Welcome back, {userInfo.name} | {getScopeLabel(userInfo.role)} Access
-            </p>
-          </div>
-          <div className="flex items-center gap-2 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm rounded-2xl px-4 py-2 border border-gray-200 dark:border-gray-700">
+      <div className={`relative z-10 mb-8 transition-all duration-800 delay-300 ${
+          pageLoaded ? 'translate-y-0 opacity-100' : '-translate-y-6 opacity-0'
+        }`}>
+          <div className="flex items-center justify-between">
+            <div className={`transition-all duration-800 delay-500 ${
+              pageLoaded ? 'translate-x-0 opacity-100' : '-translate-x-6 opacity-0'
+            }`}>
+              <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent hover:scale-105 transition-transform duration-300">
+                Calendar Hub
+              </h1>
+              <p className="text-gray-600 dark:text-gray-400 mt-2">
+                Welcome back, {userInfo.name} | {getScopeLabel(userInfo.role)} Access
+              </p>
+            </div>
+            <div className={`flex items-center gap-2 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm rounded-2xl px-4 py-2 border border-gray-200 dark:border-gray-700 hover:scale-105 hover:shadow-xl transition-all duration-300 ${
+              pageLoaded ? 'translate-x-0 opacity-100' : 'translate-x-6 opacity-0'
+            }`} style={{ transitionDelay: '700ms' }}>
             {getScopeIcon(userInfo.role)}
             <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
               {getScopeLabel(userInfo.role)} Mode
@@ -305,36 +340,69 @@ useEffect(() => {
       </div>
 
       {/* Main Content Layout - Calendar with Event View on Right */}
-      <div className="relative z-10 mb-8">
-        <div className="flex flex-col lg:flex-row gap-6">
-          
-          {/* Calendar Section */}
-          <div className="bg-white/70 dark:bg-slate-800/70 backdrop-blur-xl shadow-2xl rounded-3xl p-6 flex-1 border border-gray-200/50 dark:border-gray-700/50 relative overflow-hidden">
-            {/* Calendar Header */}
-            <div className="flex items-center justify-between mb-6">
-              <div>
-                <h3 className="text-xl font-bold text-gray-800 dark:text-gray-200">Calendar View</h3>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">Select a date to manage events</p>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-gray-500 dark:text-gray-400">Today</span>
-                <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
-              </div>
-            </div>
+      <div className={`relative z-10 mb-8 transition-all duration-800 delay-600 ${
+              pageLoaded ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0'
+            }`}>
+              <div className="flex flex-col lg:flex-row gap-6">
+                
+                {/* Calendar Section */}
+                <div className={`bg-white/70 dark:bg-slate-800/70 backdrop-blur-xl shadow-2xl rounded-3xl p-6 flex-1 border border-gray-200/50 dark:border-gray-700/50 relative overflow-hidden hover:shadow-3xl hover:scale-[1.02] transition-all duration-500 group ${
+                  pageLoaded ? 'translate-x-0 opacity-100' : '-translate-x-8 opacity-0'
+                }`} style={{ transitionDelay: '800ms' }}>
+                        {/* Calendar Header */}
+                        <div className="flex items-center justify-between mb-6">
+                          <div>
+                            <h3 className="text-xl font-bold text-gray-800 dark:text-gray-200">Calendar View</h3>
+                            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">Select a date to manage events</p>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm text-gray-500 dark:text-gray-400">Today</span>
+                            <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+                          </div>
+                        </div>
 
-            {/* Calendar Container with Enhanced Styling */}
-            <div className="calendar-container relative">
+                        {/* Calendar Container with Enhanced Styling */}
+                        <div className="calendar-container relative">
               <Calendar
                 onClickDay={handleDateClick}
                 value={value}
                 onChange={setValue}
                 tileContent={tileContent}
-                className="modern-calendar w-full border-0 bg-transparent rounded-2xl"
+                className="enhanced-modern-calendar w-full border-0 bg-transparent rounded-3xl"
                 tileClassName={({ date }) => {
                   const hasEvents = events[date.toDateString()]?.length > 0;
                   const isSelected = selectedDate && date.toDateString() === selectedDate.toDateString();
-                  return `calendar-tile ${hasEvents ? 'has-events' : ''} ${isSelected ? 'selected-date' : ''}`;
+                  const isToday = date.toDateString() === new Date().toDateString();
+                  return `enhanced-calendar-tile ${hasEvents ? 'has-events' : ''} ${isSelected ? 'selected-date' : ''} ${isToday ? 'is-today' : ''}`;
                 }}
+                navigationLabel={({ date }) => (
+                  <div className="flex items-center justify-center gap-2">
+                    <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+                    <span className="font-bold text-lg bg-gray-800 bg-clip-text text-transparent">
+                      {date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+                    </span>
+                    <div className="w-2 h-2 bg-purple-500 rounded-full animate-pulse"></div>
+                  </div>
+                )}
+                prevLabel={
+                  <div className="flex items-center justify-center w-10 h-10 rounded-full bg-gradient-to-r from-slate-100 to-slate-200 dark:from-slate-700 dark:to-slate-600 hover:from-blue-500 hover:to-purple-500 transition-all duration-300 group">
+                    <svg className="w-5 h-5 text-gray-600 dark:text-gray-300 group-hover:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                    </svg>
+                  </div>
+                }
+                nextLabel={
+                  <div className="flex items-center justify-center w-10 h-10 rounded-full bg-gradient-to-r from-slate-100 to-slate-200 dark:from-slate-700 dark:to-slate-600 hover:from-blue-500 hover:to-purple-500 transition-all duration-300 group">
+                    <svg className="w-5 h-5 text-gray-600 dark:text-gray-300 group-hover:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  </div>
+                }
+                prev2Label={null}
+                next2Label={null}
+                showNeighboringMonth={false}
+                selectRange={false}
+                returnValue="start"
               />
             </div>
 
@@ -384,7 +452,9 @@ useEffect(() => {
           </div>
 
           {/* Event View Section - Now on the Right */}
-          <div className="bg-white/70 dark:bg-slate-800/70 backdrop-blur-xl shadow-2xl rounded-3xl p-6 w-full lg:w-96 border border-gray-200/50 dark:border-gray-700/50">
+          <div className={`bg-white/70 dark:bg-slate-800/70 backdrop-blur-xl shadow-2xl rounded-3xl p-6 w-full lg:w-96 border border-gray-200/50 dark:border-gray-700/50 hover:shadow-3xl hover:scale-[1.02] transition-all duration-500 group ${
+            pageLoaded ? 'translate-x-0 opacity-100' : 'translate-x-8 opacity-0'
+          }`} style={{ transitionDelay: '1000ms' }}>
             {selectedDate ? (
               <div>
                 <div className="flex items-center justify-between mb-4">
@@ -485,11 +555,13 @@ useEffect(() => {
       </div>
 
       {/* Right Panel - Now Below Calendar with Full Width */}
-      <div className="relative z-10">
-        <div className="bg-white/70 dark:bg-slate-800/70 backdrop-blur-xl shadow-2xl rounded-3xl p-6 border border-gray-200/50 dark:border-gray-700/50">
-          <RightPanel />
+      <div className={`relative z-10 transition-all duration-800 delay-1200 ${
+          pageLoaded ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0'
+        }`}>
+          <div className="bg-white/70 dark:bg-slate-800/70 backdrop-blur-xl shadow-2xl rounded-3xl p-6 border border-gray-200/50 dark:border-gray-700/50 hover:shadow-3xl hover:scale-[1.01] transition-all duration-500">
+            <RightPanel />
+          </div>
         </div>
-      </div>
 
       {/* Event Modal */}
       {showPrompt && selectedDate && (
@@ -587,6 +659,13 @@ useEffect(() => {
       <style>{`
         .modern-calendar {
           font-family: inherit;
+        }
+
+        .react-calendar {
+          background: linear-gradient(90deg, #7c3aed, #2563eb);
+          width: 100%;
+          border-radius: 24px;
+          box-shadow: 0 8px 24px rgba(0, 50, 50, 50);
         }
         
         .modern-calendar .react-calendar__navigation {
@@ -731,6 +810,53 @@ useEffect(() => {
         .calendar-container::-webkit-scrollbar-thumb:hover {
           background: linear-gradient(to bottom, #2563eb, #7c3aed);
         }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+          }
+
+          @keyframes slideInUp {
+            0% { transform: translateY(30px); opacity: 0; }
+            100% { transform: translateY(0); opacity: 1; }
+          }
+
+          @keyframes slideInLeft {
+            0% { transform: translateX(-30px); opacity: 0; }
+            100% { transform: translateX(0); opacity: 1; }
+          }
+
+          @keyframes slideInRight {
+            0% { transform: translateX(30px); opacity: 0; }
+            100% { transform: translateX(0); opacity: 1; }
+          }
+
+          @keyframes fadeInScale {
+            0% { transform: scale(0.9); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+          }
+
+          @keyframes glow {
+            0%, 100% { box-shadow: 0 0 20px rgba(59, 130, 246, 0.1); }
+            50% { box-shadow: 0 0 40px rgba(59, 130, 246, 0.3); }
+          }
+
+          .animate-float { animation: float 3s ease-in-out infinite; }
+          .animate-glow { animation: glow 2s ease-in-out infinite; }
+
+          /* Enhanced hover effects */
+          .hover-lift {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+          }
+
+          .hover-lift:hover {
+            transform: translateY(-4px) scale(1.02);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+          }
+
+          .hover-glow:hover {
+            box-shadow: 0 0 30px rgba(59, 130, 246, 0.3);
+          }
       `}</style>
     </div>
   );

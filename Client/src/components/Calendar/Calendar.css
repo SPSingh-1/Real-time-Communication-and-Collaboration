@@ -98,7 +98,7 @@
 .react-calendar {
   width: 100%;
   max-width: 600px;
-  background: rgba(255, 255, 255, 0.15); /* translucent */
+  background:linear-gradient(90deg, #7c3aed, #2563eb);
   backdrop-filter: blur(12px);
   border-radius: 1.5rem;
   border: 2px solid rgba(255, 255, 255, 0.25);

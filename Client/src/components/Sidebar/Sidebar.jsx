@@ -27,9 +27,30 @@ const Sidebar = ({ activeTab, setActiveTab }) => {
       {!collapsed && (
         <>
           <div className="sidebar-header">
-            <h2 className="sidebar-user">
-              Welcome, 👤 {user?.name ? user.name : user?.email ? user.email.split('@')[0] : 'Guest'}
-            </h2>
+            <button
+              className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
+              onClick={() => setActiveTab("profile")}
+            >
+              {/* Profile image OR dummy icon */}
+              {user?.photo ? (
+                <img
+                  src={user.photo}
+                  alt="Profile"
+                  className="w-8 h-8 rounded-full object-cover border"
+                />
+              ) : (
+                <span className="text-xl">👤</span>
+              )}
+
+              {/* Welcome text */}
+              <span> Welcome, {" "}
+                {user?.name
+                  ? user.name
+                  : user?.email
+                  ? user.email.split("@")[0]
+                  : "Guest"}
+              </span>
+            </button>
             <div
               className="sidebar-toggle expanded"
               onClick={() => setCollapsed(true)}
@@ -38,7 +59,6 @@ const Sidebar = ({ activeTab, setActiveTab }) => {
               <FiChevronLeft size={20} />
             </div>
           </div>
-
           <nav className="sidebar-nav">
             <SidebarButton icon={<TbLayoutDashboardFilled />} label="Dashboard" tab="Dashboard" activeTab={activeTab} setActiveTab={setActiveTab} />
             <SidebarButton icon={<FaComments />} label="Chat" tab="chat" activeTab={activeTab} setActiveTab={setActiveTab} />

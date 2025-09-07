@@ -100,13 +100,13 @@ class NotificationEventManager {
   // Setup service worker for persistent notifications
   setupServiceWorker() {
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/sw.js')
-        .then(registration => {
-          console.log('Service Worker registered:', registration);
-        })
-        .catch(error => {
-          console.error('Service Worker registration failed:', error);
-        });
+  navigator.serviceWorker.register('/sw.js')
+    .then(registration => {
+      console.log('✅ Service Worker registered:', registration);
+    })
+    .catch(error => {
+      console.error('❌ Service Worker registration failed:', error);
+    });
     }
   }
 

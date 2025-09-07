@@ -49,6 +49,7 @@ import uploadRouter from './routes/fileUpload.js';
 import { fileRouter } from './routes/fileRoutes.js';
 import taskRouter from './routes/taskRouter.js';
 import chatUploadRouter from './routes/chatUpload.js'; // New chat upload route
+import userRouter from './routes/userRouter.js';
 
 // Middleware and Models
 import './models/User.js';
@@ -144,6 +145,7 @@ app.use('/collab_uploads', uploadRouter);  // For regular file uploads
 app.use('/files', fileRouter);             // For regular file management
 app.use('/api/chat', chatUploadRouter);    // For chat file uploads and management
 app.use('/api/tasks', taskRouter);
+app.use('/userRouter', userRouter);
 
 // Email notification endpoint
 app.post('/notify', async (req, res) => {

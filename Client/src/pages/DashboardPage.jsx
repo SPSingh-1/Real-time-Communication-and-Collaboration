@@ -10,6 +10,7 @@ import FigmaTool from '../components/Tools/FigmaTool';
 import VideoConferenc from '../components/Tools/VideoConferenc';
 import useAppContext from "../context/useAppContext";
 import CircularProgress from '@mui/material/CircularProgress';
+import UserProfile from '../components/Tools/UserProfil';
 
 const DashboardPage = () => {
   const navigate = useNavigate();
@@ -57,33 +58,37 @@ const DashboardPage = () => {
   }
 
   const getRoleDisplayInfo = () => {
-    switch (user.role) {
-      case 'single':
-        return {
-          title: 'Personal Workspace',
-          subtitle: 'Your private dashboard',
-          gradient: 'from-blue-600/20 to-purple-600/20'
-        };
-      case 'team':
-        return {
-          title: 'Team Workspace',
-          subtitle: user.teamId ? `Team: ${user.teamId}` : 'Team Dashboard',
-          gradient: 'from-green-600/20 to-blue-600/20'
-        };
-      case 'global':
-        return {
-          title: 'Global Community',
-          subtitle: 'Connected worldwide',
-          gradient: 'from-purple-600/20 to-pink-600/20'
-        };
-      default:
-        return {
-          title: 'Dashboard',
-          subtitle: 'Welcome',
-          gradient: 'from-gray-600/20 to-gray-700/20'
-        };
-    }
-  };
+  switch (user.role) {
+    case "single":
+      return {
+        title: "Personal Workspace",
+        subtitle: "Your private dashboard",
+        gradient: "from-blue-600/20 to-purple-600/20",
+        logo: "/logo.png", // ✅ app logo
+      };
+    case "team":
+      return {
+        title: "Team Workspace",
+        subtitle: user.teamId ? `Team: ${user.teamId}` : "Team Dashboard",
+        gradient: "from-green-600/20 to-blue-600/20",
+        logo: "/logo.png",
+      };
+    case "global":
+      return {
+        title: "Global Community",
+        subtitle: "Connected worldwide",
+        gradient: "from-purple-600/20 to-pink-600/20",
+        logo: "/logo.png",
+      };
+    default:
+      return {
+        title: "Dashboard",
+        subtitle: "Welcome",
+        gradient: "from-gray-600/20 to-gray-700/20",
+        logo: "/logo.png",
+      };
+  }
+};
 
   const roleInfo = getRoleDisplayInfo();
 
@@ -110,12 +115,41 @@ const DashboardPage = () => {
         <header className="bg-gradient-to-r from-gray-800/50 to-gray-900/50 backdrop-blur-sm border-b border-gray-700/50 p-4">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-bold text-white">{roleInfo.title}</h1>
+              <div className='flex gap-2 items-center'>
+                <img src="/logo.png" alt="applogo" className='h-[40px] w-[40px] rounded-3xl'/>
+                <h1 className="text-2xl font-bold text-white">{roleInfo.title}</h1>
+              </div>
               <p className="text-gray-400">{roleInfo.subtitle}</p>
             </div>
             <div className="flex items-center gap-4">
               <div className="text-right">
-                <div className="text-white font-medium">{user.name}</div>
+               <div className="text-white font-medium">
+                  <button
+                    className="sidebar-user-btn flex items-center space-x-2"
+                    onClick={() => setActiveTab("profile")}
+                    title="View Profile"
+                  >
+                    {/* Profile image OR dummy icon */}
+                    {user?.photo ? (
+                      <img
+                        src={user.photo}
+                        alt="Profile"
+                        className="w-8 h-8 rounded-full object-cover border"
+                      />
+                    ) : (
+                      <span className="text-xl">👤</span>
+                    )}
+
+                    {/* Welcome text */}
+                    <span>
+                      {user?.name
+                        ? user.name
+                        : user?.email
+                        ? user.email.split("@")[0]
+                        : "Guest"}
+                    </span>
+                  </button>
+                </div>
                 <div className="text-gray-400 text-sm">{user.email}</div>
               </div>
               <div className={`w-3 h-3 rounded-full ${
@@ -136,6 +170,7 @@ const DashboardPage = () => {
             {activeTab === 'calendar' && <CalendarTool />}
             {activeTab === 'figma' && <FigmaTool />}
             {activeTab === 'VideoConferenc' && <VideoConferenc />}
+            {activeTab === "profile" && <UserProfile />} 
           </div>
         </div>
       </main>

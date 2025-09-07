@@ -5,6 +5,7 @@ import { FaSquareXTwitter } from "react-icons/fa6";
 import { FaInstagramSquare } from "react-icons/fa";
 import { CiLinkedin } from "react-icons/ci";
 import { FaGithub } from "react-icons/fa";
+import { Radius } from "lucide-react";
 
 
 const LandingPage = () => {
@@ -129,12 +130,16 @@ const LandingPage = () => {
         <div style={{
           fontSize: '1.8rem',
           fontWeight: 800,
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.5rem',
           background: 'linear-gradient(45deg, #ffffff, #f0f9ff)',
           WebkitBackgroundClip: 'text',
           WebkitTextFillColor: 'transparent',
           backgroundClip: 'text'
         }}>
-          ConnectWise
+          <img src="/logo.png" alt="Logo" style={{ height: '50px', verticalAlign: 'middle',borderRadius: '30px' }} />
+          Milapp
         </div>
         
         <nav style={{ display: 'flex', gap: '2rem' }}>
