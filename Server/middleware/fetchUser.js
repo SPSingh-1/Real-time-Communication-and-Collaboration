@@ -16,7 +16,11 @@ if (!JWT_SECRET) {
 console.log('🔐 JWT_SECRET loaded in fetchUser middleware:', JWT_SECRET ? 'YES' : 'NO');
 
 const fetchUser = (req, res, next) => {
+  console.log('FetchUser middleware called for:', req.url);
+  console.log('Headers present:', Object.keys(req.headers));
+
   const token = req.header('auth-token');
+  console.log('Token received:', token ? 'YES' : 'NO');
   
   if (!token) {
     console.log("❌ No token provided");

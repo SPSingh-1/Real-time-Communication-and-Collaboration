@@ -52,6 +52,7 @@ import chatUploadRouter from './routes/chatUpload.js'; // New chat upload route
 import userRouter from './routes/userRouter.js';
 import figmaAuthRoutes from './routes/figmaAuth.js';
 import figmaFilesRoutes from './routes/figmaFiles.js';
+import dashboardRoutes from "./routes/dashboard.js";
 
 // Middleware and Models
 import './models/User.js';
@@ -156,6 +157,7 @@ app.use('/api/auth', authRoutes);
 app.use('/notifications', notificationRoutes);
 app.use('/notes', noteRouter);
 app.use('/attendees', attendeeRoutes);
+app.use("/api/dashboard", dashboardRoutes);
 
 // File management routes
 app.use('/collab_uploads', uploadRouter);  // For regular file uploads
