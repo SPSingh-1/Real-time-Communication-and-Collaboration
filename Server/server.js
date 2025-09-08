@@ -63,9 +63,10 @@ import './models/User.js';
 const app = express();
 const server = http.createServer(app);
 
+// --- UPDATED CORS CONFIGURATION FOR SOCKET.IO ---
 const io = new Server(server, {
     cors: {
-        origin: ['http://localhost:5173', 'https://the-real-time-intraction.netlify.app'],
+        origin: ['http://localhost:5173', 'https://the-real-time-intraction.netlify.app', 'https://milapp-frontend.onrender.com'],
         methods: ['GET', 'POST', 'PUT', 'DELETE'],
         credentials: true,
     }
@@ -83,14 +84,14 @@ const JITSI_DOMAIN = process.env.JITSI_DOMAIN;
 
 // Figma Configuration
 const FIGMA_CLIENT_ID = process.env.FIGMA_CLIENT_ID;
-const FIGMA_CLIENT_SECRET = process.env.FIGMA_CLIENT_SECRET; 
+const FIGMA_CLIENT_SECRET = process.env.FIGMA_CLIENT_SECRET;
 const FIGMA_REDIRECT_URI = process.env.FIGMA_REDIRECT_URI;
 
 if (!FIGMA_CLIENT_ID || !FIGMA_CLIENT_SECRET || !FIGMA_REDIRECT_URI) {
-    console.warn('⚠️  WARNING: Figma credentials not found in .env file.');
+    console.warn('⚠️  WARNING: Figma credentials not found in .env file.');
     console.warn('Figma integration will not work. Required variables:');
     console.warn('- FIGMA_CLIENT_ID');
-    console.warn('- FIGMA_CLIENT_SECRET'); 
+    console.warn('- FIGMA_CLIENT_SECRET');
     console.warn('- FIGMA_REDIRECT_URI');
 } else {
     console.log("✅ Figma credentials loaded successfully");
@@ -99,8 +100,8 @@ if (!FIGMA_CLIENT_ID || !FIGMA_CLIENT_SECRET || !FIGMA_REDIRECT_URI) {
 // Read Jitsi Private Key
 const privateKey = process.env.JITSI_PRIVATE_KEY;
 if (!privateKey) {
-  console.error('❌ CRITICAL ERROR: JITSI_PRIVATE_KEY is not defined in your .env or Render environment.');
-  process.exit(1);
+    console.error('❌ CRITICAL ERROR: JITSI_PRIVATE_KEY is not defined in your .env or Render environment.');
+    process.exit(1);
 }
 
 // OAuth scopes
@@ -124,13 +125,13 @@ initVideoRouter({
 });
 console.log('✅ Video Router initialized with Google and Jitsi configurations.');
 
-// Middleware
+// --- UPDATED CORS CONFIGURATION FOR EXPRESS ---
 app.use(cors({
-    origin: ['http://localhost:5173', 'https://the-real-time-intraction.netlify.app'],
+    origin: ['http://localhost:5173', 'https://the-real-time-intraction.netlify.app', 'https://milapp-frontend.onrender.com'],
     credentials: true
 }));
 app.use(express.json());
-app.use(express.urlencoded({ extended: true,limit: '50mb' }));
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
 // Routes
 app.get('/', (req, res) => {
@@ -153,9 +154,9 @@ app.use('/attendees', attendeeRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 
 // File management routes
-app.use('/collab_uploads', uploadRouter);  // For regular file uploads
-app.use('/files', fileRouter);             // For regular file management
-app.use('/api/chat', chatUploadRouter);    // For chat file uploads and management
+app.use('/collab_uploads', uploadRouter);  // For regular file uploads
+app.use('/files', fileRouter);             // For regular file management
+app.use('/api/chat', chatUploadRouter);    // For chat file uploads and management
 app.use('/api/tasks', taskRouter);
 app.use('/userRouter', userRouter);
 
@@ -221,12 +222,12 @@ mongoose.connect(MONGODB_URI)
 
 // Error handling middleware
 app.use((error, req, res, next) => {
-  console.error('Unhandled error:', error);
-  res.status(500).json({
-    success: false,
-    error: 'Internal server error',
-    message: process.env.NODE_ENV === 'development' ? error.message : 'Something went wrong'
-  });
+    console.error('Unhandled error:', error);
+    res.status(500).json({
+        success: false,
+        error: 'Internal server error',
+        message: process.env.NODE_ENV === 'development' ? error.message : 'Something went wrong'
+    });
 });
 
 // Start server
