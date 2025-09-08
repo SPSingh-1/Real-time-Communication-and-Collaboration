@@ -32,6 +32,15 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+
+    useEffect(() => {
+    if (userInfo) {
+      console.log('Current user info:', userInfo);
+      console.log('User teamId:', userInfo.teamId);
+      console.log('User role:', userInfo.role);
+    }
+  }, [userInfo]);
+
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {

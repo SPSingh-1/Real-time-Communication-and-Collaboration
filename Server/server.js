@@ -4,6 +4,9 @@ import dotenv from 'dotenv';
 // Load environment variables FIRST before any other imports
 dotenv.config();
 
+console.log('JWT_SECRET available:', !!process.env.JWT_SECRET);
+console.log('JWT_SECRET value check:', process.env.JWT_SECRET?.substring(0, 10) + '...');
+
 // Validate critical environment variables
 const JWT_SECRET = process.env.JWT_SECRET;
 const MONGODB_URI = process.env.MONGODB_URI;

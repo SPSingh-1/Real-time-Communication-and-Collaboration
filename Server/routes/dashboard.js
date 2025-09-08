@@ -165,26 +165,37 @@ async function getSingleUserStats(user, db) {
 
 async function getTeamLeaderStats(user, db) {
   try {
+    // Now user.teamId should be the 5-character custom teamId
     const team = await Team.findOne({ teamId: user.teamId }).populate('members');
     
     if (!team) {
+      console.log('Team not found for teamId:', user.teamId);
       return getDefaultStats();
     }
 
+    console.log('Found team:', team.teamId, 'with', team.members?.length || 0, 'members');
+    
     const teamMembers = team.members || [];
     const userDocuments = await getUserDocumentCount(user.id, db);
-    const teamDocuments = await getTeamDocumentCount(user.teamId, db);
-    const teamStorage = await getTeamStorageUsage(user.teamId, db);
     
-    // Generate mock team activity data
-    const teamActivity = generateMockTeamActivity();
-
+    let teamDocuments = userDocuments;
+    let teamStorage = await getUserStorageUsage(user.id, db);
+    
+    for (const member of teamMembers) {
+      if (member._id.toString() !== user.id) {
+        const memberDocs = await getUserDocumentCount(member._id.toString(), db);
+        const memberStorage = await getUserStorageUsage(member._id.toString(), db);
+        teamDocuments += memberDocs;
+        teamStorage += memberStorage;
+      }
+    }
+    
     return {
       userDocuments,
       managedUsers: teamMembers.length,
       accessibleStorageMB: (teamStorage / (1024 * 1024)).toFixed(2),
       activeCollections: await getTeamActiveCollections(user.teamId, db),
-      teamActivity,
+      teamActivity: generateMockTeamActivity(),
       teamDocuments,
       teamMembers: teamMembers.map(member => ({
         id: member._id,
@@ -197,6 +208,85 @@ async function getTeamLeaderStats(user, db) {
     return getDefaultStats();
   }
 }
+
+// Extract team processing logic
+async function processTeamStats(team, user, db) {
+  const teamMembers = team.members || [];
+  console.log('Found team:', team.teamId, 'with', teamMembers.length, 'members');
+  
+  const userDocuments = await getUserDocumentCount(user.id, db);
+  
+  let teamDocuments = userDocuments;
+  let teamStorage = await getUserStorageUsage(user.id, db);
+  
+  for (const member of teamMembers) {
+    if (member._id.toString() !== user.id) {
+      const memberDocs = await getUserDocumentCount(member._id.toString(), db);
+      const memberStorage = await getUserStorageUsage(member._id.toString(), db);
+      teamDocuments += memberDocs;
+      teamStorage += memberStorage;
+    }
+  }
+  
+  return {
+    userDocuments,
+    managedUsers: teamMembers.length + 1,
+    accessibleStorageMB: (teamStorage / (1024 * 1024)).toFixed(2),
+    activeCollections: await getTeamActiveCollections(team._id.toString(), db),
+    teamActivity: generateMockTeamActivity(),
+    teamDocuments,
+    teamMembers: teamMembers.map(member => ({
+      id: member._id,
+      name: member.name,
+      email: member.email
+    }))
+  };
+}
+
+
+// Add this debug route to verify team relationships
+router.get("/debug-team", fetchUser, async (req, res) => {
+  try {
+    const { user } = req;
+    
+    // Check if user has teamId
+    console.log('User teamId:', user.teamId);
+    
+    if (!user.teamId) {
+      return res.json({ error: 'User has no teamId', user: { id: user.id, role: user.role } });
+    }
+    
+    // Find the team
+    const team = await Team.findOne({ teamId: user.teamId }).populate('members');
+    
+    if (!team) {
+      // Check if team exists with different query
+      const allTeams = await Team.find({});
+      return res.json({ 
+        error: 'Team not found', 
+        searchedTeamId: user.teamId,
+        allTeamIds: allTeams.map(t => t.teamId),
+        totalTeams: allTeams.length
+      });
+    }
+    
+    res.json({
+      team: {
+        teamId: team.teamId,
+        admin: team.admin,
+        membersCount: team.members?.length || 0,
+        members: team.members?.map(m => ({ id: m._id, name: m.name, email: m.email }))
+      },
+      user: {
+        id: user.id,
+        teamId: user.teamId,
+        role: user.role
+      }
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message, stack: err.stack });
+  }
+});
 
 async function getGlobalAdminStats(user, db) {
   try {
@@ -232,42 +322,76 @@ async function getGlobalAdminStats(user, db) {
 // Helper functions for database queries
 async function getUserDocumentCount(userId, db) {
   try {
-    // This is a mock implementation - replace with your actual user document logic
+    // Replace the mock implementation with actual queries
     const collections = await db.listCollections().toArray();
     let totalDocs = 0;
     
+    // Query actual user documents based on your schema
     for (const collection of collections) {
-      if (collection.name.includes('user') || collection.name.includes('document')) {
-        try {
-          const count = await db.collection(collection.name).countDocuments({ 
-            $or: [
-              { userId: userId },
-              { user: userId },
-              { createdBy: userId }
-            ]
-          });
-          totalDocs += count;
-        } catch (err) {
-          // Collection might not have user-related fields, continue
+      try {
+        // Skip system collections
+        if (collection.name.startsWith('system') || collection.name === 'users' || collection.name === 'teams') {
           continue;
         }
+        
+        // Query for documents that belong to this user
+        const count = await db.collection(collection.name).countDocuments({
+          $or: [
+            { userId: userId },
+            { createdBy: userId },
+            { author: userId },
+            { owner: userId }
+          ]
+        });
+        totalDocs += count;
+      } catch (err) {
+        // Collection might not support the query, continue
+        continue;
       }
     }
     
-    return totalDocs || Math.floor(Math.random() * 100) + 10; // Fallback to mock data
+    return totalDocs;
   } catch (err) {
     console.error("Error getting user document count:", err);
-    return Math.floor(Math.random() * 100) + 10;
+    return 0;
   }
 }
 
 async function getUserStorageUsage(userId, db) {
   try {
-    // Mock implementation - replace with actual user storage calculation
-    return Math.floor(Math.random() * 1024 * 1024 * 100); // Random storage up to 100MB
+    const collections = await db.listCollections().toArray();
+    let totalStorage = 0;
+    
+    for (const collection of collections) {
+      try {
+        if (collection.name.startsWith('system') || collection.name === 'users' || collection.name === 'teams') {
+          continue;
+        }
+        
+        // Get documents and calculate their approximate size
+        const docs = await db.collection(collection.name).find({
+          $or: [
+            { userId: userId },
+            { createdBy: userId },
+            { author: userId },
+            { owner: userId }
+          ]
+        }).toArray();
+        
+        // Approximate document sizes
+        docs.forEach(doc => {
+          totalStorage += JSON.stringify(doc).length;
+        });
+        
+      } catch (err) {
+        continue;
+      }
+    }
+    
+    return totalStorage;
   } catch (err) {
     console.error("Error getting user storage usage:", err);
-    return Math.floor(Math.random() * 1024 * 1024 * 50);
+    return 0;
   }
 }
 
@@ -511,5 +635,51 @@ function generateUserGrowthData() {
   
   return growth;
 }
+
+router.get("/team-details", fetchUser, async (req, res) => {
+  try {
+    const { user } = req;
+
+    if (!user.teamId) {
+      return res.status(400).json({
+        error: "User is not assigned to any team",
+        user: { id: user.id, role: user.role },
+      });
+    }
+
+    const team = await Team.findOne({ teamId: user.teamId }).populate("members");
+
+    if (!team) {
+      return res.status(404).json({
+        error: "Team not found",
+        searchedTeamId: user.teamId,
+      });
+    }
+
+    res.json({
+      team: {
+        teamId: team.teamId,
+        name: team.name || null,
+        admin: team.admin,
+        membersCount: team.members?.length || 0,
+        members: team.members?.map((m) => ({
+          id: m._id,
+          name: m.name,
+          email: m.email,
+          role: m.role || "member",
+        })),
+      },
+      user: {
+        id: user.id,
+        teamId: user.teamId,
+        role: user.role,
+      },
+    });
+  } catch (err) {
+    console.error("Error fetching team details:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 
 export default router;
