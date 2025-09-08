@@ -97,20 +97,10 @@ if (!FIGMA_CLIENT_ID || !FIGMA_CLIENT_SECRET || !FIGMA_REDIRECT_URI) {
 }
 
 // Read Jitsi Private Key
-let JITSI_PRIVATE_KEY_CONTENT;
-try {
-    const privateKeyPath = process.env.JITSI_PRIVATE_KEY_PATH;
-    if (!privateKeyPath) {
-        throw new Error('JITSI_PRIVATE_KEY_PATH is not defined in your .env file.');
-    }
-    const resolvedPrivateKeyPath = path.resolve(__dirname, privateKeyPath);
-    JITSI_PRIVATE_KEY_CONTENT = fs.readFileSync(resolvedPrivateKeyPath, 'utf8');
-    console.log(`✅ Jitsi Private Key loaded successfully from ${resolvedPrivateKeyPath}.`);
-} catch (error) {
-    console.error('❌ CRITICAL ERROR: Could not load Jitsi Private Key.');
-    console.error(`Please ensure the "private_key.pem" file exists at the specified path (${process.env.JITSI_PRIVATE_KEY_PATH}) relative to the server.js file, and it contains your Jitsi private key.`);
-    console.error(error.message);
-    process.exit(1);
+const privateKey = process.env.JITSI_PRIVATE_KEY;
+if (!privateKey) {
+  console.error('❌ CRITICAL ERROR: JITSI_PRIVATE_KEY is not defined in your .env or Render environment.');
+  process.exit(1);
 }
 
 // OAuth scopes
@@ -129,7 +119,7 @@ initVideoRouter({
     SCOPES: GOOGLE_SCOPES,
     JITSI_APP_ID: JITSI_APP_ID,
     JITSI_KID: JITSI_KID,
-    JITSI_PRIVATE_KEY: JITSI_PRIVATE_KEY_CONTENT,
+    JITSI_PRIVATE_KEY: privateKey,
     JITSI_DOMAIN: JITSI_DOMAIN
 });
 console.log('✅ Video Router initialized with Google and Jitsi configurations.');
