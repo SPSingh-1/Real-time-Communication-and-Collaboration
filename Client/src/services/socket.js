@@ -4,7 +4,7 @@ import { io } from "socket.io-client";
 // Grab token (after login it should be stored in localStorage)
 const token = localStorage.getItem("token");
 
-export const socket = io("http://localhost:3001", {
+export const socket = io(`${import.meta.env.VITE_BACKEND_URL}`, {
   auth: { token } // 👈 Send JWT to backend
 });
 

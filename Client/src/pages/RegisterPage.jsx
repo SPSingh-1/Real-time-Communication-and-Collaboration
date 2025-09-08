@@ -111,7 +111,7 @@ const RegisterPage = () => {
 
       console.log('Signup payload:', payload);
 
-      const res = await axios.post('http://localhost:3001/api/auth/createuser', payload);
+      const res = await axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/auth/createuser`, payload);
       
       if (!res.data.success) {
         throw new Error(res.data.error || 'Signup failed');

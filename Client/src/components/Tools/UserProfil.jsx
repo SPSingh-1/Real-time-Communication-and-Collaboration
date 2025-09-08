@@ -64,7 +64,7 @@ const [previewOpen, setPreviewOpen] = useState(false);
     }
 
 
-      const res = await fetch(`http://localhost:3001/userRouter/update/${user._id}`, {
+      const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/userRouter/update/${user._id}`, {
         method: "PUT",
         body: data,
       });

@@ -6,7 +6,7 @@ const EventDetailPage = () => {
   const [event, setEvent] = useState(null);
 
   useEffect(() => {
-    fetch(`http://localhost:3001/events/${id}`, {
+    fetch(`${import.meta.env.VITE_BACKEND_URL}/events/${id}`, {
       headers: {
         'auth-token': localStorage.getItem('token')
       }

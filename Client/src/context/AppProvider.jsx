@@ -118,7 +118,7 @@ const AppProvider = ({ children }) => {
     const handleTokenRefresh = async () => {
       try {
         const response = await axios.post(
-          "http://localhost:3001/api/auth/refresh",
+          `${import.meta.env.VITE_BACKEND_URL}/api/auth/refresh`,
           {},
           {
             headers: { "auth-token": user.token },

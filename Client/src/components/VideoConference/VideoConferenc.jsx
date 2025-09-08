@@ -3,7 +3,7 @@ import axios from 'axios';
 
 const JITSI_DOMAIN = '8x8.vc';
 const JITSI_APP_ID = 'vpaas-magic-cookie-c83f4958a05a42488b4b573a55a25cb0';
-const API_BASE_URL = 'http://localhost:3001/api';
+const API_BASE_URL = `${import.meta.env.VITE_BACKEND_URL}/api`;
 
 const VideoConference = () => {
     // This state will hold the *normalized* room name once the meeting is started

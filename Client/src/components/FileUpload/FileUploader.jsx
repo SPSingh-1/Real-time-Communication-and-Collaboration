@@ -90,7 +90,7 @@ const FileUploader = () => {
 
         try {
             // Try a simple authenticated request
-            await axios.get('http://localhost:3001/files', {
+            await axios.get(`${import.meta.env.VITE_BACKEND_URL}/files`, {
                 headers: { 'auth-token': token }
             });
             console.log("✅ Token validation successful");
@@ -149,7 +149,7 @@ const FileUploader = () => {
                 }
 
                 console.log("🔄 Fetching regular files...");
-                const res = await axios.get('http://localhost:3001/files', {
+                const res = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/files`, {
                     headers: { 'auth-token': token }
                 });
                 
@@ -191,7 +191,7 @@ const FileUploader = () => {
                 if (!token) return;
 
                 console.log("🔄 Fetching chat files...");
-                const res = await axios.get('http://localhost:3001/api/chat/files', {
+                const res = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/chat/files`, {
                     headers: { 'auth-token': token }
                 });
                 
@@ -260,7 +260,7 @@ const FileUploader = () => {
             type: selectedFile.type
         });
 
-        const uploadPromise = axios.post('http://localhost:3001/collab_uploads', formData, {
+        const uploadPromise = axios.post(`${import.meta.env.VITE_BACKEND_URL}/collab_uploads`, formData, {
             headers: {
                 'Content-Type': 'multipart/form-data',
                 'auth-token': token,
@@ -328,7 +328,7 @@ const FileUploader = () => {
                 return;
             }
 
-            const endpoint = isChat ? `http://localhost:3001/api/chat/files/${id}` : `http://localhost:3001/files/${id}`;
+            const endpoint = isChat ? `${import.meta.env.VITE_BACKEND_URL}/api/chat/files/${id}` : `${import.meta.env.VITE_BACKEND_URL}/files/${id}`;
 
             axios.delete(endpoint, {
                 headers: { 'auth-token': localStorage.getItem('token') },

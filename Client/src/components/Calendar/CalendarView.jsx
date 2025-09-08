@@ -65,7 +65,7 @@ const CalendarView = () => {
   const token = localStorage.getItem('token');
   if (!token) return;
   
-  axios.post('http://localhost:3001/api/auth/getuser', {}, {
+  axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/auth/getuser`, {}, {
     headers: { 'auth-token': token },
   })
     .then((res) => {
@@ -94,7 +94,7 @@ useEffect(() => {
   console.log('Fetching events for user:', userInfo); // Debug log
   
   setLoading(true);
-  axios.get('http://localhost:3001/events', {
+  axios.get(`${import.meta.env.VITE_BACKEND_URL}/events`, {
     headers: { 'auth-token': token },
   })
     .then((res) => {
@@ -115,7 +115,7 @@ useEffect(() => {
     .finally(() => setLoading(false));
 }, [userInfo.id,userInfo, userInfo.role, userInfo.teamId]); // Updated dependencies
   useEffect(() => {
-    const socket = io('http://localhost:3001');
+    const socket = io(`${import.meta.env.VITE_BACKEND_URL}`);
     
     socket.on('newEvent', (event) => {
       const key = new Date(event.date).toDateString();
@@ -188,7 +188,7 @@ useEffect(() => {
     try {
       if (editId) {
         const updated = await axios.put(
-          `http://localhost:3001/events/${editId}`,
+          `${import.meta.env.VITE_BACKEND_URL}/events/${editId}`,
           eventData,
           { headers: { 'auth-token': token } }
         );
@@ -200,7 +200,7 @@ useEffect(() => {
         setEditId(null);
         toast.success('Event Updated Successfully');
       } else {
-        await axios.post('http://localhost:3001/events', eventData, {
+        await axios.post(`${import.meta.env.VITE_BACKEND_URL}/events`, eventData, {
           headers: { 'auth-token': token },
         });
         toast.success('Event Created Successfully');
@@ -225,7 +225,7 @@ useEffect(() => {
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
-      await axios.delete(`http://localhost:3001/events/${id}`, {
+      await axios.delete(`${import.meta.env.VITE_BACKEND_URL}/events/${id}`, {
         headers: { 'auth-token': token },
       });
       if (selectedDate) {

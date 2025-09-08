@@ -5,7 +5,7 @@ import axios from 'axios';
 import FigmaFiles from './FigmaFiles';
 
 // API Base URL configuration
-const API_BASE_URL = 'http://localhost:3001';
+const API_BASE_URL = `${import.meta.env.VITE_BACKEND_URL}`;
 
 // Error notification component
 const ErrorNotification = ({ error, onClose }) => {

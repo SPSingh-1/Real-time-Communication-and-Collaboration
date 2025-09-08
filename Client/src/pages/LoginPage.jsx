@@ -62,7 +62,7 @@ const LoginPage = () => {
         payload.globalId = 'GLOBAL123';
       }
 
-      const res = await axios.post('http://localhost:3001/api/auth/login', payload);
+      const res = await axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/auth/login`, payload);
 
       if (!res.data.success) {
         throw new Error(res.data.error || 'Login failed');

@@ -40,7 +40,7 @@ const DailyNotes = ({ date }) => {
       if (!token) return;
       
       try {
-        const response = await fetch('http://localhost:3001/api/auth/getuser', {
+        const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/auth/getuser`, {
           method: 'POST',
           headers: { 'auth-token': token }
         });
@@ -63,7 +63,7 @@ const DailyNotes = ({ date }) => {
     if (!token) return;
     
     setLoading(true);
-    let url = `http://localhost:3001/notes/${selectedDate}`;
+    let url = `${import.meta.env.VITE_BACKEND_URL}/notes/${selectedDate}`;
     if (filter !== 'all') url += `?type=${filter}`;
 
     try {
@@ -110,8 +110,8 @@ const DailyNotes = ({ date }) => {
     };
     
     const url = editingNote
-      ? `http://localhost:3001/notes/${editingNote._id}`
-      : 'http://localhost:3001/notes';
+      ? `${import.meta.env.VITE_BACKEND_URL}/notes/${editingNote._id}`
+      : `${import.meta.env.VITE_BACKEND_URL}/notes`;
     const method = editingNote ? 'PUT' : 'POST';
 
     try {
@@ -151,7 +151,7 @@ const DailyNotes = ({ date }) => {
     
     setLoading(true);
     try {
-      const response = await fetch(`http://localhost:3001/notes/${id}`, {
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/notes/${id}`, {
         method: 'DELETE',
         headers: { 'auth-token': token }
       });

@@ -18,7 +18,7 @@ import {
   Settings
 } from 'lucide-react';
 
-const socket = io('http://localhost:3001');
+const socket = io(`${import.meta.env.VITE_BACKEND_URL}`);
 
 const NotificationFeed = () => {
   const [notifications, setNotifications] = useState([]);
@@ -37,7 +37,7 @@ const NotificationFeed = () => {
   useEffect(() => {
     const fetchUserInfo = async () => {
       try {
-        const response = await fetch('http://localhost:3001/api/auth/getuser', {
+        const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/auth/getuser`, {
           method: 'POST',
           headers: { 'auth-token': token }
         });
@@ -67,7 +67,7 @@ const NotificationFeed = () => {
       if (showUnreadOnly) params.append('unread', 'true');
 
       const query = params.toString() ? `?${params.toString()}` : '';
-      const response = await fetch(`http://localhost:3001/notifications${query}`, {
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/notifications${query}`, {
         headers: {
           'auth-token': token,
         },
@@ -92,7 +92,7 @@ const NotificationFeed = () => {
     if (!token) return;
     
     try {
-      const response = await fetch('http://localhost:3001/notifications/stats', {
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/notifications/stats`, {
         headers: { 'auth-token': token }
       });
       
@@ -150,7 +150,7 @@ const NotificationFeed = () => {
 
   const markAsRead = async (id) => {
     try {
-      const response = await fetch(`http://localhost:3001/notifications/${id}/read`, {
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/notifications/${id}/read`, {
         method: 'PATCH',
         headers: {
           'auth-token': token,
@@ -175,7 +175,7 @@ const NotificationFeed = () => {
 
   const markAllAsRead = async () => {
     try {
-      const response = await fetch('http://localhost:3001/notifications/mark-all-read', {
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/notifications/mark-all-read`, {
         method: 'PATCH',
         headers: { 'auth-token': token }
       });
@@ -196,7 +196,7 @@ const NotificationFeed = () => {
     if (!window.confirm('Are you sure you want to delete this notification?')) return;
     
     try {
-      const response = await fetch(`http://localhost:3001/notifications/${id}`, {
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/notifications/${id}`, {
         method: 'DELETE',
         headers: { 'auth-token': token }
       });

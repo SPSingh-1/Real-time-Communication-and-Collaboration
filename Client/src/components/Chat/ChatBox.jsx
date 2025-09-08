@@ -8,7 +8,7 @@ import dayjs from "dayjs";
 import useAppContext from "../../context/useAppContext";
 import AuthDebug from './AuthDebug';
 
-const socket = io("http://localhost:3001", {
+const socket = io(`${import.meta.env.VITE_BACKEND_URL}`, {
   autoConnect: false,
 });
 
@@ -268,7 +268,7 @@ const ChatBox = () => {
     try {
       console.log("🚀 Uploading to chat endpoint...");
       
-      const res = await axios.post("http://localhost:3001/api/chat/upload", formData, {
+      const res = await axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/chat/upload`, formData, {
         headers: { 
           "auth-token": token,
           "Content-Type": "multipart/form-data"

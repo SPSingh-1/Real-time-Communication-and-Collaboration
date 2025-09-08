@@ -63,17 +63,17 @@ const Dashboard = () => {
         }
 
         // Fetch general stats
-        const statsRes = await axios.get("http://localhost:3001/api/dashboard/stats", {
+        const statsRes = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/dashboard/stats`, {
           headers: { 'auth-token': token }
         });
         
         // Fetch role-specific stats
-        const roleStatsRes = await axios.get("http://localhost:3001/api/dashboard/role-stats", {
+        const roleStatsRes = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/dashboard/role-stats`, {
           headers: { 'auth-token': token }
         });
 
         // Fetch user info
-        const userRes = await axios.get("http://localhost:3001/api/dashboard/user-info", {
+        const userRes = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/dashboard/user-info`, {
           headers: { 'auth-token': token }
         });
 

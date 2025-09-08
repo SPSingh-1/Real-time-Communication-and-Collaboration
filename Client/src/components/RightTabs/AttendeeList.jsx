@@ -47,7 +47,7 @@ const AttendeeList = () => {
   const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
 
   // API Base URL - adjust if needed
-  const API_BASE = 'http://localhost:3001';
+  const API_BASE = `${import.meta.env.VITE_BACKEND_URL}`;
 
   // Debug function
   const addDebugInfo = useCallback((info) => {

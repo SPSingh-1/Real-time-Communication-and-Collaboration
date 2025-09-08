@@ -4,7 +4,7 @@ import TaskList from '../TaskManager/TaskList';
 import { jwtDecode } from 'jwt-decode'; // Import jwtDecode
 
 // Base URL for your Node.js MongoDB backend
-const MONGODB_API_BASE_URL = 'http://localhost:3001/api/tasks';
+const MONGODB_API_BASE_URL = `${import.meta.env.VITE_BACKEND_URL}/api/tasks`;
 
 const TaskManager = () => {
     const [tasks, setTasks] = useState([]);
