@@ -50,6 +50,8 @@ import { fileRouter } from './routes/fileRoutes.js';
 import taskRouter from './routes/taskRouter.js';
 import chatUploadRouter from './routes/chatUpload.js'; // New chat upload route
 import userRouter from './routes/userRouter.js';
+import figmaAuthRoutes from './routes/figmaAuth.js';
+import figmaFilesRoutes from './routes/figmaFiles.js';
 
 // Middleware and Models
 import './models/User.js';
@@ -74,6 +76,21 @@ const GOOGLE_REDIRECT_URI = process.env.GOOGLE_REDIRECT_URI || '';
 const JITSI_APP_ID = process.env.JITSI_APP_ID;
 const JITSI_KID = process.env.JITSI_KID;
 const JITSI_DOMAIN = process.env.JITSI_DOMAIN;
+
+// Figma Configuration
+const FIGMA_CLIENT_ID = process.env.FIGMA_CLIENT_ID;
+const FIGMA_CLIENT_SECRET = process.env.FIGMA_CLIENT_SECRET; 
+const FIGMA_REDIRECT_URI = process.env.FIGMA_REDIRECT_URI;
+
+if (!FIGMA_CLIENT_ID || !FIGMA_CLIENT_SECRET || !FIGMA_REDIRECT_URI) {
+    console.warn('⚠️  WARNING: Figma credentials not found in .env file.');
+    console.warn('Figma integration will not work. Required variables:');
+    console.warn('- FIGMA_CLIENT_ID');
+    console.warn('- FIGMA_CLIENT_SECRET'); 
+    console.warn('- FIGMA_REDIRECT_URI');
+} else {
+    console.log("✅ Figma credentials loaded successfully");
+}
 
 // Read Jitsi Private Key
 let JITSI_PRIVATE_KEY_CONTENT;
@@ -119,7 +136,7 @@ app.use(cors({
     credentials: true
 }));
 app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.urlencoded({ extended: true,limit: '50mb' }));
 
 // Routes
 app.get('/', (req, res) => {
@@ -146,6 +163,13 @@ app.use('/files', fileRouter);             // For regular file management
 app.use('/api/chat', chatUploadRouter);    // For chat file uploads and management
 app.use('/api/tasks', taskRouter);
 app.use('/userRouter', userRouter);
+
+// Figma integration routes
+app.use('/api/auth', figmaAuthRoutes);
+console.log(`🎨 Figma Routes: /api/auth/figma/* - Ready ✅`);
+app.use('/api/figma', figmaFilesRoutes);
+console.log(`🎨 Figma Integration: ${FIGMA_CLIENT_ID ? 'Ready ✅' : 'Not Configured ❌'}`);
+console.log(`🔗 Figma Callback: ${FIGMA_REDIRECT_URI || 'NOT SET'}`);
 
 // Email notification endpoint
 app.post('/notify', async (req, res) => {
@@ -199,6 +223,16 @@ mongoose.connect(MONGODB_URI)
         console.error('❌ MongoDB connection error:', err);
         process.exit(1);
     });
+
+// Error handling middleware
+app.use((error, req, res, next) => {
+  console.error('Unhandled error:', error);
+  res.status(500).json({
+    success: false,
+    error: 'Internal server error',
+    message: process.env.NODE_ENV === 'development' ? error.message : 'Something went wrong'
+  });
+});
 
 // Start server
 const PORT = process.env.PORT || 3001;

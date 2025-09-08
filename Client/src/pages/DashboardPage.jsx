@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import Sidebar from '../components/Sidebar/Sidebar';
 import ChatBox from '../components/Chat/ChatBox';
 import Dashboard from '../components/Dashboard/Dashboard';
@@ -14,9 +14,88 @@ import UserProfile from '../components/Tools/UserProfil';
 
 const DashboardPage = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user, loading, authChecked, isAuthenticated } = useAppContext();
-  const [activeTab, setActiveTab] = useState('Dashboard');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+
+  // Determine active tab based on URL
+  const getActiveTabFromUrl = () => {
+    const pathname = location.pathname;
+    
+    // Handle nested tool routes
+    if (pathname.startsWith('/dashboard/tools/')) {
+      const toolName = pathname.split('/')[3];
+      switch (toolName) {
+        case 'figma':
+          return 'figma';
+        case 'calendar':
+          return 'calendar';
+        case 'tasks':
+          return 'tasks';
+        case 'files':
+          return 'files';
+        case 'video':
+          return 'VideoConferenc';
+        default:
+          return 'Dashboard';
+      }
+    }
+    
+    // Handle direct dashboard routes
+    switch (pathname) {
+      case '/dashboard':
+        return 'Dashboard';
+      case '/dashboard/chat':
+        return 'chat';
+      case '/dashboard/profile':
+        return 'profile';
+      default:
+        return 'Dashboard';
+    }
+  };
+
+  const [activeTab, setActiveTab] = useState(getActiveTabFromUrl());
+
+  // Update active tab when URL changes
+  useEffect(() => {
+    setActiveTab(getActiveTabFromUrl());
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.pathname]);
+
+  // Handle tab navigation - update URL when tab changes
+  const handleTabChange = (tab) => {
+    setActiveTab(tab);
+    
+    // Navigate to appropriate URL
+    switch (tab) {
+      case 'Dashboard':
+        navigate('/dashboard');
+        break;
+      case 'chat':
+        navigate('/dashboard/chat');
+        break;
+      case 'tasks':
+        navigate('/dashboard/tools/tasks');
+        break;
+      case 'files':
+        navigate('/dashboard/tools/files');
+        break;
+      case 'calendar':
+        navigate('/dashboard/tools/calendar');
+        break;
+      case 'figma':
+        navigate('/dashboard/tools/figma');
+        break;
+      case 'VideoConferenc':
+        navigate('/dashboard/tools/video');
+        break;
+      case 'profile':
+        navigate('/dashboard/profile');
+        break;
+      default:
+        navigate('/dashboard');
+    }
+  };
 
   // Redirect to login if not authenticated
   useEffect(() => {
@@ -58,37 +137,37 @@ const DashboardPage = () => {
   }
 
   const getRoleDisplayInfo = () => {
-  switch (user.role) {
-    case "single":
-      return {
-        title: "Personal Workspace",
-        subtitle: "Your private dashboard",
-        gradient: "from-blue-600/20 to-purple-600/20",
-        logo: "/logo.png", // ✅ app logo
-      };
-    case "team":
-      return {
-        title: "Team Workspace",
-        subtitle: user.teamId ? `Team: ${user.teamId}` : "Team Dashboard",
-        gradient: "from-green-600/20 to-blue-600/20",
-        logo: "/logo.png",
-      };
-    case "global":
-      return {
-        title: "Global Community",
-        subtitle: "Connected worldwide",
-        gradient: "from-purple-600/20 to-pink-600/20",
-        logo: "/logo.png",
-      };
-    default:
-      return {
-        title: "Dashboard",
-        subtitle: "Welcome",
-        gradient: "from-gray-600/20 to-gray-700/20",
-        logo: "/logo.png",
-      };
-  }
-};
+    switch (user.role) {
+      case "single":
+        return {
+          title: "Personal Workspace",
+          subtitle: "Your private dashboard",
+          gradient: "from-blue-600/20 to-purple-600/20",
+          logo: "/logo.png",
+        };
+      case "team":
+        return {
+          title: "Team Workspace",
+          subtitle: user.teamId ? `Team: ${user.teamId}` : "Team Dashboard",
+          gradient: "from-green-600/20 to-blue-600/20",
+          logo: "/logo.png",
+        };
+      case "global":
+        return {
+          title: "Global Community",
+          subtitle: "Connected worldwide",
+          gradient: "from-purple-600/20 to-pink-600/20",
+          logo: "/logo.png",
+        };
+      default:
+        return {
+          title: "Dashboard",
+          subtitle: "Welcome",
+          gradient: "from-gray-600/20 to-gray-700/20",
+          logo: "/logo.png",
+        };
+    }
+  };
 
   const roleInfo = getRoleDisplayInfo();
 
@@ -102,7 +181,7 @@ const DashboardPage = () => {
       <div className={`relative z-20 transition-all duration-500 ${sidebarCollapsed ? 'w-16' : 'w-64'}`}>
         <Sidebar 
           activeTab={activeTab} 
-          setActiveTab={setActiveTab}
+          setActiveTab={handleTabChange}
           collapsed={sidebarCollapsed}
           setCollapsed={setSidebarCollapsed}
           userRole={user.role}
@@ -123,10 +202,10 @@ const DashboardPage = () => {
             </div>
             <div className="flex items-center gap-4">
               <div className="text-right">
-               <div className="text-white font-medium">
+                <div className="text-white font-medium">
                   <button
                     className="sidebar-user-btn flex items-center space-x-2"
-                    onClick={() => setActiveTab("profile")}
+                    onClick={() => handleTabChange("profile")}
                     title="View Profile"
                   >
                     {/* Profile image OR dummy icon */}
@@ -168,7 +247,7 @@ const DashboardPage = () => {
             {activeTab === 'tasks' && <TaskManager />}
             {activeTab === 'files' && <FileManager />}
             {activeTab === 'calendar' && <CalendarTool />}
-            {activeTab === 'figma' && <FigmaTool />}
+            {activeTab === 'figma' && <FigmaTool user={user} />}
             {activeTab === 'VideoConferenc' && <VideoConferenc />}
             {activeTab === "profile" && <UserProfile />} 
           </div>

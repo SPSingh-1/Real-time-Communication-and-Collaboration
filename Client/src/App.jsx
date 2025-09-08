@@ -70,11 +70,77 @@ function App() {
         <Route path="/company" element={<About />} />
         <Route path="/legal" element={<Legal />} />
 
-        {/* Protected Routes - All logged-in users */}
+        {/* Protected Routes - Dashboard and its nested routes */}
         <Route
           path="/dashboard"
           element={
             <ProtectedRoute roles={["single", "team", "global"]}>
+              <DashboardPage />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Dashboard nested routes - all handled by DashboardPage */}
+        <Route
+          path="/dashboard/chat"
+          element={
+            <ProtectedRoute roles={["single", "team", "global"]}>
+              <DashboardPage />
+            </ProtectedRoute>
+          }
+        />
+        
+        <Route
+          path="/dashboard/profile"
+          element={
+            <ProtectedRoute roles={["single", "team", "global"]}>
+              <DashboardPage />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Dashboard tool routes */}
+        <Route
+          path="/dashboard/tools/figma"
+          element={
+            <ProtectedRoute roles={["single", "team", "global"]}>
+              <DashboardPage />
+            </ProtectedRoute>
+          }
+        />
+        
+        <Route
+          path="/dashboard/tools/calendar"
+          element={
+            <ProtectedRoute roles={["single", "team", "global"]}>
+              <DashboardPage />
+            </ProtectedRoute>
+          }
+        />
+        
+        <Route
+          path="/dashboard/tools/tasks"
+          element={
+            <ProtectedRoute roles={["single", "team", "global"]}>
+              <DashboardPage />
+            </ProtectedRoute>
+          }
+        />
+        
+        <Route
+          path="/dashboard/tools/files"
+          element={
+            <ProtectedRoute roles={["single", "team", "global"]}>
+              <DashboardPage />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Video Calls - Team and Global only */}
+        <Route
+          path="/dashboard/tools/video"
+          element={
+            <ProtectedRoute roles={["team", "global"]}>
               <DashboardPage />
             </ProtectedRoute>
           }
@@ -89,43 +155,6 @@ function App() {
           }
         />
 
-        {/* Tool Routes - All roles can access */}
-        <Route
-          path="/tools/figma"
-          element={
-            <ProtectedRoute roles={["single", "team", "global"]}>
-              <FigmaTool />
-            </ProtectedRoute>
-          }
-        />
-        
-        <Route
-          path="/tools/calendar"
-          element={
-            <ProtectedRoute roles={["single", "team", "global"]}>
-              <CalendarTool />
-            </ProtectedRoute>
-          }
-        />
-        
-        <Route
-          path="/tools/tasks"
-          element={
-            <ProtectedRoute roles={["single", "team", "global"]}>
-              <TaskManager />
-            </ProtectedRoute>
-          }
-        />
-        
-        <Route
-          path="/tools/files"
-          element={
-            <ProtectedRoute roles={["single", "team", "global"]}>
-              <FileManager />
-            </ProtectedRoute>
-          }
-        />
-
         {/* Events - All roles */}
         <Route
           path="/events/:id"
@@ -136,15 +165,12 @@ function App() {
           }
         />
 
-        {/* Video Calls - Team and Global only */}
-        <Route
-          path="/tools/video"
-          element={
-            <ProtectedRoute roles={["team", "global"]}>
-              <VideoCallTool />
-            </ProtectedRoute>
-          }
-        />
+        {/* Legacy redirects for backward compatibility */}
+        <Route path="/tools/figma" element={<Navigate to="/dashboard/tools/figma" replace />} />
+        <Route path="/tools/calendar" element={<Navigate to="/dashboard/tools/calendar" replace />} />
+        <Route path="/tools/tasks" element={<Navigate to="/dashboard/tools/tasks" replace />} />
+        <Route path="/tools/files" element={<Navigate to="/dashboard/tools/files" replace />} />
+        <Route path="/tools/video" element={<Navigate to="/dashboard/tools/video" replace />} />
 
         {/* Catch-all route */}
         <Route 

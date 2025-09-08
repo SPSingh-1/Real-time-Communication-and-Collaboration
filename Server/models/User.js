@@ -16,6 +16,22 @@ const UserSchema = new mongoose.Schema(
     // ✅ New fields
     photo: { type: String, default: '' }, // Cloudinary URL of profile picture
     moreDetails: { type: String, default: '' }, // Cloudinary URL of uploaded file (doc/pdf/etc.)
+    figmaConnected: {
+      type: Boolean,
+      default: false
+    },
+    figmaUserId: {
+      type: String,
+      default: null
+    },
+    figmaOAuthState: {
+      type: String,
+      default: null
+    },
+    figmaOAuthStateExpiry: {
+      type: Date,
+      default: null
+    }
   },
   { timestamps: true }
 );

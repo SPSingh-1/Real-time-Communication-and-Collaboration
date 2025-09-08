@@ -91,7 +91,7 @@ const [previewOpen, setPreviewOpen] = useState(false);
   };
 
   return (
-    <div className="p-6 max-w-xl mx-auto bg-white dark:bg-slate-800 rounded-xl shadow-md">
+    <div className="p-6 max-w-xl mx-auto bg-white dark:bg-slate-800 rounded-xl shadow-md text-white">
       <h2 className="text-2xl font-bold mb-6">User Profile</h2>
 
       {message && (
@@ -108,9 +108,9 @@ const [previewOpen, setPreviewOpen] = useState(false);
        
        
         {/* Profile photo */}
-        <div className="flex flex-col items-center">
+        <div className="flex flex-col items-center text-white">
         {formData.photo ? (
-            <div className="flex flex-col items-center">
+            <div className="flex flex-col items-center text-white">
             {/* Profile image with click-to-preview */}
             <img
                 src={formData.photo}
@@ -197,7 +197,7 @@ const [previewOpen, setPreviewOpen] = useState(false);
             type="email"
             value={formData.email}
             readOnly
-            className="border p-2 rounded w-full bg-gray-100 cursor-not-allowed"
+            className="border p-2 rounded w-full bg-gray-100 cursor-not-allowed text-black"
           />
         </div>
 
@@ -208,7 +208,7 @@ const [previewOpen, setPreviewOpen] = useState(false);
             type="text"
             value={formData.role}
             readOnly
-            className="border p-2 rounded w-full bg-gray-100 cursor-not-allowed"
+            className="border p-2 rounded w-full bg-gray-100 cursor-not-allowed text-black"
           />
         </div>
 
@@ -219,7 +219,7 @@ const [previewOpen, setPreviewOpen] = useState(false);
             type="text"
             value={formData.createdAt ? new Date(formData.createdAt).toLocaleString() : ""}
             readOnly
-            className="border p-2 rounded w-full bg-gray-100 cursor-not-allowed"
+            className="border p-2 rounded w-full bg-gray-100 cursor-not-allowed text-black"
           />
         </div>
 
@@ -230,7 +230,7 @@ const [previewOpen, setPreviewOpen] = useState(false);
             type="text"
             value={formData.updatedAt ? new Date(formData.updatedAt).toLocaleString() : ""}
             readOnly
-            className="border p-2 rounded w-full bg-gray-100 cursor-not-allowed"
+            className="border p-2 rounded w-full bg-gray-100 cursor-not-allowed text-black"
           />
         </div>
 
