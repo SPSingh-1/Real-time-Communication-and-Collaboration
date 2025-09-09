@@ -5,11 +5,11 @@ import { FaSquareXTwitter } from "react-icons/fa6";
 import { FaInstagramSquare } from "react-icons/fa";
 import { CiLinkedin } from "react-icons/ci";
 import { FaGithub } from "react-icons/fa";
-import { Radius } from "lucide-react";
-
+import { Menu, X } from "lucide-react";
 
 const LandingPage = () => {
   const [isVisible, setIsVisible] = useState({});
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   // Features data
   const features = [
@@ -67,6 +67,18 @@ const LandingPage = () => {
     return () => observer.disconnect();
   }, []);
 
+  // Close mobile menu when clicking outside
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth > 768) {
+        setIsMobileMenuOpen(false);
+      }
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   // Dashboard mockup component
   const DashboardMockup = () => (
     <div className="dashboard-mockup">
@@ -101,6 +113,13 @@ const LandingPage = () => {
     </div>
   );
 
+  const navItems = [
+    { href: "#hero", label: "Home" },
+    { href: "#features", label: "Features" },
+    { href: "#join", label: "Join" },
+    { href: "#footer", label: "Contact" }
+  ];
+
   return (
     <div style={{
       fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
@@ -127,8 +146,9 @@ const LandingPage = () => {
         alignItems: 'center',
         transition: 'all 0.3s ease'
       }}>
+        {/* Logo */}
         <div style={{
-          fontSize: '1.8rem',
+          fontSize: 'clamp(1.2rem, 4vw, 1.8rem)',
           fontWeight: 800,
           display: 'flex',
           alignItems: 'center',
@@ -138,67 +158,205 @@ const LandingPage = () => {
           WebkitTextFillColor: 'transparent',
           backgroundClip: 'text'
         }}>
-          <img src="/logo.png" alt="Logo" style={{ height: '50px', verticalAlign: 'middle',borderRadius: '30px' }} />
+          <img 
+            src="/logo.png" 
+            alt="Logo" 
+            style={{ 
+              height: 'clamp(30px, 8vw, 50px)', 
+              verticalAlign: 'middle',
+              borderRadius: '30px' 
+            }} 
+          />
           Milapp
         </div>
         
-        <nav style={{ display: 'flex', gap: '2rem' }}>
-          <a href="#hero" style={{
-            color: 'white',
-            textDecoration: 'none',
-            fontWeight: 500,
-            padding: '0.5rem 1rem',
-            borderRadius: '8px',
-            transition: 'all 0.3s ease'
-          }}>Home</a>
-          <a href="#features" style={{
-            color: 'white',
-            textDecoration: 'none',
-            fontWeight: 500,
-            padding: '0.5rem 1rem',
-            borderRadius: '8px',
-            transition: 'all 0.3s ease'
-          }}>Features</a>
-          <a href="#join" style={{
-            color: 'white',
-            textDecoration: 'none',
-            fontWeight: 500,
-            padding: '0.5rem 1rem',
-            borderRadius: '8px',
-            transition: 'all 0.3s ease'
-          }}>Join</a>
-          <a href="#footer" style={{
-            color: 'white',
-            textDecoration: 'none',
-            fontWeight: 500,
-            padding: '0.5rem 1rem',
-            borderRadius: '8px',
-            transition: 'all 0.3s ease'
-          }}>Contact</a>
+        {/* Desktop Navigation */}
+        <nav style={{ 
+          display: 'flex', 
+          gap: '2rem',
+          '@media (maxWidth: 768px)': {
+            display: 'none'
+          }
+        }} className="desktop-nav">
+          {navItems.map((item, index) => (
+            <a 
+              key={index}
+              href={item.href} 
+              style={{
+                color: 'white',
+                textDecoration: 'none',
+                fontWeight: 500,
+                padding: '0.5rem 1rem',
+                borderRadius: '8px',
+                transition: 'all 0.3s ease'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = 'transparent';
+              }}
+            >
+              {item.label}
+            </a>
+          ))}
         </nav>
         
-        <div style={{ display: 'flex', gap: '1rem' }}>
+        {/* Desktop Auth Buttons */}
+        <div style={{ display: 'flex', gap: '1rem' }} className="desktop-auth">
           <button style={{
-            padding: '0.75rem 1.5rem',
+            padding: 'clamp(0.5rem, 2vw, 0.75rem) clamp(1rem, 3vw, 1.5rem)',
             borderRadius: '50px',
             fontWeight: 600,
             border: '2px solid white',
             color: 'white',
             background: 'transparent',
             cursor: 'pointer',
-            transition: 'all 0.3s ease'
-          }}><Link to="/register">Sign up</Link></button>
+            transition: 'all 0.3s ease',
+            fontSize: 'clamp(0.8rem, 2vw, 1rem)'
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = 'white';
+            e.currentTarget.style.color = '#667eea';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = 'transparent';
+            e.currentTarget.style.color = 'white';
+          }}
+          >
+            <Link to="/register" style={{ textDecoration: 'none', color: 'inherit' }}>
+              Sign up
+            </Link>
+          </button>
           <button style={{
-            padding: '0.75rem 1.5rem',
+            padding: 'clamp(0.5rem, 2vw, 0.75rem) clamp(1rem, 3vw, 1.5rem)',
             borderRadius: '50px',
             fontWeight: 600,
             background: 'linear-gradient(45deg, #667eea, #764ba2)',
             color: 'white',
             border: 'none',
             cursor: 'pointer',
-            transition: 'all 0.3s ease'
-          }}><Link to="/login">Log In</Link></button>
+            transition: 'all 0.3s ease',
+            fontSize: 'clamp(0.8rem, 2vw, 1rem)'
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.transform = 'translateY(-2px)';
+            e.currentTarget.style.boxShadow = '0 10px 25px rgba(102, 126, 234, 0.3)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.transform = 'translateY(0)';
+            e.currentTarget.style.boxShadow = 'none';
+          }}
+          >
+            <Link to="/login" style={{ textDecoration: 'none', color: 'inherit' }}>
+              Log In
+            </Link>
+          </button>
         </div>
+
+        {/* Mobile Menu Button */}
+        <button 
+          className="mobile-menu-btn"
+          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+          style={{
+            display: 'none',
+            background: 'none',
+            border: 'none',
+            color: 'white',
+            fontSize: '1.5rem',
+            cursor: 'pointer',
+            padding: '0.5rem',
+            borderRadius: '8px',
+            transition: 'all 0.3s ease'
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = 'none';
+          }}
+        >
+          {isMobileMenuOpen ? <X /> : <Menu />}
+        </button>
+
+        {/* Mobile Menu Overlay */}
+        {isMobileMenuOpen && (
+          <div 
+            className="mobile-menu"
+            style={{
+              position: 'fixed',
+              top: '80px',
+              left: 0,
+              right: 0,
+              background: 'rgba(102, 126, 234, 0.95)',
+              backdropFilter: 'blur(20px)',
+              padding: '2rem',
+              zIndex: 999,
+              animation: 'slideDown 0.3s ease-out'
+            }}
+          >
+            <nav style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', marginBottom: '2rem' }}>
+              {navItems.map((item, index) => (
+                <a 
+                  key={index}
+                  href={item.href}
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  style={{
+                    color: 'white',
+                    textDecoration: 'none',
+                    fontWeight: 500,
+                    padding: '1rem',
+                    borderRadius: '12px',
+                    transition: 'all 0.3s ease',
+                    textAlign: 'center',
+                    fontSize: '1.1rem'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = 'transparent';
+                  }}
+                >
+                  {item.label}
+                </a>
+              ))}
+            </nav>
+            
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              <button style={{
+                padding: '1rem 2rem',
+                borderRadius: '50px',
+                fontWeight: 600,
+                border: '2px solid white',
+                color: 'white',
+                background: 'transparent',
+                cursor: 'pointer',
+                transition: 'all 0.3s ease',
+                fontSize: '1rem'
+              }}>
+                <Link to="/register" style={{ textDecoration: 'none', color: 'inherit' }}>
+                  Sign up
+                </Link>
+              </button>
+              <button style={{
+                padding: '1rem 2rem',
+                borderRadius: '50px',
+                fontWeight: 600,
+                background: 'white',
+                color: '#667eea',
+                border: 'none',
+                cursor: 'pointer',
+                transition: 'all 0.3s ease',
+                fontSize: '1rem'
+              }}>
+                <Link to="/login" style={{ textDecoration: 'none', color: 'inherit' }}>
+                  Log In
+                </Link>
+              </button>
+            </div>
+          </div>
+        )}
       </header>
 
       {/* Hero Section */}
@@ -212,7 +370,8 @@ const LandingPage = () => {
           alignItems: 'center',
           justifyContent: 'center',
           textAlign: 'center',
-          padding: '2rem',
+          padding: 'clamp(1rem, 4vw, 2rem)',
+          paddingTop: 'clamp(6rem, 15vw, 8rem)',
           position: 'relative',
           background: 'radial-gradient(ellipse at center, rgba(255,255,255,0.1) 0%, transparent 70%)',
           transform: isVisible.hero ? 'translateY(0) scale(1)' : 'translateY(50px) scale(0.95)',
@@ -222,7 +381,7 @@ const LandingPage = () => {
       >
         <div style={{ maxWidth: '800px', zIndex: 2 }}>
           <h1 style={{
-            fontSize: 'clamp(3rem, 8vw, 6rem)',
+            fontSize: 'clamp(2rem, 8vw, 6rem)',
             fontWeight: 800,
             color: 'white',
             marginBottom: '1.5rem',
@@ -230,23 +389,25 @@ const LandingPage = () => {
             WebkitBackgroundClip: 'text',
             WebkitTextFillColor: 'transparent',
             backgroundClip: 'text',
-            transform: 'translateZ(30px)'
+            lineHeight: 1.1
           }}>
             Real-time Collaboration Made Simple
           </h1>
           
           <p style={{
-            fontSize: '1.4rem',
+            fontSize: 'clamp(1rem, 3vw, 1.4rem)',
             color: 'rgba(255, 255, 255, 0.9)',
             marginBottom: '3rem',
-            lineHeight: 1.6
+            lineHeight: 1.6,
+            maxWidth: '600px',
+            margin: '0 auto 3rem'
           }}>
             Connect, communicate, and collaborate with your team in one powerful platform
           </p>
           
           <button style={{
-            fontSize: '1.2rem',
-            padding: '1.2rem 3rem',
+            fontSize: 'clamp(1rem, 2.5vw, 1.2rem)',
+            padding: 'clamp(1rem, 3vw, 1.2rem) clamp(2rem, 6vw, 3rem)',
             background: 'linear-gradient(45deg, #667eea, #764ba2)',
             color: 'white',
             border: 'none',
@@ -255,25 +416,35 @@ const LandingPage = () => {
             transition: 'all 0.4s cubic-bezier(0.23, 1, 0.32, 1)',
             boxShadow: '0 10px 30px rgba(102, 126, 234, 0.3)',
             position: 'relative',
-            overflow: 'hidden',
-            transform: 'translateZ(40px)'
-          }}>
+            overflow: 'hidden'
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.transform = 'translateY(-3px) scale(1.05)';
+            e.currentTarget.style.boxShadow = '0 15px 40px rgba(102, 126, 234, 0.4)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.transform = 'translateY(0) scale(1)';
+            e.currentTarget.style.boxShadow = '0 10px 30px rgba(102, 126, 234, 0.3)';
+          }}
+          >
             Get Started Free
           </button>
         </div>
         
-        {/* 3D Mockup */}
+        {/* 3D Mockup - Responsive */}
         <div style={{
-          marginTop: '4rem',
+          marginTop: 'clamp(2rem, 8vw, 4rem)',
           perspective: '1500px',
-          transformStyle: 'preserve-3d'
+          transformStyle: 'preserve-3d',
+          width: '100%',
+          display: 'flex',
+          justifyContent: 'center'
         }}>
           <div style={{
-            width: '90vw',
-            maxWidth: '1000px',
-            height: '600px',
+            width: 'clamp(300px, 90vw, 1000px)',
+            height: 'clamp(300px, 60vw, 600px)',
             background: 'linear-gradient(145deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05))',
-            borderRadius: '20px',
+            borderRadius: 'clamp(10px, 3vw, 20px)',
             backdropFilter: 'blur(20px)',
             border: '1px solid rgba(255,255,255,0.1)',
             boxShadow: '0 30px 80px rgba(0,0,0,0.3)',
@@ -285,12 +456,16 @@ const LandingPage = () => {
             cursor: 'pointer'
           }}
           onMouseEnter={(e) => {
-            e.currentTarget.style.transform = 'rotateY(10deg) rotateX(5deg) translateZ(50px)';
+            if (window.innerWidth > 768) {
+              e.currentTarget.style.transform = 'rotateY(10deg) rotateX(5deg) translateZ(50px)';
+            }
           }}
           onMouseLeave={(e) => {
-            e.currentTarget.style.transform = 'rotateY(5deg) rotateX(2deg)';
+            if (window.innerWidth > 768) {
+              e.currentTarget.style.transform = 'rotateY(5deg) rotateX(2deg)';
+            }
           }}>
-            <div style={{ padding: '2rem', height: '100%' }}>
+            <div style={{ padding: 'clamp(1rem, 3vw, 2rem)', height: '100%' }}>
               <DashboardMockup />
             </div>
           </div>
@@ -302,7 +477,7 @@ const LandingPage = () => {
         id="features"
         className="observe-section"
         style={{
-          padding: '8rem 2rem',
+          padding: 'clamp(4rem, 8vw, 8rem) clamp(1rem, 4vw, 2rem)',
           background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)',
           position: 'relative',
           transform: isVisible.features ? 'translateY(0)' : 'translateY(50px)',
@@ -315,15 +490,15 @@ const LandingPage = () => {
           top: 0,
           left: 0,
           right: 0,
-          height: '200px',
+          height: 'clamp(100px, 20vw, 200px)',
           background: 'linear-gradient(180deg, #764ba2, transparent)'
         }}></div>
         
         <h2 style={{
-          fontSize: '3.5rem',
+          fontSize: 'clamp(2rem, 6vw, 3.5rem)',
           fontWeight: 800,
           textAlign: 'center',
-          marginBottom: '4rem',
+          marginBottom: 'clamp(2rem, 6vw, 4rem)',
           background: 'linear-gradient(45deg, #334155, #475569)',
           WebkitBackgroundClip: 'text',
           WebkitTextFillColor: 'transparent',
@@ -336,8 +511,8 @@ const LandingPage = () => {
         
         <div style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))',
-          gap: '2rem',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 300px), 1fr))',
+          gap: 'clamp(1rem, 3vw, 2rem)',
           maxWidth: '1400px',
           margin: '0 auto',
           position: 'relative',
@@ -349,8 +524,8 @@ const LandingPage = () => {
               style={{
                 background: 'rgba(255, 255, 255, 0.9)',
                 backdropFilter: 'blur(20px)',
-                borderRadius: '20px',
-                padding: '2.5rem',
+                borderRadius: 'clamp(12px, 3vw, 20px)',
+                padding: 'clamp(1.5rem, 4vw, 2.5rem)',
                 boxShadow: '0 20px 50px rgba(0,0,0,0.1)',
                 border: '1px solid rgba(255,255,255,0.2)',
                 transformStyle: 'preserve-3d',
@@ -363,12 +538,16 @@ const LandingPage = () => {
                 transitionDelay: `${index * 0.1}s`
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.transform = 'translateY(-10px) rotateY(5deg) rotateX(5deg)';
-                e.currentTarget.style.boxShadow = '0 30px 70px rgba(0,0,0,0.2)';
+                if (window.innerWidth > 768) {
+                  e.currentTarget.style.transform = 'translateY(-10px) rotateY(5deg) rotateX(5deg)';
+                  e.currentTarget.style.boxShadow = '0 30px 70px rgba(0,0,0,0.2)';
+                }
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.boxShadow = '0 20px 50px rgba(0,0,0,0.1)';
+                if (window.innerWidth > 768) {
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow = '0 20px 50px rgba(0,0,0,0.1)';
+                }
               }}
             >
               <div style={{
@@ -381,22 +560,22 @@ const LandingPage = () => {
               }}></div>
               
               <div style={{
-                width: '80px',
-                height: '80px',
+                width: 'clamp(60px, 15vw, 80px)',
+                height: 'clamp(60px, 15vw, 80px)',
                 marginBottom: '1.5rem',
                 background: 'linear-gradient(45deg, #667eea, #764ba2)',
-                borderRadius: '20px',
+                borderRadius: 'clamp(12px, 3vw, 20px)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 boxShadow: '0 10px 30px rgba(102, 126, 234, 0.3)',
-                fontSize: '2rem'
+                fontSize: 'clamp(1.5rem, 4vw, 2rem)'
               }}>
                 {feature.icon}
               </div>
               
               <h3 style={{
-                fontSize: '1.5rem',
+                fontSize: 'clamp(1.2rem, 3vw, 1.5rem)',
                 fontWeight: 700,
                 marginBottom: '1rem',
                 color: '#1e293b'
@@ -407,7 +586,7 @@ const LandingPage = () => {
               <p style={{
                 color: '#64748b',
                 lineHeight: 1.6,
-                fontSize: '1rem',
+                fontSize: 'clamp(0.9rem, 2.5vw, 1rem)',
                 margin: 0
               }}>
                 {feature.description}
@@ -422,7 +601,7 @@ const LandingPage = () => {
         id="join"
         className="observe-section"
         style={{
-          padding: '8rem 2rem',
+          padding: 'clamp(4rem, 8vw, 8rem) clamp(1rem, 4vw, 2rem)',
           background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
           textAlign: 'center',
           color: 'white',
@@ -435,7 +614,7 @@ const LandingPage = () => {
       >
         <div style={{ maxWidth: '800px', margin: '0 auto', position: 'relative', zIndex: 2 }}>
           <h2 style={{
-            fontSize: '3.5rem',
+            fontSize: 'clamp(2rem, 6vw, 3.5rem)',
             fontWeight: 800,
             marginBottom: '1.5rem'
           }}>
@@ -443,17 +622,19 @@ const LandingPage = () => {
           </h2>
           
           <p style={{
-            fontSize: '1.3rem',
+            fontSize: 'clamp(1rem, 3vw, 1.3rem)',
             marginBottom: '3rem',
-            opacity: 0.9
+            opacity: 0.9,
+            maxWidth: '600px',
+            margin: '0 auto 3rem'
           }}>
             Sign up for free and start collaborating with your team today. No credit card required.
           </p>
           
           <div style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(3, 1fr)',
-            gap: '2rem',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 200px), 1fr))',
+            gap: 'clamp(1rem, 3vw, 2rem)',
             margin: '3rem 0'
           }}>
             {[
@@ -465,10 +646,10 @@ const LandingPage = () => {
                 key={index}
                 style={{
                   textAlign: 'center',
-                  padding: '2rem',
+                  padding: 'clamp(1.5rem, 4vw, 2rem)',
                   background: 'rgba(255, 255, 255, 0.1)',
                   backdropFilter: 'blur(20px)',
-                  borderRadius: '20px',
+                  borderRadius: 'clamp(12px, 3vw, 20px)',
                   border: '1px solid rgba(255, 255, 255, 0.2)',
                   transition: 'all 0.3s ease',
                   cursor: 'pointer'
@@ -483,21 +664,27 @@ const LandingPage = () => {
                 }}
               >
                 <h3 style={{
-                  fontSize: '2.5rem',
+                  fontSize: 'clamp(1.8rem, 5vw, 2.5rem)',
                   fontWeight: 800,
                   marginBottom: '0.5rem',
                   margin: 0
                 }}>
                   {stat.number}
                 </h3>
-                <p style={{ opacity: 0.8, margin: 0 }}>{stat.label}</p>
+                <p style={{ 
+                  opacity: 0.8, 
+                  margin: 0,
+                  fontSize: 'clamp(0.9rem, 2.5vw, 1rem)'
+                }}>
+                  {stat.label}
+                </p>
               </div>
             ))}
           </div>
           
           <button style={{
-            fontSize: '1.2rem',
-            padding: '1.2rem 3rem',
+            fontSize: 'clamp(1rem, 2.5vw, 1.2rem)',
+            padding: 'clamp(1rem, 3vw, 1.2rem) clamp(2rem, 6vw, 3rem)',
             background: 'rgba(255, 255, 255, 0.2)',
             color: 'white',
             border: '2px solid white',
@@ -515,8 +702,10 @@ const LandingPage = () => {
             e.currentTarget.style.background = 'rgba(255, 255, 255, 0.2)';
             e.currentTarget.style.color = 'white';
             e.currentTarget.style.transform = 'translateY(0) scale(1)';
-          }}><Link to="/register">
-            Sign Up Now
+          }}
+          >
+            <Link to="/register" style={{ textDecoration: 'none', color: 'inherit' }}>
+              Sign Up Now
             </Link>
           </button>
         </div>
@@ -527,7 +716,7 @@ const LandingPage = () => {
         id="footer"
         className="observe-section"
         style={{
-          padding: '4rem 2rem 2rem',
+          padding: 'clamp(2rem, 6vw, 4rem) clamp(1rem, 4vw, 2rem) clamp(1rem, 3vw, 2rem)',
           background: 'linear-gradient(135deg, #1e293b 0%, #334155 100%)',
           color: 'white',
           transform: isVisible.footer ? 'translateY(0)' : 'translateY(50px)',
@@ -537,14 +726,14 @@ const LandingPage = () => {
       >
         <div style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-          gap: '3rem',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 250px), 1fr))',
+          gap: 'clamp(2rem, 5vw, 3rem)',
           maxWidth: '1200px',
           margin: '0 auto 3rem'
         }}>
           <div>
             <div style={{
-              fontSize: '1.8rem',
+              fontSize: 'clamp(1.4rem, 4vw, 1.8rem)',
               fontWeight: 800,
               background: 'linear-gradient(45deg, #667eea, #764ba2)',
               WebkitBackgroundClip: 'text',
@@ -554,7 +743,13 @@ const LandingPage = () => {
             }}>
               ConnectWise
             </div>
-            <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
+            <div style={{ 
+              display: 'flex', 
+              gap: '1rem', 
+              marginTop: '1rem',
+              flexWrap: 'wrap',
+              justifyContent: 'flex-start'
+            }}>
               {[
                 { icon: <FaFacebookF/>, label: 'Facebook', url: 'https://www.facebook.com/' },
                 { icon: <FaSquareXTwitter/>, label: 'Twitter', url: 'https://x.com/Sp_rajjput' },
@@ -564,10 +759,10 @@ const LandingPage = () => {
               ].map((social, index) => (
                 <Link
                   key={index}
-                  to={social.url} // Use the specific URL here
+                  to={social.url}
                   style={{
-                    width: '40px',
-                    height: '40px',
+                    width: 'clamp(35px, 8vw, 40px)',
+                    height: 'clamp(35px, 8vw, 40px)',
                     background: 'rgba(255, 255, 255, 0.1)',
                     borderRadius: '10px',
                     display: 'flex',
@@ -575,7 +770,8 @@ const LandingPage = () => {
                     justifyContent: 'center',
                     transition: 'all 0.3s ease',
                     textDecoration: 'none',
-                    fontSize: '1.2rem'
+                    fontSize: 'clamp(1rem, 2.5vw, 1.2rem)',
+                    color: 'white'
                   }}
                   onMouseEnter={(e) => {
                     e.currentTarget.style.background = 'rgba(255, 255, 255, 0.2)';
@@ -594,7 +790,7 @@ const LandingPage = () => {
           
           <div>
             <h4 style={{
-              fontSize: '1.2rem',
+              fontSize: 'clamp(1rem, 2.5vw, 1.2rem)',
               fontWeight: 700,
               marginBottom: '1.5rem',
               color: 'white'
@@ -609,7 +805,8 @@ const LandingPage = () => {
                     style={{
                       color: 'rgba(255, 255, 255, 0.7)',
                       textDecoration: 'none',
-                      transition: 'color 0.3s ease'
+                      transition: 'color 0.3s ease',
+                      fontSize: 'clamp(0.9rem, 2vw, 1rem)'
                     }}
                     onMouseEnter={(e) => {
                       e.currentTarget.style.color = 'white';
@@ -627,7 +824,7 @@ const LandingPage = () => {
           
           <div>
             <h4 style={{
-              fontSize: '1.2rem',
+              fontSize: 'clamp(1rem, 2.5vw, 1.2rem)',
               fontWeight: 700,
               marginBottom: '1.5rem',
               color: 'white'
@@ -642,7 +839,8 @@ const LandingPage = () => {
                     style={{
                       color: 'rgba(255, 255, 255, 0.7)',
                       textDecoration: 'none',
-                      transition: 'color 0.3s ease'
+                      transition: 'color 0.3s ease',
+                      fontSize: 'clamp(0.9rem, 2vw, 1rem)'
                     }}
                     onMouseEnter={(e) => {
                       e.currentTarget.style.color = 'white';
@@ -660,7 +858,7 @@ const LandingPage = () => {
           
           <div>
             <h4 style={{
-              fontSize: '1.2rem',
+              fontSize: 'clamp(1rem, 2.5vw, 1.2rem)',
               fontWeight: 700,
               marginBottom: '1.5rem',
               color: 'white'
@@ -675,7 +873,8 @@ const LandingPage = () => {
                     style={{
                       color: 'rgba(255, 255, 255, 0.7)',
                       textDecoration: 'none',
-                      transition: 'color 0.3s ease'
+                      transition: 'color 0.3s ease',
+                      fontSize: 'clamp(0.9rem, 2vw, 1rem)'
                     }}
                     onMouseEnter={(e) => {
                       e.currentTarget.style.color = 'white';
@@ -698,20 +897,54 @@ const LandingPage = () => {
           borderTop: '1px solid rgba(255, 255, 255, 0.1)',
           color: 'rgba(255, 255, 255, 0.7)'
         }}>
-          <p style={{ margin: 0 }}>
+          <p style={{ 
+            margin: 0,
+            fontSize: 'clamp(0.8rem, 2vw, 1rem)'
+          }}>
             &copy; 2024 ConnectWise. All rights reserved.
           </p>
         </div>
       </footer>
 
-      {/* CSS for Dashboard Mockup */}
+      {/* CSS for Dashboard Mockup and Responsive Design */}
       <style>{`
+        /* Mobile Menu Styles */
+        @media (max-width: 768px) {
+          .desktop-nav,
+          .desktop-auth {
+            display: none !important;
+          }
+          
+          .mobile-menu-btn {
+            display: block !important;
+          }
+        }
+
+        @media (min-width: 769px) {
+          .mobile-menu-btn {
+            display: none !important;
+          }
+        }
+
+        /* Animation for mobile menu */
+        @keyframes slideDown {
+          0% {
+            opacity: 0;
+            transform: translateY(-20px);
+          }
+          100% {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
+        /* Dashboard Mockup Styles */
         .dashboard-mockup {
           width: 100%;
           height: 100%;
           background: linear-gradient(145deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05));
           border-radius: 15px;
-          padding: 1.5rem;
+          padding: clamp(1rem, 3vw, 1.5rem);
           display: flex;
           flex-direction: column;
           gap: 1rem;
@@ -724,7 +957,7 @@ const LandingPage = () => {
         }
 
         .header-item {
-          height: 40px;
+          height: clamp(25px, 6vw, 40px);
           background: rgba(255,255,255,0.2);
           border-radius: 8px;
           flex: 1;
@@ -755,14 +988,14 @@ const LandingPage = () => {
         }
 
         .sidebar {
-          width: 200px;
+          width: clamp(120px, 25%, 200px);
           display: flex;
           flex-direction: column;
           gap: 0.75rem;
         }
 
         .sidebar-item {
-          height: 50px;
+          height: clamp(30px, 8vw, 50px);
           background: rgba(255,255,255,0.15);
           border-radius: 8px;
           position: relative;
@@ -781,7 +1014,7 @@ const LandingPage = () => {
         }
 
         .chart-area {
-          height: 200px;
+          height: clamp(120px, 30vw, 200px);
           background: rgba(255,255,255,0.1);
           border-radius: 12px;
           padding: 1rem;
@@ -816,6 +1049,7 @@ const LandingPage = () => {
           border-radius: 10px;
           position: relative;
           overflow: hidden;
+          min-height: clamp(40px, 10vw, 60px);
         }
 
         .content-card::before {
@@ -828,6 +1062,7 @@ const LandingPage = () => {
           background: linear-gradient(45deg, #667eea, #764ba2);
         }
 
+        /* Responsive Dashboard Adjustments */
         @media (max-width: 768px) {
           .mockup-content {
             flex-direction: column;
@@ -837,10 +1072,69 @@ const LandingPage = () => {
             width: 100%;
             flex-direction: row;
             overflow-x: auto;
+            gap: 0.5rem;
+          }
+          
+          .sidebar-item {
+            min-width: 60px;
+            height: 40px;
           }
           
           .content-cards {
             grid-template-columns: 1fr;
+          }
+
+          .chart-area {
+            height: 150px;
+          }
+        }
+
+        @media (max-width: 480px) {
+          .chart-area {
+            height: 120px;
+            padding: 0.5rem;
+          }
+          
+          .dashboard-mockup {
+            padding: 0.75rem;
+          }
+          
+          .content-card {
+            min-height: 50px;
+          }
+        }
+
+        /* Additional responsive utilities */
+        .observe-section {
+          scroll-margin-top: 80px;
+        }
+
+        /* Smooth scrolling for anchor links */
+        html {
+          scroll-behavior: smooth;
+        }
+
+        /* Prevent horizontal overflow */
+        * {
+          box-sizing: border-box;
+        }
+
+        body {
+          overflow-x: hidden;
+        }
+
+        /* Fix for mobile menu overlay */
+        @media (max-width: 768px) {
+          .mobile-menu {
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+          }
+        }
+
+        /* Improve touch targets for mobile */
+        @media (max-width: 768px) {
+          button, a {
+            min-height: 44px;
+            min-width: 44px;
           }
         }
       `}</style>

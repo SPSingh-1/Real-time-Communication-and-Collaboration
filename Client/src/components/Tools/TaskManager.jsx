@@ -233,24 +233,24 @@ const TaskManager = () => {
         <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 relative overflow-hidden">
             {/* Animated 3D Background Elements */}
             <div className="absolute inset-0 overflow-hidden">
-                {/* Floating geometric shapes */}
-                <div className="absolute top-10 left-10 w-20 h-20 bg-gradient-to-r from-cyan-400 to-blue-500 rounded-lg opacity-20 animate-spin-slow transform-gpu"></div>
-                <div className="absolute top-40 right-20 w-16 h-16 bg-gradient-to-r from-purple-400 to-pink-500 rounded-full opacity-30 animate-bounce-slow transform-gpu"></div>
-                <div className="absolute bottom-20 left-1/4 w-12 h-12 bg-gradient-to-r from-emerald-400 to-teal-500 rounded-lg opacity-25 animate-pulse transform-gpu"></div>
-                <div className="absolute top-1/2 right-10 w-24 h-24 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full opacity-20 animate-ping transform-gpu"></div>
+                {/* Floating geometric shapes - responsive sizing */}
+                <div className="absolute top-10 left-2 sm:left-10 w-12 h-12 sm:w-20 sm:h-20 bg-gradient-to-r from-cyan-400 to-blue-500 rounded-lg opacity-20 animate-spin-slow transform-gpu"></div>
+                <div className="absolute top-20 right-4 sm:right-20 w-8 h-8 sm:w-16 sm:h-16 bg-gradient-to-r from-purple-400 to-pink-500 rounded-full opacity-30 animate-bounce-slow transform-gpu"></div>
+                <div className="absolute bottom-20 left-1/4 w-6 h-6 sm:w-12 sm:h-12 bg-gradient-to-r from-emerald-400 to-teal-500 rounded-lg opacity-25 animate-pulse transform-gpu"></div>
+                <div className="absolute top-1/2 right-2 sm:right-10 w-12 h-12 sm:w-24 sm:h-24 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full opacity-20 animate-ping transform-gpu"></div>
                 
-                {/* Large background orbs */}
-                <div className="absolute -top-40 -left-40 w-96 h-96 bg-gradient-to-br from-cyan-500/10 to-blue-500/10 rounded-full blur-3xl animate-pulse transform-gpu"></div>
-                <div className="absolute -bottom-40 -right-40 w-96 h-96 bg-gradient-to-br from-purple-500/10 to-pink-500/10 rounded-full blur-3xl animate-pulse delay-1000 transform-gpu"></div>
-                <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-80 h-80 bg-gradient-to-br from-emerald-500/10 to-teal-500/10 rounded-full blur-3xl animate-pulse delay-500 transform-gpu"></div>
+                {/* Large background orbs - hidden on mobile for performance */}
+                <div className="hidden sm:block absolute -top-40 -left-40 w-96 h-96 bg-gradient-to-br from-cyan-500/10 to-blue-500/10 rounded-full blur-3xl animate-pulse transform-gpu"></div>
+                <div className="hidden sm:block absolute -bottom-40 -right-40 w-96 h-96 bg-gradient-to-br from-purple-500/10 to-pink-500/10 rounded-full blur-3xl animate-pulse delay-1000 transform-gpu"></div>
+                <div className="hidden lg:block absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-80 h-80 bg-gradient-to-br from-emerald-500/10 to-teal-500/10 rounded-full blur-3xl animate-pulse delay-500 transform-gpu"></div>
             </div>
 
-            {/* Floating particles */}
+            {/* Floating particles - reduced count on mobile */}
             <div className="absolute inset-0 pointer-events-none">
-                {[...Array(20)].map((_, i) => (
+                {[...Array(window.innerWidth < 768 ? 10 : 20)].map((_, i) => (
                     <div
                         key={i}
-                        className="absolute w-2 h-2 bg-white/40 rounded-full animate-float-3d transform-gpu"
+                        className="absolute w-1 h-1 sm:w-2 sm:h-2 bg-white/40 rounded-full animate-float-3d transform-gpu"
                         style={{
                             left: `${Math.random() * 100}%`,
                             top: `${Math.random() * 100}%`,
@@ -261,48 +261,48 @@ const TaskManager = () => {
                 ))}
             </div>
 
-            <div className="relative z-10 p-6 max-w-6xl mx-auto">
-                {/* 3D Container with perspective */}
+            <div className="relative z-10 p-3 sm:p-4 lg:p-6 max-w-7xl mx-auto">
+                {/* 3D Container with perspective - responsive padding and border radius */}
                 <div 
-                    className="bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-xl rounded-3xl border border-white/20 shadow-2xl mb-6 transform-gpu transition-all duration-1000 hover:scale-[1.02] hover:rotate-x-2"
+                    className="bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-xl rounded-2xl lg:rounded-3xl border border-white/20 shadow-2xl mb-4 lg:mb-6 transform-gpu transition-all duration-1000 hover:scale-[1.01] lg:hover:scale-[1.02] hover:rotate-x-2"
                     style={{
                         transformStyle: 'preserve-3d',
                         perspective: '1000px'
                     }}
                 >
                     {/* Glowing border effect */}
-                    <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/20 via-purple-500/20 to-pink-500/20 rounded-3xl blur-xl animate-pulse-glow"></div>
+                    <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/20 via-purple-500/20 to-pink-500/20 rounded-2xl lg:rounded-3xl blur-xl animate-pulse-glow"></div>
                     
-                    <div className="relative z-10 p-6">
-                        {/* Enhanced 3D Header with Role Information */}
-                        <div className="mb-6 transform-gpu transition-all duration-700 hover:translate-z-4">
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <h2 className="text-4xl font-black bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400 text-transparent bg-clip-text mb-2 animate-text-shimmer">
+                    <div className="relative z-10 p-4 sm:p-6">
+                        {/* Enhanced 3D Header with Role Information - responsive layout */}
+                        <div className="mb-4 lg:mb-6 transform-gpu transition-all duration-700 hover:translate-z-4">
+                            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                                <div className="text-center sm:text-left">
+                                    <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400 text-transparent bg-clip-text mb-2 animate-text-shimmer">
                                         🚀 Task Manager
                                     </h2>
-                                    <div className="h-1 w-32 bg-gradient-to-r from-cyan-400 to-purple-400 rounded-full animate-width-expand"></div>
+                                    <div className="h-1 w-20 sm:w-24 lg:w-32 bg-gradient-to-r from-cyan-400 to-purple-400 rounded-full animate-width-expand mx-auto sm:mx-0"></div>
                                 </div>
                                 
-                                {/* Role Badge */}
-                                <div className="flex items-center space-x-4">
-                                    <div className="text-right">
-                                        <div className="text-sm text-white/60">Welcome back,</div>
-                                        <div className="text-lg font-bold text-white/90">{currentUser.name}</div>
+                                {/* Role Badge - responsive sizing */}
+                                <div className="flex items-center justify-center sm:justify-end space-x-3 lg:space-x-4">
+                                    <div className="text-center sm:text-right">
+                                        <div className="text-xs sm:text-sm text-white/60">Welcome back,</div>
+                                        <div className="text-sm sm:text-lg font-bold text-white/90 truncate max-w-32 sm:max-w-none">{currentUser.name}</div>
                                     </div>
-                                    <div className={`px-4 py-2 rounded-xl bg-gradient-to-r ${roleInfo.color} text-white font-bold shadow-lg transform-gpu transition-all duration-500 hover:scale-110 hover:rotate-y-6`}>
+                                    <div className={`px-3 py-2 lg:px-4 lg:py-2 rounded-xl bg-gradient-to-r ${roleInfo.color} text-white font-bold shadow-lg transform-gpu transition-all duration-500 hover:scale-110 hover:rotate-y-6`}>
                                         <div className="flex items-center space-x-2">
-                                            <span className="text-lg">{roleInfo.icon}</span>
-                                            <span>{roleInfo.label} Mode</span>
+                                            <span className="text-base lg:text-lg">{roleInfo.icon}</span>
+                                            <span className="text-xs sm:text-sm lg:text-base">{roleInfo.label} Mode</span>
                                         </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
 
-                        {/* Role-based Information Panel */}
-                        <div className="mb-6 p-4 bg-gradient-to-r from-white/10 to-white/5 rounded-2xl border border-white/20 transform-gpu transition-all duration-500 hover:scale-105">
-                            <div className="text-sm text-white/70">
+                        {/* Role-based Information Panel - responsive text */}
+                        <div className="mb-4 lg:mb-6 p-3 lg:p-4 bg-gradient-to-r from-white/10 to-white/5 rounded-xl lg:rounded-2xl border border-white/20 transform-gpu transition-all duration-500 hover:scale-105">
+                            <div className="text-xs sm:text-sm text-white/70">
                                 {currentUser.role === 'single' && (
                                     <div className="flex items-center space-x-2">
                                         <span>📝</span>
@@ -324,39 +324,40 @@ const TaskManager = () => {
                             </div>
                         </div>
 
-                        {/* 3D Navigation Buttons */}
-                        <div className="flex justify-end mb-6">
+                        {/* 3D Navigation Buttons - responsive positioning */}
+                        <div className="flex justify-center sm:justify-end mb-4 lg:mb-6">
                             {currentView === 'list' && (
                                 <button
                                     onClick={handleAddTaskClick}
-                                    className="group relative px-8 py-4 bg-gradient-to-r from-emerald-500 to-teal-500 text-white rounded-2xl shadow-2xl hover:shadow-emerald-500/50 transform-gpu transition-all duration-500 hover:scale-110 hover:rotate-y-12 focus:outline-none focus:ring-4 focus:ring-emerald-500/50"
+                                    className="group relative px-4 py-3 lg:px-8 lg:py-4 bg-gradient-to-r from-emerald-500 to-teal-500 text-white rounded-xl lg:rounded-2xl shadow-2xl hover:shadow-emerald-500/50 transform-gpu transition-all duration-500 hover:scale-110 hover:rotate-y-12 focus:outline-none focus:ring-4 focus:ring-emerald-500/50"
                                     style={{ transformStyle: 'preserve-3d' }}
                                 >
-                                    <div className="absolute inset-0 bg-gradient-to-r from-emerald-600 to-teal-600 rounded-2xl transform translate-z-[-4px] group-hover:translate-z-[-8px] transition-transform duration-500"></div>
+                                    <div className="absolute inset-0 bg-gradient-to-r from-emerald-600 to-teal-600 rounded-xl lg:rounded-2xl transform translate-z-[-4px] group-hover:translate-z-[-8px] transition-transform duration-500"></div>
                                     <div className="relative z-10 font-bold flex items-center space-x-2">
-                                        <span className="text-xl">✨</span>
-                                        <span>Add New {roleInfo.label} Task</span>
+                                        <span className="text-lg lg:text-xl">✨</span>
+                                        <span className="text-sm lg:text-base">Add New {roleInfo.label} Task</span>
                                     </div>
-                                    <div className="absolute inset-0 bg-white/20 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                                    <div className="absolute inset-0 bg-white/20 rounded-xl lg:rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                                 </button>
                             )}
                             
                             {currentView === 'form' && (
                                 <button
                                     onClick={handleBackToListClick}
-                                    className="group relative px-8 py-4 bg-gradient-to-r from-gray-600 to-gray-700 text-white rounded-2xl shadow-2xl hover:shadow-gray-500/50 transform-gpu transition-all duration-500 hover:scale-110 hover:rotate-y-12 focus:outline-none focus:ring-4 focus:ring-gray-500/50"
+                                    className="group relative px-4 py-3 lg:px-8 lg:py-4 bg-gradient-to-r from-gray-600 to-gray-700 text-white rounded-xl lg:rounded-2xl shadow-2xl hover:shadow-gray-500/50 transform-gpu transition-all duration-500 hover:scale-110 hover:rotate-y-12 focus:outline-none focus:ring-4 focus:ring-gray-500/50"
                                     style={{ transformStyle: 'preserve-3d' }}
                                 >
-                                    <div className="absolute inset-0 bg-gradient-to-r from-gray-700 to-gray-800 rounded-2xl transform translate-z-[-4px] group-hover:translate-z-[-8px] transition-transform duration-500"></div>
+                                    <div className="absolute inset-0 bg-gradient-to-r from-gray-700 to-gray-800 rounded-xl lg:rounded-2xl transform translate-z-[-4px] group-hover:translate-z-[-8px] transition-transform duration-500"></div>
                                     <div className="relative z-10 font-bold flex items-center space-x-2">
-                                        <span className="text-xl">⬅️</span>
-                                        <span>Back to Task List</span>
+                                        <span className="text-lg lg:text-xl">⬅️</span>
+                                        <span className="text-sm lg:text-base">Back to Task List</span>
                                     </div>
-                                    <div className="absolute inset-0 bg-white/20 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                                    <div className="absolute inset-0 bg-white/20 rounded-xl lg:rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                                 </button>
                             )}
                         </div>
-                        {/* 3D Content Container with transition effects */}
+                        
+                        {/* 3D Content Container with transition effects - responsive */}
                         <div 
                             className={`transform-gpu transition-all duration-1000 ${
                                 currentView === 'form' 
@@ -404,7 +405,7 @@ const TaskManager = () => {
                         opacity: 0.3; 
                     }
                     50% { 
-                        transform: translateY(-30px) rotateX(180deg) scale(1.1); 
+                        transform: translateY(-20px) rotateX(180deg) scale(1.1); 
                         opacity: 0.6; 
                     }
                 }
@@ -414,15 +415,15 @@ const TaskManager = () => {
                         opacity: 0.4; 
                     }
                     25% { 
-                        transform: translateY(-20px) translateX(10px) rotateZ(90deg) rotateY(90deg); 
+                        transform: translateY(-10px) translateX(5px) rotateZ(90deg) rotateY(90deg); 
                         opacity: 0.8; 
                     }
                     50% { 
-                        transform: translateY(-40px) translateX(0px) rotateZ(180deg) rotateY(180deg); 
+                        transform: translateY(-20px) translateX(0px) rotateZ(180deg) rotateY(180deg); 
                         opacity: 1; 
                     }
                     75% { 
-                        transform: translateY(-20px) translateX(-10px) rotateZ(270deg) rotateY(270deg); 
+                        transform: translateY(-10px) translateX(-5px) rotateZ(270deg) rotateY(270deg); 
                         opacity: 0.8; 
                     }
                 }
@@ -436,11 +437,23 @@ const TaskManager = () => {
                 }
                 @keyframes width-expand {
                     0% { width: 0; opacity: 0; }
-                    100% { width: 8rem; opacity: 1; }
+                    100% { width: 5rem; opacity: 1; }
+                }
+                @media (min-width: 640px) {
+                    @keyframes width-expand {
+                        0% { width: 0; opacity: 0; }
+                        100% { width: 6rem; opacity: 1; }
+                    }
+                }
+                @media (min-width: 1024px) {
+                    @keyframes width-expand {
+                        0% { width: 0; opacity: 0; }
+                        100% { width: 8rem; opacity: 1; }
+                    }
                 }
                 @keyframes slide-in-right {
                     from { 
-                        transform: translateX(100%) rotateY(90deg) scale(0.8); 
+                        transform: translateX(50%) rotateY(45deg) scale(0.9); 
                         opacity: 0; 
                     }
                     to { 
@@ -450,7 +463,7 @@ const TaskManager = () => {
                 }
                 @keyframes slide-in-left {
                     from { 
-                        transform: translateX(-100%) rotateY(-90deg) scale(0.8); 
+                        transform: translateX(-50%) rotateY(-45deg) scale(0.9); 
                         opacity: 0; 
                     }
                     to { 
@@ -505,6 +518,25 @@ const TaskManager = () => {
                 }
                 .hover\\:rotate-x-2:hover {
                     transform: rotateX(2deg);
+                }
+                
+                /* Mobile optimizations */
+                @media (max-width: 640px) {
+                    .hover\\:scale-110:hover,
+                    .hover\\:scale-105:hover,
+                    .hover\\:scale-\\[1\\.01\\]:hover,
+                    .hover\\:scale-\\[1\\.02\\]:hover {
+                        transform: scale(1.02);
+                    }
+                    
+                    .animate-bounce-slow,
+                    .animate-float-3d {
+                        animation-duration: 8s;
+                    }
+                    
+                    .animate-spin-slow {
+                        animation-duration: 12s;
+                    }
                 }
             `}</style>
         </div>

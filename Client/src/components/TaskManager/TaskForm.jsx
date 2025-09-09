@@ -3,7 +3,7 @@ import PropTypes from 'prop-types'; // Import PropTypes for type checking
 
 // Reusable Input Field Component with 3D styling
 const InputField = ({ label, name, type = 'text', value, onChange, placeholder, options = [], multiple = false, disabled = false, required = false }) => {
-    const commonClasses = "mt-2 block w-full p-4 border-2 border-white/20 rounded-2xl shadow-2xl focus:ring-4 focus:ring-cyan-500/50 focus:border-cyan-400 sm:text-sm bg-white/10 backdrop-blur-md text-white placeholder-white/60 transform-gpu transition-all duration-500 hover:scale-105 hover:shadow-cyan-500/25 focus:scale-105";
+    const commonClasses = "mt-2 block w-full p-3 lg:p-4 border-2 border-white/20 rounded-xl lg:rounded-2xl shadow-2xl focus:ring-4 focus:ring-cyan-500/50 focus:border-cyan-400 text-sm lg:text-base bg-white/10 backdrop-blur-md text-white placeholder-white/60 transform-gpu transition-all duration-500 hover:scale-102 lg:hover:scale-105 hover:shadow-cyan-500/25 focus:scale-102 lg:focus:scale-105";
     const labelClasses = "block text-sm font-bold text-white/90 mb-2 transform-gpu transition-all duration-300 hover:text-cyan-400";
 
     // Handle array values for 'assignedTo' when converting to string for input 'value'
@@ -12,7 +12,7 @@ const InputField = ({ label, name, type = 'text', value, onChange, placeholder, 
     switch (type) {
         case 'select':
             return (
-                <div className="transform-gpu transition-all duration-700 hover:translate-y-[-2px]">
+                <div className="transform-gpu transition-all duration-700 hover:translate-y-[-1px] lg:hover:translate-y-[-2px]">
                     <label htmlFor={name} className={labelClasses}>
                         {label} {required && <span className="text-red-400 animate-pulse">*</span>}
                     </label>
@@ -32,15 +32,15 @@ const InputField = ({ label, name, type = 'text', value, onChange, placeholder, 
                                 <option key={option} value={option} className="bg-gray-800 text-white">{option}</option>
                             ))}
                         </select>
-                        <div className="absolute inset-y-0 right-0 flex items-center px-4 pointer-events-none">
-                            <div className="w-4 h-4 border-2 border-white/60 border-t-transparent rounded-full animate-spin opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                        <div className="absolute inset-y-0 right-0 flex items-center px-3 lg:px-4 pointer-events-none">
+                            <div className="w-3 h-3 lg:w-4 lg:h-4 border-2 border-white/60 border-t-transparent rounded-full animate-spin opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                         </div>
                     </div>
                 </div>
             );
         case 'textarea':
             return (
-                <div className="transform-gpu transition-all duration-700 hover:translate-y-[-2px]">
+                <div className="transform-gpu transition-all duration-700 hover:translate-y-[-1px] lg:hover:translate-y-[-2px]">
                     <label htmlFor={name} className={labelClasses}>
                         {label} {required && <span className="text-red-400 animate-pulse">*</span>}
                     </label>
@@ -50,19 +50,19 @@ const InputField = ({ label, name, type = 'text', value, onChange, placeholder, 
                             name={name}
                             value={displayValue}
                             onChange={onChange}
-                            rows="4"
+                            rows="3"
                             className={`${commonClasses} resize-none`}
                             placeholder={placeholder}
                             disabled={disabled}
                             required={required}
                         />
-                        <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/10 to-purple-500/10 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
+                        <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/10 to-purple-500/10 rounded-xl lg:rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
                     </div>
                 </div>
             );
         case 'date':
             return (
-                <div className="transform-gpu transition-all duration-700 hover:translate-y-[-2px]">
+                <div className="transform-gpu transition-all duration-700 hover:translate-y-[-1px] lg:hover:translate-y-[-2px]">
                     <label htmlFor={name} className={labelClasses}>
                         {label} {required && <span className="text-red-400 animate-pulse">*</span>}
                     </label>
@@ -77,13 +77,13 @@ const InputField = ({ label, name, type = 'text', value, onChange, placeholder, 
                             disabled={disabled}
                             required={required}
                         />
-                        <div className="absolute inset-0 bg-gradient-to-r from-emerald-500/10 to-teal-500/10 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
+                        <div className="absolute inset-0 bg-gradient-to-r from-emerald-500/10 to-teal-500/10 rounded-xl lg:rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
                     </div>
                 </div>
             );
         case 'number':
             return (
-                <div className="transform-gpu transition-all duration-700 hover:translate-y-[-2px]">
+                <div className="transform-gpu transition-all duration-700 hover:translate-y-[-1px] lg:hover:translate-y-[-2px]">
                     <label htmlFor={name} className={labelClasses}>
                         {label} {required && <span className="text-red-400 animate-pulse">*</span>}
                     </label>
@@ -99,13 +99,13 @@ const InputField = ({ label, name, type = 'text', value, onChange, placeholder, 
                             disabled={disabled}
                             required={required}
                         />
-                        <div className="absolute inset-0 bg-gradient-to-r from-yellow-500/10 to-orange-500/10 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
+                        <div className="absolute inset-0 bg-gradient-to-r from-yellow-500/10 to-orange-500/10 rounded-xl lg:rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
                     </div>
                 </div>
             );
         case 'checkbox':
             return (
-                <div className="flex items-center transform-gpu transition-all duration-700 hover:translate-y-[-2px] hover:scale-105">
+                <div className="flex items-center transform-gpu transition-all duration-700 hover:translate-y-[-1px] lg:hover:translate-y-[-2px] hover:scale-105">
                     <div className="relative">
                         <input
                             type="checkbox"
@@ -113,7 +113,7 @@ const InputField = ({ label, name, type = 'text', value, onChange, placeholder, 
                             name={name}
                             checked={value}
                             onChange={onChange}
-                            className="h-6 w-6 text-cyan-600 border-2 border-white/30 rounded-lg focus:ring-cyan-500 focus:ring-4 bg-white/10 backdrop-blur-md transform-gpu transition-all duration-300 hover:scale-110"
+                            className="h-5 w-5 lg:h-6 lg:w-6 text-cyan-600 border-2 border-white/30 rounded-lg focus:ring-cyan-500 focus:ring-4 bg-white/10 backdrop-blur-md transform-gpu transition-all duration-300 hover:scale-110"
                             disabled={disabled}
                         />
                         <div className="absolute inset-0 bg-cyan-500/20 rounded-lg opacity-0 hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
@@ -123,7 +123,7 @@ const InputField = ({ label, name, type = 'text', value, onChange, placeholder, 
             );
         default:
             return (
-                <div className="transform-gpu transition-all duration-700 hover:translate-y-[-2px]">
+                <div className="transform-gpu transition-all duration-700 hover:translate-y-[-1px] lg:hover:translate-y-[-2px]">
                     <label htmlFor={name} className={labelClasses}>
                         {label} {required && <span className="text-red-400 animate-pulse">*</span>}
                     </label>
@@ -139,7 +139,7 @@ const InputField = ({ label, name, type = 'text', value, onChange, placeholder, 
                             disabled={disabled}
                             required={required}
                         />
-                        <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 to-indigo-500/10 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
+                        <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 to-indigo-500/10 rounded-xl lg:rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
                     </div>
                 </div>
             );
@@ -307,25 +307,25 @@ const TaskForm = ({ task, onSave, onCancel, currentUser }) => {
     const roleInfo = getRoleInfo();
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 p-8 relative overflow-hidden">
-            {/* Enhanced 3D animated background elements */}
-            <div className="absolute inset-0 overflow-hidden">
-                {/* Geometric shapes with 3D transforms */}
-                <div className="absolute top-20 left-20 w-32 h-32 bg-gradient-to-r from-cyan-400/20 to-blue-500/20 rounded-3xl blur-xl animate-float-3d transform-gpu"></div>
-                <div className="absolute bottom-20 right-20 w-40 h-40 bg-gradient-to-r from-purple-400/20 to-pink-500/20 rounded-full blur-2xl animate-spin-3d transform-gpu"></div>
-                <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-28 h-28 bg-gradient-to-r from-emerald-400/20 to-teal-500/20 rounded-2xl blur-xl animate-bounce-3d transform-gpu"></div>
+        <div className="w-full relative overflow-hidden">
+            {/* Enhanced 3D animated background elements - mobile optimized */}
+            <div className="absolute inset-0 overflow-hidden pointer-events-none">
+                {/* Geometric shapes with responsive sizing */}
+                <div className="absolute top-5 left-2 sm:left-5 lg:left-20 w-16 h-16 sm:w-24 sm:h-24 lg:w-32 lg:h-32 bg-gradient-to-r from-cyan-400/20 to-blue-500/20 rounded-2xl lg:rounded-3xl blur-xl animate-float-3d transform-gpu"></div>
+                <div className="absolute bottom-5 right-2 sm:right-5 lg:right-20 w-20 h-20 sm:w-32 sm:h-32 lg:w-40 lg:h-40 bg-gradient-to-r from-purple-400/20 to-pink-500/20 rounded-full blur-2xl animate-spin-3d transform-gpu"></div>
+                <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-14 h-14 sm:w-20 sm:h-20 lg:w-28 lg:h-28 bg-gradient-to-r from-emerald-400/20 to-teal-500/20 rounded-xl lg:rounded-2xl blur-xl animate-bounce-3d transform-gpu"></div>
                 
-                {/* Large orbital rings */}
-                <div className="absolute top-10 right-10 w-64 h-64 border-2 border-white/10 rounded-full animate-spin-slow transform-gpu"></div>
-                <div className="absolute bottom-10 left-10 w-48 h-48 border-2 border-cyan-400/20 rounded-full animate-spin-reverse transform-gpu"></div>
+                {/* Orbital rings - hidden on small mobile */}
+                <div className="hidden sm:block absolute top-5 right-5 lg:top-10 lg:right-10 w-32 h-32 lg:w-64 lg:h-64 border-2 border-white/10 rounded-full animate-spin-slow transform-gpu"></div>
+                <div className="hidden sm:block absolute bottom-5 left-5 lg:bottom-10 lg:left-10 w-24 h-24 lg:w-48 lg:h-48 border-2 border-cyan-400/20 rounded-full animate-spin-reverse transform-gpu"></div>
             </div>
 
-            {/* Enhanced floating particles with 3D movement */}
+            {/* Enhanced floating particles with responsive count */}
             <div className="absolute inset-0 pointer-events-none">
-                {[...Array(25)].map((_, i) => (
+                {[...Array(window.innerWidth < 768 ? 8 : 15)].map((_, i) => (
                     <div
                         key={i}
-                        className="absolute w-2 h-2 bg-white/50 rounded-full animate-particle-3d transform-gpu shadow-2xl shadow-white/20"
+                        className="absolute w-1 h-1 sm:w-2 sm:h-2 bg-white/50 rounded-full animate-particle-3d transform-gpu shadow-lg sm:shadow-2xl shadow-white/20"
                         style={{
                             left: `${Math.random() * 100}%`,
                             top: `${Math.random() * 100}%`,
@@ -336,10 +336,10 @@ const TaskForm = ({ task, onSave, onCancel, currentUser }) => {
                 ))}
             </div>
 
-            <div className="max-w-6xl mx-auto relative z-10">
-                {/* Main 3D container with enhanced effects */}
+            <div className="w-full relative z-10">
+                {/* Main 3D container with enhanced effects - responsive */}
                 <div 
-                    className="bg-gradient-to-br from-white/15 to-white/5 backdrop-blur-2xl rounded-3xl border border-white/30 shadow-2xl p-8 transform-gpu transition-all duration-1000 hover:scale-[1.01] hover:rotate-x-1"
+                    className="bg-gradient-to-br from-white/15 to-white/5 backdrop-blur-2xl rounded-xl lg:rounded-3xl border border-white/30 shadow-2xl p-4 sm:p-6 lg:p-8 transform-gpu transition-all duration-1000 hover:scale-101 lg:hover:scale-[1.01] hover:rotate-x-1"
                     style={{ 
                         transformStyle: 'preserve-3d',
                         perspective: '1200px',
@@ -347,44 +347,44 @@ const TaskForm = ({ task, onSave, onCancel, currentUser }) => {
                     }}
                 >
                     {/* Enhanced glowing border */}
-                    <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/30 via-purple-500/30 to-pink-500/30 rounded-3xl blur-2xl animate-pulse-rainbow -z-10"></div>
+                    <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/30 via-purple-500/30 to-pink-500/30 rounded-xl lg:rounded-3xl blur-2xl animate-pulse-rainbow -z-10"></div>
                     
-                    {/* 3D Header with window controls and role info */}
-                    <div className="flex items-center justify-between mb-8 transform-gpu transition-all duration-700 hover:translate-z-2">
-                        <div className="flex items-center space-x-4">
-                            {/* Animated window controls */}
-                            <div className="w-4 h-4 bg-red-500 rounded-full shadow-lg shadow-red-500/50 animate-pulse transform-gpu hover:scale-125 transition-transform duration-300"></div>
-                            <div className="w-4 h-4 bg-yellow-500 rounded-full shadow-lg shadow-yellow-500/50 animate-pulse delay-200 transform-gpu hover:scale-125 transition-transform duration-300"></div>
-                            <div className="w-4 h-4 bg-green-500 rounded-full shadow-lg shadow-green-500/50 animate-pulse delay-400 transform-gpu hover:scale-125 transition-transform duration-300"></div>
+                    {/* 3D Header with window controls and role info - responsive */}
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 lg:mb-8 gap-4 transform-gpu transition-all duration-700 hover:translate-z-2">
+                        <div className="flex items-center space-x-3 lg:space-x-4 justify-center sm:justify-start">
+                            {/* Animated window controls - smaller on mobile */}
+                            <div className="w-3 h-3 lg:w-4 lg:h-4 bg-red-500 rounded-full shadow-lg shadow-red-500/50 animate-pulse transform-gpu hover:scale-125 transition-transform duration-300"></div>
+                            <div className="w-3 h-3 lg:w-4 lg:h-4 bg-yellow-500 rounded-full shadow-lg shadow-yellow-500/50 animate-pulse delay-200 transform-gpu hover:scale-125 transition-transform duration-300"></div>
+                            <div className="w-3 h-3 lg:w-4 lg:h-4 bg-green-500 rounded-full shadow-lg shadow-green-500/50 animate-pulse delay-400 transform-gpu hover:scale-125 transition-transform duration-300"></div>
                         </div>
                         <div className="text-center">
-                            <h3 className="text-4xl font-black bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400 text-transparent bg-clip-text animate-text-glow">
+                            <h3 className="text-2xl sm:text-3xl lg:text-4xl font-black bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400 text-transparent bg-clip-text animate-text-glow">
                                 {isEditMode ? '✏️ Edit Task' : '➕ Add New Task'}
                             </h3>
-                            {/* Role indicator */}
-                            <div className={`mt-2 inline-flex items-center px-3 py-1 rounded-full bg-gradient-to-r ${roleInfo.color} text-white text-sm font-medium shadow-lg`}>
+                            {/* Role indicator - responsive */}
+                            <div className={`mt-2 inline-flex items-center px-2 py-1 lg:px-3 lg:py-1 rounded-full bg-gradient-to-r ${roleInfo.color} text-white text-xs sm:text-sm font-medium shadow-lg`}>
                                 <span className="mr-1">{roleInfo.icon}</span>
                                 <span>{roleInfo.label} Mode</span>
                             </div>
                         </div>
                     </div>
 
-                    {/* Role Information Panel */}
+                    {/* Role Information Panel - responsive */}
                     {!isEditMode && (
-                        <div className="mb-8 p-4 bg-gradient-to-r from-white/10 to-white/5 rounded-2xl border border-white/20 transform-gpu transition-all duration-500 hover:scale-105">
-                            <div className="flex items-center space-x-3">
-                                <div className="text-2xl">{roleInfo.icon}</div>
-                                <div>
-                                    <div className="text-white/90 font-medium">Creating {roleInfo.label} Task</div>
-                                    <div className="text-white/70 text-sm">{roleInfo.description}</div>
+                        <div className="mb-4 lg:mb-8 p-3 lg:p-4 bg-gradient-to-r from-white/10 to-white/5 rounded-xl lg:rounded-2xl border border-white/20 transform-gpu transition-all duration-500 hover:scale-105">
+                            <div className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-3">
+                                <div className="text-xl lg:text-2xl text-center sm:text-left">{roleInfo.icon}</div>
+                                <div className="text-center sm:text-left">
+                                    <div className="text-white/90 font-medium text-sm lg:text-base">Creating {roleInfo.label} Task</div>
+                                    <div className="text-white/70 text-xs lg:text-sm">{roleInfo.description}</div>
                                 </div>
                             </div>
                         </div>
                     )}
 
-                    {/* Enhanced 3D form */}
-                    <form onSubmit={handleSubmit} className="space-y-8">
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    {/* Enhanced 3D form - responsive grid */}
+                    <form onSubmit={handleSubmit} className="space-y-4 lg:space-y-8">
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-8">
                             <InputField
                                 label="🎯 Task Title"
                                 name="taskTitle"
@@ -463,14 +463,14 @@ const TaskForm = ({ task, onSave, onCancel, currentUser }) => {
                             required={true}
                         />
 
-                        {/* Role-based scope information */}
+                        {/* Role-based scope information - responsive */}
                         {!isEditMode && (
-                            <div className="p-4 bg-gradient-to-r from-gray-800/30 to-gray-900/30 rounded-2xl border border-white/10">
-                                <div className="flex items-center space-x-2 text-white/80">
-                                    <span className="text-lg">ℹ️</span>
-                                    <div>
-                                        <div className="font-medium">Task Scope: {roleInfo.label}</div>
-                                        <div className="text-sm text-white/60">
+                            <div className="p-3 lg:p-4 bg-gradient-to-r from-gray-800/30 to-gray-900/30 rounded-xl lg:rounded-2xl border border-white/10">
+                                <div className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-2 text-white/80">
+                                    <span className="text-base lg:text-lg text-center sm:text-left">ℹ️</span>
+                                    <div className="text-center sm:text-left">
+                                        <div className="font-medium text-sm lg:text-base">Task Scope: {roleInfo.label}</div>
+                                        <div className="text-xs lg:text-sm text-white/60">
                                             {currentUser.role === 'single' && 'Only you will be able to see and edit this task.'}
                                             {currentUser.role === 'team' && `All members of your team will be able to see and edit this task.`}
                                             {currentUser.role === 'global' && 'All users in your organization will be able to see and edit this task.'}
@@ -480,42 +480,42 @@ const TaskForm = ({ task, onSave, onCancel, currentUser }) => {
                             </div>
                         )}
 
-                        {/* Enhanced 3D action buttons */}
-                        <div className="flex justify-end space-x-8 mt-12">
+                        {/* Enhanced 3D action buttons - responsive layout */}
+                        <div className="flex flex-col sm:flex-row justify-end space-y-4 sm:space-y-0 sm:space-x-4 lg:space-x-8 mt-8 lg:mt-12">
                             <button
                                 type="button"
                                 onClick={onCancel}
-                                className="group relative px-10 py-5 bg-gradient-to-r from-gray-600 to-gray-700 text-white font-bold rounded-3xl
+                                className="group relative w-full sm:w-auto px-6 py-3 lg:px-10 lg:py-5 bg-gradient-to-r from-gray-600 to-gray-700 text-white font-bold rounded-2xl lg:rounded-3xl
                                          shadow-2xl hover:shadow-gray-500/50 transform-gpu transition-all duration-500 
-                                         hover:scale-110 hover:rotate-y-6 focus:outline-none focus:ring-4 focus:ring-gray-500/50
+                                         hover:scale-105 lg:hover:scale-110 hover:rotate-y-6 focus:outline-none focus:ring-4 focus:ring-gray-500/50
                                          overflow-hidden"
                                 style={{ transformStyle: 'preserve-3d' }}
                             >
-                                <div className="absolute inset-0 bg-gradient-to-r from-gray-700 to-gray-800 rounded-3xl transform translate-z-[-6px] group-hover:translate-z-[-12px] transition-transform duration-500"></div>
-                                <div className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-3xl"></div>
-                                <div className="relative z-10 flex items-center space-x-2">
-                                    <span className="text-2xl animate-bounce">❌</span>
-                                    <span>Cancel</span>
+                                <div className="absolute inset-0 bg-gradient-to-r from-gray-700 to-gray-800 rounded-2xl lg:rounded-3xl transform translate-z-[-6px] group-hover:translate-z-[-12px] transition-transform duration-500"></div>
+                                <div className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-2xl lg:rounded-3xl"></div>
+                                <div className="relative z-10 flex items-center justify-center space-x-2">
+                                    <span className="text-lg lg:text-2xl animate-bounce">❌</span>
+                                    <span className="text-sm lg:text-base">Cancel</span>
                                 </div>
                             </button>
                             <button
                                 type="submit"
-                                className={`group relative px-10 py-5 font-bold rounded-3xl transform-gpu transition-all duration-500 
-                                         hover:scale-110 hover:rotate-y-6 shadow-2xl overflow-hidden focus:outline-none focus:ring-4
+                                className={`group relative w-full sm:w-auto px-6 py-3 lg:px-10 lg:py-5 font-bold rounded-2xl lg:rounded-3xl transform-gpu transition-all duration-500 
+                                         hover:scale-105 lg:hover:scale-110 hover:rotate-y-6 shadow-2xl overflow-hidden focus:outline-none focus:ring-4
                                          ${isEditMode ? 
                                            'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 hover:shadow-blue-500/50 focus:ring-blue-500/50' : 
                                            `bg-gradient-to-r ${roleInfo.color} hover:shadow-emerald-500/50 focus:ring-emerald-500/50`
                                          } text-white`}
                                 style={{ transformStyle: 'preserve-3d' }}
                             >
-                                <div className={`absolute inset-0 rounded-3xl transform translate-z-[-6px] group-hover:translate-z-[-12px] transition-transform duration-500
+                                <div className={`absolute inset-0 rounded-2xl lg:rounded-3xl transform translate-z-[-6px] group-hover:translate-z-[-12px] transition-transform duration-500
                                     ${isEditMode ? 'bg-gradient-to-r from-blue-700 to-indigo-700' : `bg-gradient-to-r ${roleInfo.color.replace('500', '600')}`}`}></div>
-                                <div className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-3xl"></div>
-                                <div className="relative z-10 flex items-center space-x-2">
-                                    <span className="text-2xl animate-pulse">
+                                <div className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-2xl lg:rounded-3xl"></div>
+                                <div className="relative z-10 flex items-center justify-center space-x-2">
+                                    <span className="text-lg lg:text-2xl animate-pulse">
                                         {isEditMode ? '💫' : roleInfo.icon}
                                     </span>
-                                    <span>
+                                    <span className="text-sm lg:text-base">
                                         {isEditMode ? 'Update Task' : `Add ${roleInfo.label} Task`}
                                     </span>
                                 </div>
@@ -531,10 +531,10 @@ const TaskForm = ({ task, onSave, onCancel, currentUser }) => {
                         transform: translateY(0px) translateX(0px) rotateX(0deg) rotateY(0deg) rotateZ(0deg); 
                     }
                     33% { 
-                        transform: translateY(-30px) translateX(20px) rotateX(120deg) rotateY(120deg) rotateZ(120deg); 
+                        transform: translateY(-20px) translateX(15px) rotateX(120deg) rotateY(120deg) rotateZ(120deg); 
                     }
                     66% { 
-                        transform: translateY(15px) translateX(-20px) rotateX(240deg) rotateY(240deg) rotateZ(240deg); 
+                        transform: translateY(10px) translateX(-15px) rotateX(240deg) rotateY(240deg) rotateZ(240deg); 
                     }
                 }
                 @keyframes spin-3d {
@@ -551,7 +551,7 @@ const TaskForm = ({ task, onSave, onCancel, currentUser }) => {
                         opacity: 0.6; 
                     }
                     50% { 
-                        transform: translateY(-40px) rotateY(180deg) scale(1.2); 
+                        transform: translateY(-30px) rotateY(180deg) scale(1.2); 
                         opacity: 1; 
                     }
                 }
@@ -569,15 +569,15 @@ const TaskForm = ({ task, onSave, onCancel, currentUser }) => {
                         opacity: 0.3; 
                     }
                     25% { 
-                        transform: translateY(-50px) translateX(30px) translateZ(20px) rotateX(90deg) rotateY(90deg); 
+                        transform: translateY(-25px) translateX(15px) translateZ(10px) rotateX(90deg) rotateY(90deg); 
                         opacity: 0.8; 
                     }
                     50% { 
-                        transform: translateY(-80px) translateX(0px) translateZ(40px) rotateX(180deg) rotateY(180deg); 
+                        transform: translateY(-40px) translateX(0px) translateZ(20px) rotateX(180deg) rotateY(180deg); 
                         opacity: 1; 
                     }
                     75% { 
-                        transform: translateY(-50px) translateX(-30px) translateZ(20px) rotateX(270deg) rotateY(270deg); 
+                        transform: translateY(-25px) translateX(-15px) translateZ(10px) rotateX(270deg) rotateY(270deg); 
                         opacity: 0.8; 
                     }
                 }
@@ -638,6 +638,42 @@ const TaskForm = ({ task, onSave, onCancel, currentUser }) => {
                 }
                 .group:hover .group-hover\\:translate-z-\\[-12px\\] {
                     transform: translateZ(-12px);
+                }
+                .hover\\:scale-101:hover {
+                    transform: scale(1.01);
+                }
+                .hover\\:scale-102:hover {
+                    transform: scale(1.02);
+                }
+                
+                /* Mobile optimizations */
+                @media (max-width: 640px) {
+                    .hover\\:scale-110:hover,
+                    .hover\\:scale-105:hover,
+                    .hover\\:scale-101:hover,
+                    .hover\\:scale-102:hover {
+                        transform: scale(1.02);
+                    }
+                    
+                    .animate-bounce-3d,
+                    .animate-float-3d {
+                        animation-duration: 8s;
+                    }
+                    
+                    .animate-spin-3d {
+                        animation-duration: 16s;
+                    }
+                    
+                    .animate-spin-slow {
+                        animation-duration: 25s;
+                    }
+                }
+                
+                /* Tablet optimizations */
+                @media (min-width: 641px) and (max-width: 1024px) {
+                    .hover\\:scale-110:hover {
+                        transform: scale(1.05);
+                    }
                 }
             `}</style>
         </div>
