@@ -3,7 +3,7 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 //eslint-disable-next-line
 import { motion } from "framer-motion";
-import { Users, Database, FileText, Shield, TrendingUp, Activity } from "lucide-react";
+import { Users, Database, FileText, Shield, TrendingUp, Activity, AlertTriangle } from "lucide-react";
 
 // Chart components
 import StorageBarChart from "./StorageBarChart";
@@ -31,9 +31,9 @@ const Dashboard = () => {
   const [roleStats, setRoleStats] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [debugInfo, setDebugInfo] = useState(null);
 
-
-    useEffect(() => {
+  useEffect(() => {
     if (userInfo) {
       console.log('Current user info:', userInfo);
       console.log('User teamId:', userInfo.teamId);
@@ -56,31 +56,66 @@ const Dashboard = () => {
           }
 
           console.log('Using token:', token.substring(0, 20) + '...');
-        
-        if (!token) {
-          setError('Authentication required');
-          return;
+
+        const headers = { 'auth-token': token };
+
+        try {
+          // Fetch all data in parallel with better error handling
+          const [statsRes, roleStatsRes, userRes] = await Promise.allSettled([
+            axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/dashboard/stats`, { headers }),
+            axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/dashboard/role-stats`, { headers }),
+            axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/dashboard/user-info`, { headers })
+          ]);
+
+          // Handle stats response
+          if (statsRes.status === 'fulfilled') {
+            setStats(statsRes.value.data);
+          } else {
+            console.error("Failed to fetch general stats:", statsRes.reason);
+          }
+
+          // Handle user info response
+          if (userRes.status === 'fulfilled') {
+            setUserInfo(userRes.value.data);
+            console.log('User info loaded:', userRes.value.data);
+          } else {
+            console.error("Failed to fetch user info:", userRes.reason);
+            setError('Failed to load user information');
+            return;
+          }
+
+          // Handle role stats response
+          if (roleStatsRes.status === 'fulfilled') {
+            const roleData = roleStatsRes.value.data;
+            console.log('Role stats loaded:', roleData);
+            setRoleStats(roleData);
+            
+            // Check for errors in role stats
+            if (roleData.error) {
+              console.warn('Role stats warning:', roleData.error);
+              setDebugInfo({
+                type: 'warning',
+                message: roleData.error,
+                details: roleData.debug
+              });
+            }
+          } else {
+            console.error("Failed to fetch role stats:", roleStatsRes.reason);
+            // Don't fail completely, show default stats
+            setRoleStats({
+              userDocuments: 0,
+              managedUsers: 0,
+              accessibleStorageMB: "0.00",
+              activeCollections: 0,
+              error: 'Failed to load role-specific data'
+            });
+          }
+
+          setLoading(false);
+        } catch (fetchError) {
+          console.error("Error during data fetching:", fetchError);
+          throw fetchError;
         }
-
-        // Fetch general stats
-        const statsRes = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/dashboard/stats`, {
-          headers: { 'auth-token': token }
-        });
-        
-        // Fetch role-specific stats
-        const roleStatsRes = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/dashboard/role-stats`, {
-          headers: { 'auth-token': token }
-        });
-
-        // Fetch user info
-        const userRes = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/dashboard/user-info`, {
-          headers: { 'auth-token': token }
-        });
-
-        setStats(statsRes.data);
-        setRoleStats(roleStatsRes.data);
-        setUserInfo(userRes.data);
-        setLoading(false);
       } catch (err) {
         console.error("Error fetching dashboard data:", err);
         console.error("Response data:", err.response?.data);
@@ -88,10 +123,8 @@ const Dashboard = () => {
         
         if (err.response?.status === 401) {
           setError('Session expired - please log in again');
-          // Optionally redirect to login
-          // window.location.href = '/login';
         } else {
-          setError(err.response?.data?.message || 'Failed to load dashboard');
+          setError(err.response?.data?.message || err.message || 'Failed to load dashboard');
         }
         setLoading(false);
       }
@@ -99,6 +132,37 @@ const Dashboard = () => {
     
     fetchDashboardData();
   }, []);
+
+  // Debug function to check team data
+  const fetchDebugInfo = async () => {
+    try {
+      const token = localStorage.getItem('auth-token') || 
+            localStorage.getItem('token') || 
+            localStorage.getItem('authToken');
+      
+      const response = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/dashboard/debug-team`, {
+        headers: { 'auth-token': token }
+      });
+      
+      setDebugInfo({
+        type: 'debug',
+        data: response.data
+      });
+      console.log('Debug info:', response.data);
+    } catch (err) {
+      console.error('Debug fetch error:', err);
+      setDebugInfo({
+        type: 'error',
+        message: 'Failed to fetch debug info'
+      });
+    }
+  };
+
+  useEffect(() => {
+    if (userInfo?.role === 'team' || userInfo?.role === 'global') {
+      fetchDebugInfo();
+    }
+  }, [userInfo]);
 
   // Pie chart data for storage usage
   const storageData = stats.map((s) => ({
@@ -207,6 +271,85 @@ const Dashboard = () => {
             </h1>
           </div>
           
+                    {debugInfo && debugInfo.type === 'userDocs' && (
+            <motion.div 
+              className="bg-purple-500/20 backdrop-blur-sm rounded-2xl p-4 border border-purple-500/30 mx-auto max-w-6xl"
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+            >
+              <div className="text-left">
+                <h3 className="text-purple-300 font-medium mb-3">User Documents Analysis</h3>
+                
+                {/* Summary */}
+                <div className="bg-purple-900/30 p-3 rounded-lg mb-4">
+                  <h4 className="text-purple-200 font-medium mb-2">Summary for User ID: {debugInfo.data.userId}</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <span className="text-purple-300">Total Documents Found: </span>
+                      <span className="text-white font-bold">{debugInfo.data.totalUserDocuments}</span>
+                    </div>
+                    <div>
+                      <span className="text-purple-300">Collections with Your Data: </span>
+                      <span className="text-white font-bold">{debugInfo.data.summary?.collectionsWithUserData || 0}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Collections Details */}
+                <div className="space-y-3 max-h-96 overflow-y-auto">
+                  {debugInfo.data.collections?.map((col, index) => (
+                    <div key={index} className="bg-purple-900/20 rounded-lg p-3">
+                      <div className="flex justify-between items-start mb-2">
+                        <h5 className="text-white font-medium">{col.collection}</h5>
+                        <div className="text-sm text-purple-200">
+                          Total: {col.totalDocs || 0}
+                        </div>
+                      </div>
+                      
+                      {col.queryResults && col.queryResults.length > 0 ? (
+                        <div className="space-y-1">
+                          <p className="text-green-300 text-sm font-medium">Found your documents:</p>
+                          {col.queryResults.map((qr, qIndex) => (
+                            <div key={qIndex} className="text-sm bg-green-900/20 p-2 rounded">
+                              <span className="text-green-200">Field: {qr.field}</span> - 
+                              <span className="text-white font-bold ml-1">{qr.count} documents</span>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div>
+                          <p className="text-gray-400 text-sm">No documents found for your user ID</p>
+                          {col.sampleDocs && col.sampleDocs.length > 0 && (
+                            <div className="mt-2">
+                              <p className="text-purple-300 text-xs">Sample document fields:</p>
+                              <div className="text-xs text-gray-300 bg-gray-800/20 p-1 rounded mt-1">
+                                {col.sampleDocs[0]?.fields.join(", ")}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+
+                <div className="flex justify-between items-center mt-4">
+                  <p className="text-purple-200 text-sm">
+                    {debugInfo.data.totalUserDocuments === 0 ? 
+                      "No documents found - this explains why you're seeing zeros" : 
+                      `Found ${debugInfo.data.totalUserDocuments} documents across ${debugInfo.data.summary?.collectionsWithUserData || 0} collections`
+                    }
+                  </p>
+                  <button 
+                    onClick={() => setDebugInfo(null)}
+                    className="px-4 py-2 bg-purple-600/30 hover:bg-purple-600/50 text-purple-200 rounded-lg text-sm transition-colors"
+                  >
+                    Hide User Docs Debug
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          )}
           {userInfo && (
             <motion.div 
               className="flex items-center justify-center space-x-3 bg-white/10 backdrop-blur-sm rounded-2xl px-6 py-3 border border-white/20 mx-auto w-fit"
@@ -233,26 +376,81 @@ const Dashboard = () => {
             initial="initial"
             whileInView="whileInView"
           >
+            {/* Team Activity Count (for team/global users) or Message Count (for single users) */}
             <motion.div variants={cardAnimation} className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20 hover:bg-white/15 transition-all duration-300">
               <div className="flex items-center space-x-4">
                 <div className="p-3 bg-blue-500/20 rounded-2xl">
                   <FileText className="w-6 h-6 text-blue-400" />
                 </div>
                 <div>
-                  <h3 className="text-blue-200 font-medium">Your Documents</h3>
-                  <p className="text-2xl font-bold text-white">{roleStats.userDocuments || 0}</p>
+                  <h3 className="text-blue-200 font-medium">
+                    Your Message Count
+                  </h3>
+                  <p className="text-2xl font-bold text-white">
+                    {roleStats.userDocuments || 0}
+                  </p>
                 </div>
               </div>
             </motion.div>
 
+            {/* Team Documents (for team/global users) or keep original logic for single users */}
+            <motion.div variants={cardAnimation} className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20 hover:bg-white/15 transition-all duration-300">
+              <div className="flex items-center space-x-4">
+                <div className="p-3 bg-green-500/20 rounded-2xl">
+                  <FileText className="w-6 h-6 text-green-400" />
+                </div>
+                <div>
+                  <h3 className="text-green-200 font-medium">
+                    {userInfo?.role === 'single' ? 'Active Collections' : 'Team Documents'}
+                  </h3>
+                  <p className="text-2xl font-bold text-white">
+                    {userInfo?.role === 'single' ? (roleStats.activeCollections || 0) : (roleStats.teamDocuments || 0)}
+                  </p>
+                </div>
+              </div>
+            </motion.div>
+
+            {/* Team Storage (for team/global users) or Accessible Storage (for single users) */}
+            <motion.div variants={cardAnimation} className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20 hover:bg-white/15 transition-all duration-300">
+              <div className="flex items-center space-x-4">
+                <div className="p-3 bg-purple-500/20 rounded-2xl">
+                  <Database className="w-6 h-6 text-purple-400" />
+                </div>
+                <div>
+                  <h3 className="text-purple-200 font-medium">
+                    {userInfo?.role === 'single' ? 'Accessible Storage' : 'Team Storage'}
+                  </h3>
+                  <p className="text-2xl font-bold text-white">
+                    {userInfo?.role === 'single' 
+                      ? `${roleStats.accessibleStorageMB || 0} MB`
+                      : (() => {
+                          const bytes = roleStats.teamStorage || 0;
+                          const mb = bytes / (1024 * 1024);
+                          const kb = bytes / 1024;
+                          
+                          if (mb >= 1) {
+                            return `${mb.toFixed(2)} MB`;
+                          } else if (kb >= 1) {
+                            return `${kb.toFixed(2)} KB`;
+                          } else {
+                            return `${bytes} Bytes`;
+                          }
+                        })()
+                    }
+                  </p>
+                </div>
+              </div>
+            </motion.div>
+
+            {/* Team Members (for team/global users) - always show for non-single users */}
             {userInfo?.role !== 'single' && (
               <motion.div variants={cardAnimation} className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20 hover:bg-white/15 transition-all duration-300">
                 <div className="flex items-center space-x-4">
-                  <div className="p-3 bg-green-500/20 rounded-2xl">
-                    <Users className="w-6 h-6 text-green-400" />
+                  <div className="p-3 bg-yellow-500/20 rounded-2xl">
+                    <Users className="w-6 h-6 text-yellow-400" />
                   </div>
                   <div>
-                    <h3 className="text-green-200 font-medium">
+                    <h3 className="text-yellow-200 font-medium">
                       {userInfo.role === 'global' ? 'All Users' : 'Team Members'}
                     </h3>
                     <p className="text-2xl font-bold text-white">{roleStats.managedUsers || 0}</p>
@@ -261,29 +459,20 @@ const Dashboard = () => {
               </motion.div>
             )}
 
-            <motion.div variants={cardAnimation} className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20 hover:bg-white/15 transition-all duration-300">
-              <div className="flex items-center space-x-4">
-                <div className="p-3 bg-purple-500/20 rounded-2xl">
-                  <Database className="w-6 h-6 text-purple-400" />
+            {/* For single users, show Active Collections in the 4th position */}
+            {userInfo?.role === 'single' && (
+              <motion.div variants={cardAnimation} className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20 hover:bg-white/15 transition-all duration-300">
+                <div className="flex items-center space-x-4">
+                  <div className="p-3 bg-yellow-500/20 rounded-2xl">
+                    <Activity className="w-6 h-6 text-yellow-400" />
+                  </div>
+                  <div>
+                    <h3 className="text-yellow-200 font-medium">Active Collections</h3>
+                    <p className="text-2xl font-bold text-white">{roleStats.activeCollections || 0}</p>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="text-purple-200 font-medium">Accessible Storage</h3>
-                  <p className="text-2xl font-bold text-white">{roleStats.accessibleStorageMB || 0} MB</p>
-                </div>
-              </div>
-            </motion.div>
-
-            <motion.div variants={cardAnimation} className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20 hover:bg-white/15 transition-all duration-300">
-              <div className="flex items-center space-x-4">
-                <div className="p-3 bg-yellow-500/20 rounded-2xl">
-                  <Activity className="w-6 h-6 text-yellow-400" />
-                </div>
-                <div>
-                  <h3 className="text-yellow-200 font-medium">Active Collections</h3>
-                  <p className="text-2xl font-bold text-white">{roleStats.activeCollections || 0}</p>
-                </div>
-              </div>
-            </motion.div>
+              </motion.div>
+            )}
           </motion.div>
         )}
 
