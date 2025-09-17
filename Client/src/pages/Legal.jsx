@@ -8,10 +8,12 @@ import { CiLinkedin } from "react-icons/ci";
 import { FaGithub } from "react-icons/fa";
 // eslint-disable-next-line no-unused-vars
 import { motion } from "framer-motion";
+import { Menu } from "lucide-react";
 
 const Legal = () => {
 
   const [isVisible, setIsVisible] = useState({});
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   
       useEffect(() => {
           const observer = new IntersectionObserver(
@@ -33,20 +35,261 @@ const Legal = () => {
       
           return () => observer.disconnect();
         }, []);
+
+        const navItems = [
+    { href: "#legal&policies", label: "Legal&Policies" },
+    { href: "#terms-of-service", label: "Terms-of-Service" },
+    { href: "#footer", label: "Contact" }
+  ];
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-800 text-white p-10 flex flex-col items-center">
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-800 text-white p-12 flex flex-col items-start px-4 sm:px-6 lg:px-8">
+
+      {/* Header */}
+       <header style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        zIndex: 1000,
+        background: 'linear-gradient(45deg, #667eea, #764ba2)',
+        backdropFilter: 'blur(20px)',
+        borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+        padding: '1rem 2rem',
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        transition: 'all 0.3s ease'
+      }}>
+        {/* Logo */}
+        <div style={{
+          fontSize: 'clamp(1.2rem, 4vw, 1.4rem)',
+          fontWeight: 800,
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.5rem',
+          //background: 'linear-gradient(45deg, #667eea, #764ba2)',
+          WebkitBackgroundClip: 'text',
+          WebkitTextFillColor: 'white',
+          backgroundClip: 'text',
+          color: 'white',
+          cursor: 'pointer',
+          userSelect: 'none',
+        }}>
+          <img 
+            src="/logo.png" 
+            alt="Logo" 
+            style={{ 
+              height: 'clamp(30px, 8vw, 50px)', 
+              verticalAlign: 'middle',
+              borderRadius: '30px' 
+            }} 
+          />
+          Milapp
+        </div>
+        
+        {/* Desktop Navigation */}
+        <nav style={{ 
+          display: 'flex', 
+          gap: '2rem',
+          '@media (maxWidth: 768px)': {
+            display: 'none'
+          }
+        }} className="desktop-nav">
+          {navItems.map((item, index) => (
+            <a 
+              key={index}
+              href={item.href} 
+              style={{
+                color: 'white',
+                textDecoration: 'none',
+                fontWeight: 500,
+                padding: '0.5rem 1rem',
+                borderRadius: '8px',
+                transition: 'all 0.3s ease'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = 'transparent';
+              }}
+            >
+              {item.label}
+            </a>
+          ))}
+        </nav>
+        
+        {/* Desktop Auth Buttons */}
+        <div style={{ display: 'flex', gap: '1rem' }} className="desktop-auth">
+          <button style={{
+            padding: 'clamp(0.5rem, 2vw, 0.75rem) clamp(1rem, 3vw, 1.5rem)',
+            borderRadius: '50px',
+            fontWeight: 600,
+            border: '2px solid white',
+            color: 'white',
+            background: 'transparent',
+            cursor: 'pointer',
+            transition: 'all 0.3s ease',
+            fontSize: 'clamp(0.8rem, 2vw, 1rem)'
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = 'white';
+            e.currentTarget.style.color = '#667eea';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = 'transparent';
+            e.currentTarget.style.color = 'white';
+          }}
+          >
+            <Link to="/register" style={{ textDecoration: 'none', color: 'inherit' }}>
+              Sign up
+            </Link>
+          </button>
+          <button style={{
+            padding: 'clamp(0.5rem, 2vw, 0.75rem) clamp(1rem, 3vw, 1.5rem)',
+            borderRadius: '50px',
+            fontWeight: 600,
+            background: 'linear-gradient(45deg, #667eea, #764ba2)',
+            color: 'white',
+            border: 'none',
+            cursor: 'pointer',
+            transition: 'all 0.3s ease',
+            fontSize: 'clamp(0.8rem, 2vw, 1rem)'
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.transform = 'translateY(-2px)';
+            e.currentTarget.style.boxShadow = '0 10px 25px rgba(102, 126, 234, 0.3)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.transform = 'translateY(0)';
+            e.currentTarget.style.boxShadow = 'none';
+          }}
+          >
+            <Link to="/login" style={{ textDecoration: 'none', color: 'inherit' }}>
+              Log In
+            </Link>
+          </button>
+        </div>
+
+        {/* Mobile Menu Button */}
+        <button 
+          className="mobile-menu-btn"
+          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+          style={{
+            display: 'none',
+            background: 'none',
+            border: 'none',
+            color: 'white',
+            fontSize: '1.5rem',
+            cursor: 'pointer',
+            padding: '0.5rem',
+            borderRadius: '8px',
+            transition: 'all 0.3s ease'
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = 'none';
+          }}
+        >
+          {isMobileMenuOpen ? <X /> : <Menu />}
+        </button>
+
+        {/* Mobile Menu Overlay */}
+        {isMobileMenuOpen && (
+          <div 
+            className="mobile-menu"
+            style={{
+              position: 'fixed',
+              top: '80px',
+              left: 0,
+              right: 0,
+              background: 'rgba(102, 126, 234, 0.95)',
+              backdropFilter: 'blur(20px)',
+              padding: '2rem',
+              zIndex: 999,
+              animation: 'slideDown 0.3s ease-out'
+            }}
+          >
+            <nav style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', marginBottom: '2rem' }}>
+              {navItems.map((item, index) => (
+                <a 
+                  key={index}
+                  href={item.href}
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  style={{
+                    color: 'white',
+                    textDecoration: 'none',
+                    fontWeight: 500,
+                    padding: '1rem',
+                    borderRadius: '12px',
+                    transition: 'all 0.3s ease',
+                    textAlign: 'center',
+                    fontSize: '1.1rem'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = 'transparent';
+                  }}
+                >
+                  {item.label}
+                </a>
+              ))}
+            </nav>
+            
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              <button style={{
+                padding: '1rem 2rem',
+                borderRadius: '50px',
+                fontWeight: 600,
+                border: '2px solid white',
+                color: 'white',
+                background: 'transparent',
+                cursor: 'pointer',
+                transition: 'all 0.3s ease',
+                fontSize: '1rem'
+              }}>
+                <Link to="/register" style={{ textDecoration: 'none', color: 'inherit' }}>
+                  Sign up
+                </Link>
+              </button>
+              <button style={{
+                padding: '1rem 2rem',
+                borderRadius: '50px',
+                fontWeight: 600,
+                background: 'white',
+                color: '#667eea',
+                border: 'none',
+                cursor: 'pointer',
+                transition: 'all 0.3s ease',
+                fontSize: '1rem'
+              }}>
+                <Link to="/login" style={{ textDecoration: 'none', color: 'inherit' }}>
+                  Log In
+                </Link>
+              </button>
+            </div>
+          </div>
+        )}
+      </header>
+
       {/* Title */}
       <motion.h1
         className="text-5xl font-extrabold mb-12 text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500"
         initial={{ y: -50, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 1 }}
+        id="legal&policies"
       >
         Legal & Policies
       </motion.h1>
 
       {/* Container */}
-      <div className="grid gap-12 w-full max-w-5xl">
+      <div className="grid gap-12 w-full max-w-8xl">
         {/* Privacy Policy */}
         <motion.div
           className="p-8 rounded-2xl shadow-2xl bg-gradient-to-r from-blue-500/20 to-cyan-400/10 backdrop-blur-lg border border-blue-400/20"
@@ -80,6 +323,7 @@ const Legal = () => {
           whileInView={{ rotateX: 0, opacity: 1 }}
           transition={{ duration: 1 }}
           viewport={{ once: true }}
+          id="terms-of-service"
         >
           <h2 className="text-3xl font-semibold mb-4 text-pink-300">
             Terms of Service
@@ -145,7 +389,7 @@ const Legal = () => {
               backgroundClip: 'text',
               marginBottom: '1.5rem'
             }}>
-              ConnectWise
+              Milapp
             </div>
             <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
               {[
@@ -197,8 +441,8 @@ const Legal = () => {
             <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
               {['Home', 'Features', 'Join'].map((item, index) => (
                 <li key={index} style={{ marginBottom: '0.75rem' }}>
-                  <a
-                    href="#hero"
+                  <Link
+                    to="/"
                     style={{
                       color: 'rgba(255, 255, 255, 0.7)',
                       textDecoration: 'none',
@@ -212,7 +456,7 @@ const Legal = () => {
                     }}
                   >
                     {item}
-                  </a>
+                  </Link>
                 </li>
               ))}
             </ul>

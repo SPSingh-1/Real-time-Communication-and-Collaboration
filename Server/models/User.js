@@ -36,5 +36,29 @@ const UserSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+// Method to get query scope for reports based on user role
+UserSchema.methods.getQueryScope = function() {
+  let query = {};
+  
+  if (this.role === 'single') {
+    // Single users can only see their own reports
+    query.user = this._id;
+  } else if (this.role === 'team') {
+    // Team users can see their team's reports
+    query.$or = [
+      { user: this._id }, // Own reports
+      { teamId: this.teamId, scope: 'team' } // Team reports
+    ];
+  } else if (this.role === 'global') {
+    // Global users can see all reports with global scope
+    query.$or = [
+      { user: this._id }, // Own reports
+      { globalId: this.globalId, scope: 'global' } // Global reports
+    ];
+  }
+  
+  return query;
+};
+
 const User = mongoose.model('user', UserSchema);
 export default User;

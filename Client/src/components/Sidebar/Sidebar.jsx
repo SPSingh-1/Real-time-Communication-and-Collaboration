@@ -106,6 +106,14 @@ const Sidebar = ({ activeTab, setActiveTab, collapsed, setCollapsed }) => {
               setActiveTab={setActiveTab} 
             />
 
+            <SidebarButton 
+              icon={<FaClipboardList />} 
+              label="Daily Reporting" 
+              tab="dailyreporting" 
+              activeTab={activeTab} 
+              setActiveTab={setActiveTab} 
+            />
+
             {/* Only show Video Conference if role is NOT "single" */}
             {user?.role !== "single" && (
               <SidebarButton 

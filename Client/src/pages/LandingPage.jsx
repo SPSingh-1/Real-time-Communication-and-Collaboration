@@ -131,13 +131,13 @@ const LandingPage = () => {
     }}>
       
       {/* Header */}
-      <header style={{
+       <header style={{
         position: 'fixed',
         top: 0,
         left: 0,
         right: 0,
         zIndex: 1000,
-        background: 'rgba(255, 255, 255, 0.1)',
+        background: 'linear-gradient(45deg, #667eea, #764ba2)',
         backdropFilter: 'blur(20px)',
         borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
         padding: '1rem 2rem',
@@ -148,15 +148,18 @@ const LandingPage = () => {
       }}>
         {/* Logo */}
         <div style={{
-          fontSize: 'clamp(1.2rem, 4vw, 1.8rem)',
+          fontSize: 'clamp(1.2rem, 4vw, 1.4rem)',
           fontWeight: 800,
           display: 'flex',
           alignItems: 'center',
           gap: '0.5rem',
-          background: 'linear-gradient(45deg, #ffffff, #f0f9ff)',
+          //background: 'linear-gradient(45deg, #667eea, #764ba2)',
           WebkitBackgroundClip: 'text',
-          WebkitTextFillColor: 'transparent',
-          backgroundClip: 'text'
+          WebkitTextFillColor: 'white',
+          backgroundClip: 'text',
+          color: 'white',
+          cursor: 'pointer',
+          userSelect: 'none',
         }}>
           <img 
             src="/logo.png" 
@@ -741,7 +744,7 @@ const LandingPage = () => {
               backgroundClip: 'text',
               marginBottom: '1.5rem'
             }}>
-              ConnectWise
+              Milapp
             </div>
             <div style={{ 
               display: 'flex', 
@@ -800,13 +803,12 @@ const LandingPage = () => {
             <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
               {['Home', 'Features', 'Join'].map((item, index) => (
                 <li key={index} style={{ marginBottom: '0.75rem' }}>
-                  <a
-                    href="#hero"
+                  <Link
+                    to="/"
                     style={{
                       color: 'rgba(255, 255, 255, 0.7)',
                       textDecoration: 'none',
-                      transition: 'color 0.3s ease',
-                      fontSize: 'clamp(0.9rem, 2vw, 1rem)'
+                      transition: 'color 0.3s ease'
                     }}
                     onMouseEnter={(e) => {
                       e.currentTarget.style.color = 'white';
@@ -816,7 +818,7 @@ const LandingPage = () => {
                     }}
                   >
                     {item}
-                  </a>
+                  </Link>
                 </li>
               ))}
             </ul>
@@ -901,7 +903,7 @@ const LandingPage = () => {
             margin: 0,
             fontSize: 'clamp(0.8rem, 2vw, 1rem)'
           }}>
-            &copy; 2024 ConnectWise. All rights reserved.
+            &copy; 2024 Milapp. All rights reserved.
           </p>
         </div>
       </footer>

@@ -7,9 +7,12 @@ import { CiLinkedin } from "react-icons/ci";
 import { FaGithub } from "react-icons/fa";
 // eslint-disable-next-line no-unused-vars
 import { motion } from "framer-motion";
+import { Menu } from "lucide-react";
 
 const About = () => {
     const [isVisible, setIsVisible] = useState({});
+    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+    
 
     useEffect(() => {
         const observer = new IntersectionObserver(
@@ -31,6 +34,13 @@ const About = () => {
     
         return () => observer.disconnect();
       }, []);
+
+      const navItems = [
+    { href: "#about", label: "About" },
+    { href: "#careers", label: "Careers" },
+    { href: "#blog", label: "Blog" },
+    { href: "#contact", label: "Contact" }
+  ];
   return (
     <div className="bg-gradient-to-br from-indigo-50 via-white to-blue-100">
           {/* Header */}
@@ -40,86 +50,232 @@ const About = () => {
         left: 0,
         right: 0,
         zIndex: 1000,
-        background: 'rgba(0, 0, 0, 0.1)',
+        background: 'linear-gradient(45deg, #667eea, #764ba2)',
         backdropFilter: 'blur(20px)',
-        borderBottom: '1px solid rgba(0, 0, 0, 0.1)',
+        borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
         padding: '1rem 2rem',
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
         transition: 'all 0.3s ease'
       }}>
+        {/* Logo */}
         <div style={{
-          fontSize: '1.8rem',
+          fontSize: 'clamp(1.2rem, 4vw, 1.4rem)',
           fontWeight: 800,
-          background: 'linear-gradient(45deg, #ffffff, #f0f9ff)',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.5rem',
+          //background: 'linear-gradient(45deg, #667eea, #764ba2)',
           WebkitBackgroundClip: 'text',
-          WebkitTextFillColor: 'transparent',
-          backgroundClip: 'text'
+          WebkitTextFillColor: 'white',
+          backgroundClip: 'text',
+          color: 'white',
+          cursor: 'pointer',
+          userSelect: 'none',
         }}>
-          ConnectWise
+          <img 
+            src="/logo.png" 
+            alt="Logo" 
+            style={{ 
+              height: 'clamp(30px, 8vw, 50px)', 
+              verticalAlign: 'middle',
+              borderRadius: '30px' 
+            }} 
+          />
+          Milapp
         </div>
         
-        <nav style={{ display: 'flex', gap: '2rem' }}>
-          <a href="#About" style={{
-            color: 'white',
-            textDecoration: 'none',
-            fontWeight: 500,
-            padding: '0.5rem 1rem',
-            borderRadius: '8px',
-            transition: 'all 0.3s ease'
-          }}>About</a>
-          <a href="#Careers" style={{
-            color: 'white',
-            textDecoration: 'none',
-            fontWeight: 500,
-            padding: '0.5rem 1rem',
-            borderRadius: '8px',
-            transition: 'all 0.3s ease'
-          }}>Careers</a>
-          <a href="#Blog" style={{
-            color: 'white',
-            textDecoration: 'none',
-            fontWeight: 500,
-            padding: '0.5rem 1rem',
-            borderRadius: '8px',
-            transition: 'all 0.3s ease'
-          }}>Blog</a>
-          <a href="#Contact" style={{
-            color: 'white',
-            textDecoration: 'none',
-            fontWeight: 500,
-            padding: '0.5rem 1rem',
-            borderRadius: '8px',
-            transition: 'all 0.3s ease'
-          }}>Contact</a>
+        {/* Desktop Navigation */}
+        <nav style={{ 
+          display: 'flex', 
+          gap: '2rem',
+          '@media (maxWidth: 768px)': {
+            display: 'none'
+          }
+        }} className="desktop-nav">
+          {navItems.map((item, index) => (
+            <a 
+              key={index}
+              href={item.href} 
+              style={{
+                color: 'white',
+                textDecoration: 'none',
+                fontWeight: 500,
+                padding: '0.5rem 1rem',
+                borderRadius: '8px',
+                transition: 'all 0.3s ease'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = 'transparent';
+              }}
+            >
+              {item.label}
+            </a>
+          ))}
         </nav>
         
-        <div style={{ display: 'flex', gap: '1rem' }}>
+        {/* Desktop Auth Buttons */}
+        <div style={{ display: 'flex', gap: '1rem' }} className="desktop-auth">
           <button style={{
-            padding: '0.75rem 1.5rem',
+            padding: 'clamp(0.5rem, 2vw, 0.75rem) clamp(1rem, 3vw, 1.5rem)',
             borderRadius: '50px',
             fontWeight: 600,
             border: '2px solid white',
             color: 'white',
             background: 'transparent',
             cursor: 'pointer',
-            transition: 'all 0.3s ease'
-          }}><Link to="/register">Sign up</Link></button>
+            transition: 'all 0.3s ease',
+            fontSize: 'clamp(0.8rem, 2vw, 1rem)'
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = 'white';
+            e.currentTarget.style.color = '#667eea';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = 'transparent';
+            e.currentTarget.style.color = 'white';
+          }}
+          >
+            <Link to="/register" style={{ textDecoration: 'none', color: 'inherit' }}>
+              Sign up
+            </Link>
+          </button>
           <button style={{
-            padding: '0.75rem 1.5rem',
+            padding: 'clamp(0.5rem, 2vw, 0.75rem) clamp(1rem, 3vw, 1.5rem)',
             borderRadius: '50px',
             fontWeight: 600,
             background: 'linear-gradient(45deg, #667eea, #764ba2)',
             color: 'white',
             border: 'none',
             cursor: 'pointer',
-            transition: 'all 0.3s ease'
-          }}><Link to="/login">Log In</Link></button>
+            transition: 'all 0.3s ease',
+            fontSize: 'clamp(0.8rem, 2vw, 1rem)'
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.transform = 'translateY(-2px)';
+            e.currentTarget.style.boxShadow = '0 10px 25px rgba(102, 126, 234, 0.3)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.transform = 'translateY(0)';
+            e.currentTarget.style.boxShadow = 'none';
+          }}
+          >
+            <Link to="/login" style={{ textDecoration: 'none', color: 'inherit' }}>
+              Log In
+            </Link>
+          </button>
         </div>
+
+        {/* Mobile Menu Button */}
+        <button 
+          className="mobile-menu-btn"
+          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+          style={{
+            display: 'none',
+            background: 'none',
+            border: 'none',
+            color: 'white',
+            fontSize: '1.5rem',
+            cursor: 'pointer',
+            padding: '0.5rem',
+            borderRadius: '8px',
+            transition: 'all 0.3s ease'
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = 'none';
+          }}
+        >
+          {isMobileMenuOpen ? <X /> : <Menu />}
+        </button>
+
+        {/* Mobile Menu Overlay */}
+        {isMobileMenuOpen && (
+          <div 
+            className="mobile-menu"
+            style={{
+              position: 'fixed',
+              top: '80px',
+              left: 0,
+              right: 0,
+              background: 'rgba(102, 126, 234, 0.95)',
+              backdropFilter: 'blur(20px)',
+              padding: '2rem',
+              zIndex: 999,
+              animation: 'slideDown 0.3s ease-out'
+            }}
+          >
+            <nav style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', marginBottom: '2rem' }}>
+              {navItems.map((item, index) => (
+                <a 
+                  key={index}
+                  href={item.href}
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  style={{
+                    color: 'white',
+                    textDecoration: 'none',
+                    fontWeight: 500,
+                    padding: '1rem',
+                    borderRadius: '12px',
+                    transition: 'all 0.3s ease',
+                    textAlign: 'center',
+                    fontSize: '1.1rem'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = 'transparent';
+                  }}
+                >
+                  {item.label}
+                </a>
+              ))}
+            </nav>
+            
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              <button style={{
+                padding: '1rem 2rem',
+                borderRadius: '50px',
+                fontWeight: 600,
+                border: '2px solid white',
+                color: 'white',
+                background: 'transparent',
+                cursor: 'pointer',
+                transition: 'all 0.3s ease',
+                fontSize: '1rem'
+              }}>
+                <Link to="/register" style={{ textDecoration: 'none', color: 'inherit' }}>
+                  Sign up
+                </Link>
+              </button>
+              <button style={{
+                padding: '1rem 2rem',
+                borderRadius: '50px',
+                fontWeight: 600,
+                background: 'white',
+                color: '#667eea',
+                border: 'none',
+                cursor: 'pointer',
+                transition: 'all 0.3s ease',
+                fontSize: '1rem'
+              }}>
+                <Link to="/login" style={{ textDecoration: 'none', color: 'inherit' }}>
+                  Log In
+                </Link>
+              </button>
+            </div>
+          </div>
+        )}
       </header>
       {/* Hero / About Section */}
-      <section ID="About" className="min-h-screen flex flex-col items-center justify-center text-center px-6 py-20">
+      <section id="about" className="min-h-screen flex flex-col items-center justify-center text-center px-6 py-20">
         <motion.h1
           className="text-5xl md:text-6xl font-bold text-gray-800 mb-6"
           initial={{ opacity: 0, y: -30 }}
@@ -173,7 +329,7 @@ const About = () => {
       </section>
 
       {/* Careers Section */}
-      <section Id="Careers" className="min-h-screen bg-white py-20 px-6">
+      <section id="careers" className="min-h-screen bg-white py-20 px-6">
         <motion.h2
           className="text-4xl md:text-5xl font-bold text-center text-gray-800 mb-12"
           initial={{ opacity: 0, y: -20 }}
@@ -223,7 +379,7 @@ const About = () => {
       </section>
 
       {/* Blog Section */}
-      <section Id="Blog" className="min-h-screen py-20 px-6">
+      <section id="blog" className="min-h-screen py-20 px-6">
         <motion.h2
           className="text-4xl md:text-5xl font-bold text-center text-gray-800 mb-12"
           initial={{ opacity: 0, y: -20 }}
@@ -276,7 +432,7 @@ const About = () => {
       </section>
 
       {/* Contact Section */}
-      <section Id="Contact" className="min-h-screen bg-gradient-to-r from-indigo-600 to-blue-500 flex flex-col items-center justify-center py-20 px-6 text-white relative overflow-hidden">
+      <section id="contact" className="min-h-screen bg-gradient-to-r from-indigo-600 to-blue-500 flex flex-col items-center justify-center py-20 px-6 text-white relative overflow-hidden">
         <motion.h2
           className="text-5xl font-bold mb-6"
           initial={{ opacity: 0, y: -20 }}
@@ -396,8 +552,8 @@ const About = () => {
             <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
               {['Home', 'Features', 'Join'].map((item, index) => (
                 <li key={index} style={{ marginBottom: '0.75rem' }}>
-                  <a
-                    href="#hero"
+                  <Link
+                    to="/"
                     style={{
                       color: 'rgba(255, 255, 255, 0.7)',
                       textDecoration: 'none',
@@ -411,7 +567,7 @@ const About = () => {
                     }}
                   >
                     {item}
-                  </a>
+                  </Link>
                 </li>
               ))}
             </ul>
@@ -491,7 +647,7 @@ const About = () => {
           color: 'rgba(255, 255, 255, 0.7)'
         }}>
           <p style={{ margin: 0 }}>
-            &copy; 2024 ConnectWise. All rights reserved.
+            &copy; 2024 Milapp. All rights reserved.
           </p>
         </div>
       </footer>

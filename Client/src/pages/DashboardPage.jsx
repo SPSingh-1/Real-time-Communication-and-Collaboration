@@ -11,6 +11,7 @@ import VideoConferenc from '../components/Tools/VideoConferenc';
 import useAppContext from "../context/useAppContext";
 import CircularProgress from '@mui/material/CircularProgress';
 import UserProfile from '../components/Tools/UserProfil';
+import DailyReporting from '../components/Tools/DailyReporting';
 
 const DashboardPage = () => {
   const navigate = useNavigate();
@@ -37,6 +38,8 @@ const DashboardPage = () => {
           return 'files';
         case 'video':
           return 'VideoConferenc';
+        case 'reporting':
+          return 'dailyreporting';
         default:
           return 'Dashboard';
       }
@@ -93,6 +96,9 @@ const DashboardPage = () => {
         break;
       case 'profile':
         navigate('/dashboard/profile');
+        break;
+      case 'dailyreporting':
+        navigate('/dashboard');
         break;
       default:
         navigate('/dashboard');
@@ -307,7 +313,8 @@ const DashboardPage = () => {
             {activeTab === 'calendar' && <CalendarTool />}
             {activeTab === 'figma' && <FigmaTool user={user} />}
             {activeTab === 'VideoConferenc' && <VideoConferenc />}
-            {activeTab === "profile" && <UserProfile />} 
+            {activeTab === "profile" && <UserProfile />}
+            {activeTab === "dailyreporting" && <DailyReporting user={user} />}
           </div>
         </div>
       </main>

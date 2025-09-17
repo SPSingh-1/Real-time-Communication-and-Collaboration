@@ -56,6 +56,8 @@ import userRouter from './routes/userRouter.js';
 import figmaAuthRoutes from './routes/figmaAuth.js';
 import figmaFilesRoutes from './routes/figmaFiles.js';
 import dashboardRoutes from "./routes/dashboard.js";
+import reportsRoutes from './routes/reports.js';
+import complaintsRoutes from './routes/complaints.js';
 
 // Middleware and Models
 import './models/User.js';
@@ -159,6 +161,8 @@ app.use('/files', fileRouter);             // For regular file management
 app.use('/api/chat', chatUploadRouter);    // For chat file uploads and management
 app.use('/api/tasks', taskRouter);
 app.use('/userRouter', userRouter);
+app.use('/api/reports', reportsRoutes);
+app.use('/api/complaints', complaintsRoutes);
 
 // Figma integration routes
 app.use('/api/auth', figmaAuthRoutes);
