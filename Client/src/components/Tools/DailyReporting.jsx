@@ -226,31 +226,57 @@ const DailyReporting = () => {
   };
 
   const fetchStats = async () => {
-    try {
-      const [reportResponse, complaintResponse] = await Promise.all([
-        fetch(`${API_BASE_URL}/api/reports/stats`, {
-          headers: getAuthHeaders()
-        }),
-        fetch(`${API_BASE_URL}/api/complaints/stats`, {
-          headers: getAuthHeaders()
-        })
-      ]);
-      
-      const reportData = await reportResponse.json();
-      const complaintData = await complaintResponse.json();
-      
-      if (reportData.success && complaintData.success) {
-        setStats({
-          reports: reportData.stats,
-          complaints: complaintData.stats,
-          assignedReports: reportData.assignedToMe || 0,
-          assignedComplaints: complaintData.assignedToMe || 0
-        });
-      }
-    } catch (error) {
-      console.error('Error fetching stats:', error);
+  try {
+    console.log('Fetching stats from:', `${API_BASE_URL}/api/reports/stats`); // Add this
+    console.log('Auth token:', localStorage.getItem('token')); // Add this
+    
+    const [reportResponse, complaintResponse] = await Promise.all([
+      fetch(`${API_BASE_URL}/api/reports/stats`, {
+        headers: getAuthHeaders()
+      }),
+      fetch(`${API_BASE_URL}/api/complaints/stats`, {
+        headers: getAuthHeaders()
+      })
+    ]);
+    
+    console.log('Response status - Reports:', reportResponse.status, 'Complaints:', complaintResponse.status); // Add this
+    
+    const reportData = await reportResponse.json();
+    const complaintData = await complaintResponse.json();
+    
+    console.log('Raw API responses:'); // Add this
+    console.log('Reports:', reportData);
+    console.log('Complaints:', complaintData);
+    
+    // Rest of your existing code...
+    
+    if (reportData.success && complaintData.success) {
+      setStats({
+        reports: reportData.stats,
+        complaints: complaintData.stats,
+        assignedReports: reportData.assignedToMe || 0,
+        assignedComplaints: complaintData.assignedToMe || 0
+      });
+    } else {
+      // Fallback to counting loaded data
+      setStats({
+        reports: { total: reports.length, pending: 0, completed: 0 },
+        complaints: { total: complaints.length, pending: 0, resolved: 0 },
+        assignedReports: assignedReports.length || 0,
+        assignedComplaints: assignedComplaints.length || 0
+      });
     }
-  };
+  } catch (error) {
+    console.error('Error fetching stats:', error);
+    // Fallback stats
+    setStats({
+      reports: { total: reports.length, pending: 0, completed: 0 },
+      complaints: { total: complaints.length, pending: 0, resolved: 0 },
+      assignedReports: assignedReports.length || 0,
+      assignedComplaints: assignedComplaints.length || 0
+    });
+  }
+};
 
   const submitReport = async (e) => {
     e.preventDefault();
@@ -808,25 +834,30 @@ const DailyReporting = () => {
           <p className="text-white/70">Manage your daily reports, complaints, feedback, and assignments</p>
         </div>
 
-        {/* Enhanced Stats Dashboard */}
+        {/* Enhanced Stats Dashboard - Add debug logging */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
           <div className="bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl p-4 text-center">
-            <div className="text-2xl font-bold text-blue-400 mb-1">{(stats.reports?.total || 0)}</div>
+            <div className="text-2xl font-bold text-blue-400 mb-1">
+              {/* Debug: Add fallback and logging */}
+              {stats.reports?.total !== undefined ? stats.reports.total : 'Loading...'}
+            </div>
             <div className="text-white/70 text-sm">Total Reports</div>
           </div>
           <div className="bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl p-4 text-center">
-            <div className="text-2xl font-bold text-red-400 mb-1">{(stats.complaints?.total || 0)}</div>
+            <div className="text-2xl font-bold text-red-400 mb-1">
+              {stats.complaints?.total !== undefined ? stats.complaints.total : 'Loading...'}
+            </div>
             <div className="text-white/70 text-sm">Total Complaints</div>
           </div>
           <div className="bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl p-4 text-center">
             <div className="text-2xl font-bold text-yellow-400 mb-1">
-              {(stats.reports?.pending || 0) + (stats.complaints?.pending || 0)}
+              {((stats.reports?.pending || 0) + (stats.complaints?.pending || 0)) || 'Loading...'}
             </div>
             <div className="text-white/70 text-sm">Pending Items</div>
           </div>
           <div className="bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl p-4 text-center">
             <div className="text-2xl font-bold text-green-400 mb-1">
-              {(stats.assignedReports || 0) + (stats.assignedComplaints || 0)}
+              {((stats.assignedReports || 0) + (stats.assignedComplaints || 0)) || 'Loading...'}
             </div>
             <div className="text-white/70 text-sm">Assigned to Me</div>
           </div>

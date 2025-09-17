@@ -385,9 +385,41 @@ router.patch('/:id/assign', fetchUser, async (req, res) => {
 });
 
 // GET REPORT STATISTICS
+// GET REPORT STATISTICS
 router.get('/stats', fetchUser, async (req, res) => {
   try {
-    const query = req.user.getQueryScope ? req.user.getQueryScope() : {};
+    // Build query based on user's role and scope
+    let query = {};
+    
+    if (req.user.role === 'team' && req.user.teamId) {
+      // For team users, count reports from their team
+      query = {
+        $or: [
+          { user: req.user.id }, // My reports
+          { teamId: req.user.teamId }, // Team reports
+          { assignedTo: req.user.id } // Assigned to me
+        ]
+      };
+    } else if (req.user.role === 'global' && req.user.globalId) {
+      // For global users, count reports from their global scope
+      query = {
+        $or: [
+          { user: req.user.id },
+          { globalId: req.user.globalId },
+          { assignedTo: req.user.id }
+        ]
+      };
+    } else {
+      // For single users, count all their reports
+      query = {
+        $or: [
+          { user: req.user.id },
+          { assignedTo: req.user.id }
+        ]
+      };
+    }
+
+    console.log('Reports stats query:', JSON.stringify(query, null, 2)); // Debug
 
     const stats = await Report.aggregate([
       { $match: query },
@@ -398,22 +430,16 @@ router.get('/stats', fetchUser, async (req, res) => {
           pending: { $sum: { $cond: [{ $eq: ['$status', 'pending'] }, 1, 0] } },
           inProgress: { $sum: { $cond: [{ $eq: ['$status', 'in-progress'] }, 1, 0] } },
           completed: { $sum: { $cond: [{ $eq: ['$status', 'completed'] }, 1, 0] } },
-          avgRating: { $avg: '$rating' },
-          byCategory: {
-            $push: {
-              category: '$category',
-              count: 1
-            }
-          }
+          avgRating: { $avg: '$rating' }
         }
       }
     ]);
 
     // Get assigned to me count
     const assignedCount = await Report.countDocuments({ assignedTo: req.user.id });
-
-    // Get my reports count
     const myReportsCount = await Report.countDocuments({ user: req.user.id });
+
+    console.log('Reports stats result:', stats[0]); // Debug
 
     res.json({
       success: true,

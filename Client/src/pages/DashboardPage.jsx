@@ -39,7 +39,7 @@ const DashboardPage = () => {
         case 'video':
           return 'VideoConferenc';
         case 'reporting':
-          return 'dailyreporting';
+          return 'DailyReporting'; // Fixed: This should match the case in the render section
         default:
           return 'Dashboard';
       }
@@ -97,8 +97,8 @@ const DashboardPage = () => {
       case 'profile':
         navigate('/dashboard/profile');
         break;
-      case 'dailyreporting':
-        navigate('/dashboard');
+      case 'DailyReporting':
+        navigate('/dashboard/tools/reporting');
         break;
       default:
         navigate('/dashboard');
@@ -213,6 +213,7 @@ const DashboardPage = () => {
           collapsed={sidebarCollapsed}
           setCollapsed={setSidebarCollapsed}
           userRole={user.role}
+          user={user}
         />
       </div>
 
@@ -226,6 +227,7 @@ const DashboardPage = () => {
           collapsed={false}
           setCollapsed={() => {}}
           userRole={user.role}
+          user={user}
         />
       </div>
 
@@ -314,7 +316,8 @@ const DashboardPage = () => {
             {activeTab === 'figma' && <FigmaTool user={user} />}
             {activeTab === 'VideoConferenc' && <VideoConferenc />}
             {activeTab === "profile" && <UserProfile />}
-            {activeTab === "dailyreporting" && <DailyReporting user={user} />}
+            {/* FIXED: Changed from "dailyreporting" to "DailyReporting" */}
+            {activeTab === "DailyReporting" && <DailyReporting user={user} />}
           </div>
         </div>
       </main>

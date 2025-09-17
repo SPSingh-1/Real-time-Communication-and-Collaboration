@@ -400,9 +400,41 @@ router.patch('/:id/assign', fetchUser, async (req, res) => {
 });
 
 // GET COMPLAINT STATISTICS
+// GET COMPLAINT STATISTICS
 router.get('/stats', fetchUser, async (req, res) => {
   try {
-    const query = req.user.getQueryScope ? req.user.getQueryScope() : {};
+    // Build query based on user's role and scope
+    let query = {};
+    
+    if (req.user.role === 'team' && req.user.teamId) {
+      // For team users, count complaints from their team
+      query = {
+        $or: [
+          { user: req.user.id }, // My complaints
+          { teamId: req.user.teamId }, // Team complaints
+          { assignedTo: req.user.id } // Assigned to me
+        ]
+      };
+    } else if (req.user.role === 'global' && req.user.globalId) {
+      // For global users, count complaints from their global scope
+      query = {
+        $or: [
+          { user: req.user.id },
+          { globalId: req.user.globalId },
+          { assignedTo: req.user.id }
+        ]
+      };
+    } else {
+      // For single users, count all their complaints
+      query = {
+        $or: [
+          { user: req.user.id },
+          { assignedTo: req.user.id }
+        ]
+      };
+    }
+
+    console.log('Complaints stats query:', JSON.stringify(query, null, 2)); // Debug
 
     const stats = await Complaint.aggregate([
       { $match: query },
@@ -413,22 +445,16 @@ router.get('/stats', fetchUser, async (req, res) => {
           pending: { $sum: { $cond: [{ $eq: ['$status', 'pending'] }, 1, 0] } },
           investigating: { $sum: { $cond: [{ $eq: ['$status', 'investigating'] }, 1, 0] } },
           resolved: { $sum: { $cond: [{ $eq: ['$status', 'resolved'] }, 1, 0] } },
-          critical: { $sum: { $cond: [{ $eq: ['$severity', 'critical'] }, 1, 0] } },
-          byType: {
-            $push: {
-              type: '$complaintType',
-              count: 1
-            }
-          }
+          critical: { $sum: { $cond: [{ $eq: ['$severity', 'critical'] }, 1, 0] } }
         }
       }
     ]);
 
     // Get assigned to me count
     const assignedCount = await Complaint.countDocuments({ assignedTo: req.user.id });
-
-    // Get my complaints count
     const myComplaintsCount = await Complaint.countDocuments({ user: req.user.id });
+
+    console.log('Complaints stats result:', stats[0]); // Debug
 
     res.json({
       success: true,

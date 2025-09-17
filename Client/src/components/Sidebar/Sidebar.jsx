@@ -109,7 +109,7 @@ const Sidebar = ({ activeTab, setActiveTab, collapsed, setCollapsed }) => {
             <SidebarButton 
               icon={<FaClipboardList />} 
               label="Daily Reporting" 
-              tab="dailyreporting" 
+              tab="DailyReporting"  // Make sure this matches exactly
               activeTab={activeTab} 
               setActiveTab={setActiveTab} 
             />

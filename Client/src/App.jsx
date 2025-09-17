@@ -14,6 +14,7 @@ import CalendarTool from "./components/Tools/CalendarTool";
 import TaskManager from "./components/Tools/TaskManager";
 import FileManager from "./components/Tools/FileManager";
 import VideoCallTool from "./components/Tools/VideoConferenc";
+import DailyReporting from "./components/Tools/DailyReporting";
 
 // Helpers
 import { ToastContainer } from "react-toastify";
@@ -145,6 +146,15 @@ function App() {
             </ProtectedRoute>
           }
         />
+
+        <Route
+          path="/dashboard/tools/reporting"
+          element={
+            <ProtectedRoute roles={["single", "team", "global"]}>
+              <DashboardPage />
+            </ProtectedRoute>
+          }
+        />
         
         <Route
           path="/chat"
@@ -171,6 +181,7 @@ function App() {
         <Route path="/tools/tasks" element={<Navigate to="/dashboard/tools/tasks" replace />} />
         <Route path="/tools/files" element={<Navigate to="/dashboard/tools/files" replace />} />
         <Route path="/tools/video" element={<Navigate to="/dashboard/tools/video" replace />} />
+        <Route path="/tools/reporting" element={<Navigate to="/dashboard/tools/reporting" replace />} />
 
         {/* Catch-all route */}
         <Route 
