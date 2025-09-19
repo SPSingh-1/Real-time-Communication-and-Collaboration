@@ -58,6 +58,9 @@ import figmaFilesRoutes from './routes/figmaFiles.js';
 import dashboardRoutes from "./routes/dashboard.js";
 import reportsRoutes from './routes/reports.js';
 import complaintsRoutes from './routes/complaints.js';
+import personalChatRoutes from './routes/personalChat.js';
+import { setupPersonalChatSocketHandlers } from './routes/personalMessageRouter.js';
+
 
 // Middleware and Models
 import './models/User.js';
@@ -163,6 +166,10 @@ app.use('/api/tasks', taskRouter);
 app.use('/userRouter', userRouter);
 app.use('/api/reports', reportsRoutes);
 app.use('/api/complaints', complaintsRoutes);
+app.use('/api/personal-chat', personalChatRoutes);
+
+setupSocketHandlers(io);
+setupPersonalChatSocketHandlers(io);
 
 // Figma integration routes
 app.use('/api/auth', figmaAuthRoutes);

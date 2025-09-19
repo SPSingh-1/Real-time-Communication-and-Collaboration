@@ -10,15 +10,46 @@ const router = express.Router();
 // Helper function to get valid Figma token for user
 async function getFigmaToken(userId) {
   const figmaToken = await FigmaToken.findOne({ userId, isActive: true });
-  
-  if (!figmaToken) {
-    throw new Error('Figma not connected');
+
+if (!figmaToken) {
+  throw new Error('Figma not connected');
+}
+
+// Check if token is expired
+if (figmaToken.expiresAt && figmaToken.expiresAt < new Date()) {
+  // Try to refresh token
+  if (figmaToken.refreshToken) {
+    try {
+      const refreshResponse = await axios.post('https://www.figma.com/api/oauth/refresh', {
+        client_id: process.env.FIGMA_CLIENT_ID,
+        client_secret: process.env.FIGMA_CLIENT_SECRET,
+        refresh_token: figmaToken.refreshToken
+      });
+      
+      const { access_token, expires_in } = refreshResponse.data;
+      
+      // Update token
+      figmaToken.accessToken = access_token;
+      figmaToken.expiresAt = new Date(Date.now() + expires_in * 1000);
+      await figmaToken.save();
+      
+      return figmaToken.accessToken;
+    } catch (refreshError) {
+      console.error('Token refresh failed:', refreshError);
+      figmaToken.isActive = false;
+      await figmaToken.save();
+      throw new Error('Token expired and refresh failed');
+    }
+  } else {
+    figmaToken.isActive = false;
+    await figmaToken.save();
+    throw new Error('Token expired and no refresh token available');
   }
-  
+}
   try {
     await axios.get('https://api.figma.com/v1/me', {
       headers: { 
-        'X-Figma-Token': figmaToken.accessToken,
+        'Authorization': `Bearer ${figmaToken.accessToken}`,  // ✅ Correct for OAuth
         'Accept': 'application/json'
       },
       timeout: 10000
@@ -39,7 +70,7 @@ async function figmaApiRequest(url, token, method = 'GET', data = null) {
     method,
     url,
     headers: {
-      'X-Figma-Token': token,
+      'Authorization': `Bearer ${token}`,
       'Accept': 'application/json'
     },
     timeout: 15000
@@ -84,73 +115,99 @@ router.get('/test-auth', fetchUser, (req, res) => {
 router.get('/files', fetchUser, async (req, res) => {
   console.log('=== GET /api/figma/files called ===');
   console.log('User ID:', req.user?.id);
-  
+
   try {
+    // ✅ Step 0: Ensure authentication
     if (!req.user || !req.user.id) {
-      return res.status(401).json({ 
-        success: false, 
-        error: 'User not authenticated' 
+      return res.status(401).json({
+        success: false,
+        error: "User not authenticated",
       });
     }
 
     const token = await getFigmaToken(req.user.id);
     let allFiles = [];
-    
-    console.log('Step 1: Getting user info...');
-    const userInfo = await figmaApiRequest('https://api.figma.com/v1/me', token);
+
+    console.log("Step 1: Getting user info...");
+    const userInfo = await figmaApiRequest("https://api.figma.com/v1/me", token);
     console.log(`User: ${userInfo.handle}, Teams: ${userInfo.teams?.length || 0}`);
-    
-    console.log('Step 2: Getting recent files...');
+
+    // ✅ Step 2: Get recent files
+    console.log("Step 2: Getting recent files...");
     try {
-      const recentFiles = await figmaApiRequest('https://api.figma.com/v1/files/recent', token);
+      const recentFiles = await figmaApiRequest(
+        "https://api.figma.com/v1/files/recent",
+        token
+      );
       if (recentFiles.files && recentFiles.files.length > 0) {
         console.log(`Found ${recentFiles.files.length} recent files`);
-        allFiles.push(...recentFiles.files.map(file => ({
-          ...file,
-          source: 'recent'
-        })));
+        allFiles.push(
+          ...recentFiles.files.map((file) => ({
+            ...file,
+            source: "recent",
+          }))
+        );
       }
-    } catch (error) {
-      console.log('Recent files request failed, continuing...');
+    } catch (recentError) {
+      console.error("Recent files fetch error:", recentError.message);
+
+      if (
+        recentError.message.includes("expired") ||
+        recentError.message.includes("not connected")
+      ) {
+        return res.status(401).json({
+          success: false,
+          error: recentError.message,
+          requiresReconnection: true,
+        });
+      }
     }
-    
-    console.log('Step 3: Getting team files...');
+
+    // ✅ Step 3: Get team files
+    console.log("Step 3: Getting team files...");
     if (userInfo.teams && userInfo.teams.length > 0) {
       for (const team of userInfo.teams) {
         try {
           console.log(`Processing team: ${team.name} (${team.id})`);
-          
+
           const teamProjects = await figmaApiRequest(
             `https://api.figma.com/v1/teams/${team.id}/projects`,
             token
           );
-          
+
           if (teamProjects.projects && teamProjects.projects.length > 0) {
             console.log(`Found ${teamProjects.projects.length} projects in team ${team.name}`);
-            
+
             for (const project of teamProjects.projects) {
               try {
                 const projectFiles = await figmaApiRequest(
                   `https://api.figma.com/v1/projects/${project.id}/files`,
                   token
                 );
-                
+
                 if (projectFiles.files && projectFiles.files.length > 0) {
-                  console.log(`Found ${projectFiles.files.length} files in project ${project.name}`);
-                  allFiles.push(...projectFiles.files.map(file => ({
-                    key: file.key,
-                    name: file.name,
-                    thumbnail_url: file.thumbnail_url,
-                    last_modified: file.last_modified,
-                    version: file.version,
-                    role: file.role,
-                    source: 'team',
-                    team: team.name,
-                    project: project.name
-                  })));
+                  console.log(
+                    `Found ${projectFiles.files.length} files in project ${project.name}`
+                  );
+                  allFiles.push(
+                    ...projectFiles.files.map((file) => ({
+                      key: file.key,
+                      name: file.name,
+                      thumbnail_url: file.thumbnail_url,
+                      last_modified: file.last_modified,
+                      version: file.version,
+                      role: file.role,
+                      source: "team",
+                      team: team.name,
+                      project: project.name,
+                    }))
+                  );
                 }
               } catch (projectError) {
-                console.log(`Error getting files from project ${project.name}:`, projectError.message);
+                console.log(
+                  `Error getting files from project ${project.name}:`,
+                  projectError.message
+                );
               }
             }
           }
@@ -159,27 +216,26 @@ router.get('/files', fetchUser, async (req, res) => {
         }
       }
     }
-    
+
+    // ✅ Step 4: Deduplicate files
     console.log(`Step 4: Total files found: ${allFiles.length}`);
-    
-    // Remove duplicates based on file key
     const uniqueFiles = [];
     const seenKeys = new Set();
-    
+
     for (const file of allFiles) {
-      if (!seenKeys.has(file.key)) {
+      if (file.key && !seenKeys.has(file.key)) {
         seenKeys.add(file.key);
         uniqueFiles.push(file);
       }
     }
-    
+
     console.log(`Step 5: Unique files after deduplication: ${uniqueFiles.length}`);
-    
-    // Sync with local database
+
+    // ✅ Step 6: Sync with local database
     const syncedFiles = [];
     for (const file of uniqueFiles) {
       try {
-        let localFile = await FigmaFile.findOneAndUpdate(
+        const localFile = await FigmaFile.findOneAndUpdate(
           { userId: req.user.id, figmaFileId: file.key },
           {
             userId: req.user.id,
@@ -187,49 +243,53 @@ router.get('/files', fetchUser, async (req, res) => {
             name: file.name,
             thumbnail_url: file.thumbnail_url,
             version: file.version,
-            role: file.role || 'viewer',
+            role: file.role || "viewer",
             lastModified: new Date(file.last_modified),
-            'localMetadata.lastSyncedAt': new Date(),
-            'localMetadata.source': file.source,
-            'localMetadata.team': file.team,
-            'localMetadata.project': file.project,
-            teamId: req.user.teamId || null
+            "localMetadata.lastSyncedAt": new Date(),
+            "localMetadata.source": file.source,
+            "localMetadata.team": file.team,
+            "localMetadata.project": file.project,
+            teamId: req.user.teamId || null,
           },
           { upsert: true, new: true }
         );
-        
+
         syncedFiles.push(localFile);
       } catch (dbError) {
         console.error(`Error syncing file ${file.key}:`, dbError.message);
       }
     }
-    
+
     console.log(`Step 6: Successfully synced ${syncedFiles.length} files to database`);
-    
+
+    // ✅ Final response
     res.json({
       success: true,
       files: syncedFiles,
       totalCount: syncedFiles.length,
       figmaUser: userInfo.handle || userInfo.email,
       sources: {
-        recent: allFiles.filter(f => f.source === 'recent').length,
-        team: allFiles.filter(f => f.source === 'team').length
-      }
+        recent: allFiles.filter((f) => f.source === "recent").length,
+        team: allFiles.filter((f) => f.source === "team").length,
+      },
     });
-    
   } catch (error) {
-    console.error('=== GET /api/figma/files ERROR ===');
-    console.error('Error:', error.message);
-    
-    const statusCode = error.message.includes('not connected') ? 400 : 
-                      error.message.includes('not authenticated') ? 401 : 500;
-    
-    res.status(statusCode).json({ 
-      success: false, 
-      error: error.message
+    console.error("=== GET /api/figma/files ERROR ===");
+    console.error("Error:", error.message);
+
+    const statusCode = error.message.includes("not connected")
+      ? 400
+      : error.message.includes("not authenticated")
+      ? 401
+      : 500;
+
+    res.status(statusCode).json({
+      success: false,
+      error: error.message,
     });
   }
 });
+
 
 // Debug endpoint to test Figma access
 router.get('/debug-figma-access', fetchUser, async (req, res) => {

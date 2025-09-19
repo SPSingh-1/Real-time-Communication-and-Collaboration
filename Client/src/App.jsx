@@ -22,6 +22,7 @@ import "react-toastify/dist/ReactToastify.css";
 import ProtectedRoute from "./components/ProtectedRoute";
 import useAppContext from "./context/useAppContext";
 import { useNavigate } from "react-router-dom";
+import PersonalChatBox from "./components/Chat/PersonalChatBox";
 
 function App() {
   const { isAuthenticated, loading, authChecked } = useAppContext();
@@ -84,6 +85,15 @@ function App() {
         {/* Dashboard nested routes - all handled by DashboardPage */}
         <Route
           path="/dashboard/chat"
+          element={
+            <ProtectedRoute roles={["single", "team", "global"]}>
+              <DashboardPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/dashboard/personalchat"
           element={
             <ProtectedRoute roles={["single", "team", "global"]}>
               <DashboardPage />
@@ -161,6 +171,15 @@ function App() {
           element={
             <ProtectedRoute roles={["single", "team", "global"]}>
               <ChatPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/personalchat"
+          element={
+            <ProtectedRoute roles={["single", "team", "global"]}>
+              <PersonalChatBox />
             </ProtectedRoute>
           }
         />

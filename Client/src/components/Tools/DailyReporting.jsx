@@ -250,22 +250,12 @@ const DailyReporting = () => {
     
     // Rest of your existing code...
     
-    if (reportData.success && complaintData.success) {
-      setStats({
-        reports: reportData.stats,
-        complaints: complaintData.stats,
-        assignedReports: reportData.assignedToMe || 0,
-        assignedComplaints: complaintData.assignedToMe || 0
-      });
-    } else {
-      // Fallback to counting loaded data
-      setStats({
-        reports: { total: reports.length, pending: 0, completed: 0 },
-        complaints: { total: complaints.length, pending: 0, resolved: 0 },
-        assignedReports: assignedReports.length || 0,
-        assignedComplaints: assignedComplaints.length || 0
-      });
-    }
+    setStats({
+      reports: reportData.success ? reportData.stats : { total: 0, pending: 0, inProgress: 0, completed: 0, avgRating: 0 },
+      complaints: complaintData.success ? complaintData.stats : { total: 0, pending: 0, investigating: 0, resolved: 0, critical: 0 },
+      assignedReports: reportData.assignedToMe || 0,
+      assignedComplaints: complaintData.assignedToMe || 0
+    });
   } catch (error) {
     console.error('Error fetching stats:', error);
     // Fallback stats
@@ -839,19 +829,19 @@ const DailyReporting = () => {
           <div className="bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl p-4 text-center">
             <div className="text-2xl font-bold text-blue-400 mb-1">
               {/* Debug: Add fallback and logging */}
-              {stats.reports?.total !== undefined ? stats.reports.total : 'Loading...'}
+              {stats.reports?.total || 0}
             </div>
             <div className="text-white/70 text-sm">Total Reports</div>
           </div>
           <div className="bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl p-4 text-center">
             <div className="text-2xl font-bold text-red-400 mb-1">
-              {stats.complaints?.total !== undefined ? stats.complaints.total : 'Loading...'}
+              {stats.complaints?.total || 0}
             </div>
             <div className="text-white/70 text-sm">Total Complaints</div>
           </div>
           <div className="bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl p-4 text-center">
             <div className="text-2xl font-bold text-yellow-400 mb-1">
-              {((stats.reports?.pending || 0) + (stats.complaints?.pending || 0)) || 'Loading...'}
+              {(stats.reports?.pending || 0) + (stats.complaints?.pending || 0)}
             </div>
             <div className="text-white/70 text-sm">Pending Items</div>
           </div>

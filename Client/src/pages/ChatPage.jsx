@@ -1,5 +1,6 @@
 import React from 'react';
-import ChatBox from '../components/Chat/ChatBox';
+// import ChatBox from '../components/Chat/ChatBox';
+// import PersonalChatBox from '../components/Chat/PersonalChatBox';
 
 const ChatPage = () => {
   return (
@@ -9,7 +10,8 @@ const ChatPage = () => {
 
       {/* Chat container */}
       <div className="relative z-10 flex flex-col h-screen">
-        <ChatBox />
+        {/* <PersonalChatBox /> */}
+        {/* <ChatBox /> */}
       </div>
     </div>
   );

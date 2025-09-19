@@ -12,6 +12,7 @@ import useAppContext from "../context/useAppContext";
 import CircularProgress from '@mui/material/CircularProgress';
 import UserProfile from '../components/Tools/UserProfil';
 import DailyReporting from '../components/Tools/DailyReporting';
+import PersonalChatBox from '../components/Chat/PersonalChatBox';
 
 const DashboardPage = () => {
   const navigate = useNavigate();
@@ -51,6 +52,8 @@ const DashboardPage = () => {
         return 'Dashboard';
       case '/dashboard/chat':
         return 'chat';
+        case '/dashboard/personalchat':
+        return 'personalchat';
       case '/dashboard/profile':
         return 'profile';
       default:
@@ -78,6 +81,9 @@ const DashboardPage = () => {
         break;
       case 'chat':
         navigate('/dashboard/chat');
+        break;
+      case 'personalchat':
+        navigate('/dashboard/personalchat');
         break;
       case 'tasks':
         navigate('/dashboard/tools/tasks');
@@ -310,6 +316,7 @@ const DashboardPage = () => {
           <div className="h-full p-3 sm:p-4 lg:p-6 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-transparent">
             {activeTab === 'Dashboard' && <Dashboard />}
             {activeTab === 'chat' && <ChatBox />}
+            {activeTab === 'personalchat' && <PersonalChatBox />}
             {activeTab === 'tasks' && <TaskManager />}
             {activeTab === 'files' && <FileManager />}
             {activeTab === 'calendar' && <CalendarTool />}

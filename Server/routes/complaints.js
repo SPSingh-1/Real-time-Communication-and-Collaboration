@@ -436,19 +436,21 @@ router.get('/stats', fetchUser, async (req, res) => {
 
     console.log('Complaints stats query:', JSON.stringify(query, null, 2)); // Debug
 
-    const stats = await Complaint.aggregate([
-      { $match: query },
-      {
-        $group: {
-          _id: null,
-          total: { $sum: 1 },
-          pending: { $sum: { $cond: [{ $eq: ['$status', 'pending'] }, 1, 0] } },
-          investigating: { $sum: { $cond: [{ $eq: ['$status', 'investigating'] }, 1, 0] } },
-          resolved: { $sum: { $cond: [{ $eq: ['$status', 'resolved'] }, 1, 0] } },
-          critical: { $sum: { $cond: [{ $eq: ['$severity', 'critical'] }, 1, 0] } }
-        }
-      }
-    ]);
+    const [totalComplaints, pendingComplaints, investigatingComplaints, resolvedComplaints, criticalComplaints] = await Promise.all([
+    Complaint.countDocuments(query),
+    Complaint.countDocuments({ ...query, status: 'pending' }),
+    Complaint.countDocuments({ ...query, status: 'investigating' }),
+    Complaint.countDocuments({ ...query, status: 'resolved' }),
+    Complaint.countDocuments({ ...query, severity: 'critical' })
+      ]);
+
+    const stats = [{
+      total: totalComplaints,
+      pending: pendingComplaints,
+      investigating: investigatingComplaints,
+      resolved: resolvedComplaints,
+      critical: criticalComplaints
+    }];
 
     // Get assigned to me count
     const assignedCount = await Complaint.countDocuments({ assignedTo: req.user.id });

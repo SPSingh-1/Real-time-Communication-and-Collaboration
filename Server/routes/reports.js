@@ -421,19 +421,25 @@ router.get('/stats', fetchUser, async (req, res) => {
 
     console.log('Reports stats query:', JSON.stringify(query, null, 2)); // Debug
 
-    const stats = await Report.aggregate([
-      { $match: query },
-      {
-        $group: {
-          _id: null,
-          total: { $sum: 1 },
-          pending: { $sum: { $cond: [{ $eq: ['$status', 'pending'] }, 1, 0] } },
-          inProgress: { $sum: { $cond: [{ $eq: ['$status', 'in-progress'] }, 1, 0] } },
-          completed: { $sum: { $cond: [{ $eq: ['$status', 'completed'] }, 1, 0] } },
-          avgRating: { $avg: '$rating' }
-        }
-      }
-    ]);
+   const [totalReports, pendingReports, inProgressReports, completedReports] = await Promise.all([
+    Report.countDocuments(query),
+    Report.countDocuments({ ...query, status: 'pending' }),
+    Report.countDocuments({ ...query, status: 'in-progress' }),
+    Report.countDocuments({ ...query, status: 'completed' })
+  ]);
+
+  const avgRating = await Report.aggregate([
+    { $match: query },
+    { $group: { _id: null, avgRating: { $avg: '$rating' } } }
+  ]);
+
+  const stats = [{
+    total: totalReports,
+    pending: pendingReports,
+    inProgress: inProgressReports,
+    completed: completedReports,
+    avgRating: avgRating[0]?.avgRating || 0
+  }];
 
     // Get assigned to me count
     const assignedCount = await Report.countDocuments({ assignedTo: req.user.id });

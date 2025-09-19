@@ -40,7 +40,9 @@ const FigmaFiles = () => {
     } catch (error) {
       console.error('Error loading files:', error);
       
-      if (error.response?.status === 401) {
+       if (error.response?.status === 401 && error.response?.data?.requiresReconnection) {
+        setError('Your Figma connection has expired. Please reconnect to Figma.');
+      } else if (error.response?.status === 401) {
         setError('Authentication failed. Please reconnect to Figma.');
       } else if (error.response?.status === 400) {
         setError('Figma not connected. Please check your connection.');
@@ -185,10 +187,10 @@ const FigmaFiles = () => {
           </div>
           <div className="mt-4 space-x-2">
             <button
-              onClick={loadFiles}
-              className="bg-red-100 text-red-800 px-4 py-2 rounded-lg hover:bg-red-200 transition-colors"
+              onClick={() => window.location.href = '/dashboard/tools/figma?tab=connection'}
+              className="bg-purple-100 text-purple-800 px-4 py-2 rounded-lg hover:bg-purple-200 transition-colors"
             >
-              Try Again
+              Reconnect Figma
             </button>
             <button
               onClick={() => setError(null)}
