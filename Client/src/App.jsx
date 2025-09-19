@@ -22,7 +22,6 @@ import "react-toastify/dist/ReactToastify.css";
 import ProtectedRoute from "./components/ProtectedRoute";
 import useAppContext from "./context/useAppContext";
 import { useNavigate } from "react-router-dom";
-import PersonalChatBox from "./components/Chat/PersonalChatBox";
 
 function App() {
   const { isAuthenticated, loading, authChecked } = useAppContext();
@@ -83,24 +82,6 @@ function App() {
         />
 
         {/* Dashboard nested routes - all handled by DashboardPage */}
-        <Route
-          path="/dashboard/chat"
-          element={
-            <ProtectedRoute roles={["single", "team", "global"]}>
-              <DashboardPage />
-            </ProtectedRoute>
-          }
-        />
-
-        <Route
-          path="/dashboard/personalchat"
-          element={
-            <ProtectedRoute roles={["single", "team", "global"]}>
-              <DashboardPage />
-            </ProtectedRoute>
-          }
-        />
-        
         <Route
           path="/dashboard/profile"
           element={
@@ -166,6 +147,7 @@ function App() {
           }
         />
         
+        {/* Chat Routes - Now all handled by ChatPage */}
         <Route
           path="/chat"
           element={
@@ -176,10 +158,10 @@ function App() {
         />
 
         <Route
-          path="/personalchat"
+          path="/chat/:chatType"
           element={
             <ProtectedRoute roles={["single", "team", "global"]}>
-              <PersonalChatBox />
+              <ChatPage />
             </ProtectedRoute>
           }
         />
@@ -195,6 +177,7 @@ function App() {
         />
 
         {/* Legacy redirects for backward compatibility */}
+        <Route path="/personalchat" element={<Navigate to="/chat/personal" replace />} />
         <Route path="/tools/figma" element={<Navigate to="/dashboard/tools/figma" replace />} />
         <Route path="/tools/calendar" element={<Navigate to="/dashboard/tools/calendar" replace />} />
         <Route path="/tools/tasks" element={<Navigate to="/dashboard/tools/tasks" replace />} />

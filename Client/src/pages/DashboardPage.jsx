@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import Sidebar from '../components/Sidebar/Sidebar';
-import ChatBox from '../components/Chat/ChatBox';
 import Dashboard from '../components/Dashboard/Dashboard';
 import TaskManager from '../components/Tools/TaskManager';
 import FileManager from '../components/Tools/FileManager';
@@ -12,7 +11,6 @@ import useAppContext from "../context/useAppContext";
 import CircularProgress from '@mui/material/CircularProgress';
 import UserProfile from '../components/Tools/UserProfil';
 import DailyReporting from '../components/Tools/DailyReporting';
-import PersonalChatBox from '../components/Chat/PersonalChatBox';
 
 const DashboardPage = () => {
   const navigate = useNavigate();
@@ -50,10 +48,6 @@ const DashboardPage = () => {
     switch (pathname) {
       case '/dashboard':
         return 'Dashboard';
-      case '/dashboard/chat':
-        return 'chat';
-        case '/dashboard/personalchat':
-        return 'personalchat';
       case '/dashboard/profile':
         return 'profile';
       default:
@@ -80,10 +74,7 @@ const DashboardPage = () => {
         navigate('/dashboard');
         break;
       case 'chat':
-        navigate('/dashboard/chat');
-        break;
-      case 'personalchat':
-        navigate('/dashboard/personalchat');
+        navigate('/chat');
         break;
       case 'tasks':
         navigate('/dashboard/tools/tasks');
@@ -315,15 +306,12 @@ const DashboardPage = () => {
         <div className="flex-1 overflow-hidden">
           <div className="h-full p-3 sm:p-4 lg:p-6 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-transparent">
             {activeTab === 'Dashboard' && <Dashboard />}
-            {activeTab === 'chat' && <ChatBox />}
-            {activeTab === 'personalchat' && <PersonalChatBox />}
             {activeTab === 'tasks' && <TaskManager />}
             {activeTab === 'files' && <FileManager />}
             {activeTab === 'calendar' && <CalendarTool />}
             {activeTab === 'figma' && <FigmaTool user={user} />}
             {activeTab === 'VideoConferenc' && <VideoConferenc />}
             {activeTab === "profile" && <UserProfile />}
-            {/* FIXED: Changed from "dailyreporting" to "DailyReporting" */}
             {activeTab === "DailyReporting" && <DailyReporting user={user} />}
           </div>
         </div>

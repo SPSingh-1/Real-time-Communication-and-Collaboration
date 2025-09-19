@@ -73,14 +73,6 @@ const Sidebar = ({ activeTab, setActiveTab, collapsed, setCollapsed }) => {
               activeTab={activeTab} 
               setActiveTab={setActiveTab} 
             />
-
-            <SidebarButton 
-              icon={<FaComments />} 
-              label="Personalchat" 
-              tab="personalchat" 
-              activeTab={activeTab} 
-              setActiveTab={setActiveTab} 
-            />
             
             <SidebarButton 
               icon={<FaTasks />} 
