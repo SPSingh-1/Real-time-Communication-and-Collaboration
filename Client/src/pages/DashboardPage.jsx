@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, useParams } from 'react-router-dom';
 import Sidebar from '../components/Sidebar/Sidebar';
 import Dashboard from '../components/Dashboard/Dashboard';
 import TaskManager from '../components/Tools/TaskManager';
@@ -11,10 +11,13 @@ import useAppContext from "../context/useAppContext";
 import CircularProgress from '@mui/material/CircularProgress';
 import UserProfile from '../components/Tools/UserProfil';
 import DailyReporting from '../components/Tools/DailyReporting';
+import ChatPage from './ChatPage';
 
 const DashboardPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  //eslint-disable-next-line
+  const { chatType } = useParams();
   const { user, loading, authChecked, isAuthenticated } = useAppContext();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -22,6 +25,16 @@ const DashboardPage = () => {
   // Determine active tab based on URL
   const getActiveTabFromUrl = () => {
     const pathname = location.pathname;
+    
+    // Handle chat routes
+    if (pathname.startsWith('/dashboard/chat')) {
+      if (pathname === '/dashboard/chat') {
+        return 'chat';
+      }
+      // Handle chat with type parameter
+      const pathChatType = pathname.split('/')[3];
+      return pathChatType ? `chat-${pathChatType}` : 'chat';
+    }
     
     // Handle nested tool routes
     if (pathname.startsWith('/dashboard/tools/')) {
@@ -38,7 +51,7 @@ const DashboardPage = () => {
         case 'video':
           return 'VideoConferenc';
         case 'reporting':
-          return 'DailyReporting'; // Fixed: This should match the case in the render section
+          return 'DailyReporting';
         default:
           return 'Dashboard';
       }
@@ -74,7 +87,10 @@ const DashboardPage = () => {
         navigate('/dashboard');
         break;
       case 'chat':
-        navigate('/chat');
+        navigate('/dashboard/chat');
+        break;
+      case 'chat-personal':
+        navigate('/dashboard/chat/personal');
         break;
       case 'tasks':
         navigate('/dashboard/tools/tasks');
@@ -188,6 +204,11 @@ const DashboardPage = () => {
 
   const roleInfo = getRoleDisplayInfo();
 
+  // Helper function to check if current tab is chat-related
+  const isChatActive = () => {
+    return activeTab === 'chat' || activeTab === 'chat-personal';
+  };
+
   return (
     <div className="flex min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black overflow-hidden relative">
       {/* ANIMATED BACKGROUND */}
@@ -257,9 +278,13 @@ const DashboardPage = () => {
               <div>
                 <div className='flex gap-2 items-center'>
                   <img src="/logo.png" alt="applogo" className='h-[30px] w-[30px] sm:h-[40px] sm:w-[40px] rounded-3xl'/>
-                  <h1 className="text-lg sm:text-2xl font-bold text-white truncate">{roleInfo.title}</h1>
+                  <h1 className="text-lg sm:text-2xl font-bold text-white truncate">
+                    {isChatActive() ? 'Chat' : roleInfo.title}
+                  </h1>
                 </div>
-                <p className="text-gray-400 text-xs sm:text-sm truncate">{roleInfo.subtitle}</p>
+                <p className="text-gray-400 text-xs sm:text-sm truncate">
+                  {isChatActive() ? 'Communication Hub' : roleInfo.subtitle}
+                </p>
               </div>
             </div>
             
@@ -304,16 +329,24 @@ const DashboardPage = () => {
 
         {/* CONTENT AREA */}
         <div className="flex-1 overflow-hidden">
-          <div className="h-full p-3 sm:p-4 lg:p-6 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-transparent">
-            {activeTab === 'Dashboard' && <Dashboard />}
-            {activeTab === 'tasks' && <TaskManager />}
-            {activeTab === 'files' && <FileManager />}
-            {activeTab === 'calendar' && <CalendarTool />}
-            {activeTab === 'figma' && <FigmaTool user={user} />}
-            {activeTab === 'VideoConferenc' && <VideoConferenc />}
-            {activeTab === "profile" && <UserProfile />}
-            {activeTab === "DailyReporting" && <DailyReporting user={user} />}
-          </div>
+          {isChatActive() ? (
+            // Chat content takes full height without padding
+            <div className="h-full">
+              <ChatPage />
+            </div>
+          ) : (
+            // Other content with normal padding and scrolling
+            <div className="h-full p-3 sm:p-4 lg:p-6 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-transparent">
+              {activeTab === 'Dashboard' && <Dashboard />}
+              {activeTab === 'tasks' && <TaskManager />}
+              {activeTab === 'files' && <FileManager />}
+              {activeTab === 'calendar' && <CalendarTool />}
+              {activeTab === 'figma' && <FigmaTool user={user} />}
+              {activeTab === 'VideoConferenc' && <VideoConferenc />}
+              {activeTab === "profile" && <UserProfile />}
+              {activeTab === "DailyReporting" && <DailyReporting user={user} />}
+            </div>
+          )}
         </div>
       </main>
     </div>

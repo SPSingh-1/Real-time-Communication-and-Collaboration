@@ -515,21 +515,6 @@ const RegisterPage = () => {
             </Link>
           </p>
 
-          <div className="flex items-center my-6">
-            <div className="flex-1 border-t border-gray-600"></div>
-            <span className="px-4 text-gray-400 text-sm">Or continue with</span>
-            <div className="flex-1 border-t border-gray-600"></div>
-          </div>
-
-          <Button 
-            type="button"
-            fullWidth
-            disabled={isLoading}
-            className="!bg-white !text-gray-800 !py-3 !rounded-lg !font-semibold hover:!bg-gray-100 !transition-all !duration-200 !shadow-lg hover:!shadow-xl"
-          >
-            <FcGoogle className="text-xl mr-2" /> 
-            Continue with Google
-          </Button>
         </form>
 
         {/* ROLE INFO SECTION */}

@@ -83,6 +83,24 @@ function App() {
 
         {/* Dashboard nested routes - all handled by DashboardPage */}
         <Route
+          path="/dashboard/chat"
+          element={
+            <ProtectedRoute roles={["single", "team", "global"]}>
+              <DashboardPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/dashboard/chat/:chatType"
+          element={
+            <ProtectedRoute roles={["single", "team", "global"]}>
+              <DashboardPage />
+            </ProtectedRoute>
+          }
+        />
+        
+        <Route
           path="/dashboard/profile"
           element={
             <ProtectedRoute roles={["single", "team", "global"]}>
@@ -146,25 +164,6 @@ function App() {
             </ProtectedRoute>
           }
         />
-        
-        {/* Chat Routes - Now all handled by ChatPage */}
-        <Route
-          path="/chat"
-          element={
-            <ProtectedRoute roles={["single", "team", "global"]}>
-              <ChatPage />
-            </ProtectedRoute>
-          }
-        />
-
-        <Route
-          path="/chat/:chatType"
-          element={
-            <ProtectedRoute roles={["single", "team", "global"]}>
-              <ChatPage />
-            </ProtectedRoute>
-          }
-        />
 
         {/* Events - All roles */}
         <Route
@@ -177,7 +176,9 @@ function App() {
         />
 
         {/* Legacy redirects for backward compatibility */}
-        <Route path="/personalchat" element={<Navigate to="/chat/personal" replace />} />
+        <Route path="/chat" element={<Navigate to="/dashboard/chat" replace />} />
+        <Route path="/chat/:chatType" element={<Navigate to="/dashboard/chat/:chatType" replace />} />
+        <Route path="/personalchat" element={<Navigate to="/dashboard/chat/personal" replace />} />
         <Route path="/tools/figma" element={<Navigate to="/dashboard/tools/figma" replace />} />
         <Route path="/tools/calendar" element={<Navigate to="/dashboard/tools/calendar" replace />} />
         <Route path="/tools/tasks" element={<Navigate to="/dashboard/tools/tasks" replace />} />

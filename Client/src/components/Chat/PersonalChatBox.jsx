@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { io } from "socket.io-client";
 import axios from "axios";
-import { FaPaperclip, FaSmile, FaPlus, FaArrowLeft, FaUsers } from "react-icons/fa";
+import { FaPaperclip, FaSmile, FaPlus, FaArrowLeft, FaUsers, FaBars, FaTimes } from "react-icons/fa";
 import { FaAngleDown, FaStar, FaThumbtack } from "react-icons/fa6";
 import Picker from "emoji-picker-react";
 import dayjs from "dayjs";
@@ -33,7 +33,8 @@ const PersonalChatBox = () => {
   const [pinnedMsgs, setPinnedMsgs] = useState([]);
   const [connectionStatus, setConnectionStatus] = useState('connecting');
   const [currentRole, setCurrentRole] = useState('single');
-  const [showSidebar, setShowSidebar] = useState(true);
+  const [showSidebar, setShowSidebar] = useState(window.innerWidth >= 768);
+  const [isMobile, setIsMobile] = useState(false);
 
   // Reaction states
   const [showTriggerSmileyForMsgId, setShowTriggerSmileyForMsgId] = useState(null);
@@ -44,6 +45,19 @@ const PersonalChatBox = () => {
   const messagesEndRef = useRef();
 
   const quickReactions = ["😀", "❤️", "😂", "😮", "😢", "😡"];
+
+  // Detect screen size changes
+  // Detect screen size changes
+useEffect(() => {
+  const checkScreenSize = () => {
+    const mobile = window.innerWidth < 768;
+    setIsMobile(mobile);
+  };
+
+  checkScreenSize();
+  window.addEventListener('resize', checkScreenSize);
+  return () => window.removeEventListener('resize', checkScreenSize);
+}, []);
 
   // Initialize socket connection for personal chat
   useEffect(() => {
@@ -294,25 +308,25 @@ useEffect(() => {
   ]);
 
   const selectTeammate = (teammate) => {
-  console.log("Selecting teammate:", teammate.name, teammate._id);
-  setSelectedTeammate(teammate);
-  setMessages([]);
-  setShowSidebar(false);
-  
-  // Ensure socket is connected before joining conversation
-  if (connectionStatus === 'connected' && socket.connected) {
-    console.log("Joining conversation with teammate:", teammate._id);
-    socket.emit("join-personal-conversation", { teammateId: teammate._id });
-  } else {
-    console.error("Cannot join conversation - socket not connected:", connectionStatus);
-    // Don't show alert immediately, wait a moment for connection
-    setTimeout(() => {
-      if (connectionStatus !== 'connected') {
-        alert("Connection error. Please wait for connection to be established.");
-      }
-    }, 1000);
-  }
-};
+    console.log("Selecting teammate:", teammate.name, teammate._id);
+    setSelectedTeammate(teammate);
+    setMessages([]);
+    setShowSidebar(false);
+    
+    
+    // Ensure socket is connected before joining conversation
+    if (connectionStatus === 'connected' && socket.connected) {
+      console.log("Joining conversation with teammate:", teammate._id);
+      socket.emit("join-personal-conversation", { teammateId: teammate._id });
+    } else {
+      console.error("Cannot join conversation - socket not connected:", connectionStatus);
+      setTimeout(() => {
+        if (connectionStatus !== 'connected') {
+          alert("Connection error. Please wait for connection to be established.");
+        }
+      }, 1000);
+    }
+  };
 
   const sendMessage = () => {
     console.log("Attempting to send message:", {
@@ -554,10 +568,10 @@ useEffect(() => {
   // Loading state while waiting for user context
   if (!user) {
     return (
-      <div className="flex flex-col items-center justify-center h-full text-white bg-gradient-to-br from-gray-900 to-gray-800">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mb-4"></div>
-        <div className="text-xl mb-2">Loading Personal Chat...</div>
-        <div className="text-gray-400 text-center">
+      <div className="flex flex-col items-center justify-center h-full text-white bg-gradient-to-br from-gray-900 to-gray-800 p-4">
+        <div className="animate-spin rounded-full h-8 sm:h-12 w-8 sm:w-12 border-b-2 border-blue-500 mb-4"></div>
+        <div className="text-lg sm:text-xl mb-2 text-center">Loading Personal Chat...</div>
+        <div className="text-gray-400 text-center text-sm sm:text-base">
           Initializing user context
         </div>
       </div>
@@ -566,15 +580,15 @@ useEffect(() => {
 
   if (connectionStatus === 'role-restricted') {
     return (
-      <div className="flex flex-col items-center justify-center h-full text-white bg-gradient-to-br from-gray-900 to-gray-800">
-        <div className="text-xl mb-4">Personal Chat Not Available</div>
-        <div className="text-gray-400 text-center">
+      <div className="flex flex-col items-center justify-center h-full text-white bg-gradient-to-br from-gray-900 to-gray-800 p-4">
+        <div className="text-lg sm:text-xl mb-4 text-center">Personal Chat Not Available</div>
+        <div className="text-gray-400 text-center text-sm sm:text-base max-w-sm">
           Personal chat is only available for team and global users.<br />
           Current role: <span className="font-semibold text-yellow-400">{user.role}</span>
         </div>
         <button 
           onClick={() => window.location.reload()} 
-          className="mt-4 bg-blue-600 px-4 py-2 rounded hover:bg-blue-700 transition"
+          className="mt-4 bg-blue-600 px-4 py-2 rounded hover:bg-blue-700 transition text-sm sm:text-base"
         >
           Reload
         </button>
@@ -584,9 +598,9 @@ useEffect(() => {
 
   if (connectionStatus === 'error' || connectionStatus === 'auth-error') {
     return (
-      <div className="flex flex-col items-center justify-center h-full text-white bg-gradient-to-br from-gray-900 to-gray-800">
-        <div className="text-xl mb-4">Connection Error</div>
-        <div className="text-gray-400 text-center">
+      <div className="flex flex-col items-center justify-center h-full text-white bg-gradient-to-br from-gray-900 to-gray-800 p-4">
+        <div className="text-lg sm:text-xl mb-4 text-center">Connection Error</div>
+        <div className="text-gray-400 text-center text-sm sm:text-base max-w-sm">
           {connectionStatus === 'auth-error' ? 
             'Authentication failed. Please log in again.' : 
             'Failed to connect to personal chat service'
@@ -594,7 +608,7 @@ useEffect(() => {
         </div>
         <button 
           onClick={() => window.location.reload()} 
-          className="mt-4 bg-blue-600 px-4 py-2 rounded hover:bg-blue-700 transition"
+          className="mt-4 bg-blue-600 px-4 py-2 rounded hover:bg-blue-700 transition text-sm sm:text-base"
         >
           Reload
         </button>
@@ -603,99 +617,161 @@ useEffect(() => {
   }
 
   return (
-    <div className="flex h-full bg-gradient-to-br from-gray-900 to-gray-800">
+    <div className="flex h-full bg-gradient-to-br from-gray-900 to-gray-800 relative">
+      {/* MOBILE OVERLAY */}
+      {isMobile && showSidebar && (
+        <div 
+          className="fixed inset-0 bg-black/50 z-40 md:hidden"
+          onClick={() => setShowSidebar(false)}
+        />
+      )}
+
       {/* SIDEBAR - Teammates List */}
-      <div className={`${showSidebar ? 'w-80' : 'w-0'} transition-all duration-300 border-r border-gray-700 bg-gray-800/50 overflow-hidden`}>
-        <div className="p-4 border-b border-gray-700">
-          <h2 className="text-lg font-bold text-white mb-2">{getRoleDisplayName()}</h2>
-          <p className="text-sm text-gray-400">
-            {currentRole === 'team' ? 'Chat privately with your teammates' : 'Chat privately with global users'}
-          </p>
-          <div className="text-xs text-gray-500 mt-2">
-            User: {user.name} | Role: {user.role}
-          </div>
-        </div>
-        
-        <div className="overflow-y-auto h-full">
-          {teammates.length === 0 ? (
-            <div className="p-4 text-center text-gray-400">
-              <FaUsers className="mx-auto mb-2 text-2xl" />
-              <p>No {currentRole} members available</p>
-              {connectionStatus === 'connecting' && (
-                <div className="mt-2 text-xs">Connecting...</div>
-              )}
-            </div>
-          ) : (
-            teammates.map((teammate) => (
-              <div
-                key={teammate._id}
-                onClick={() => selectTeammate(teammate)}
-                className={`p-4 cursor-pointer hover:bg-gray-700/50 transition border-b border-gray-700/50 ${
-                  selectedTeammate?._id === teammate._id ? 'bg-blue-600/20 border-blue-500/30' : ''
-                }`}
+      <div className={`
+        ${showSidebar 
+          ? 'w-full sm:w-80 md:w-80 lg:w-80' 
+          : 'w-0'
+        } 
+        ${isMobile 
+          ? 'fixed inset-y-0 left-0 z-50' 
+          : 'relative'
+        }
+        transition-all duration-300 border-r border-gray-700 bg-gray-800/95 backdrop-blur-sm 
+        overflow-hidden flex-shrink-0 min-w-0
+      `}>
+        <div className="flex flex-col h-full">
+          {/* SIDEBAR HEADER */}
+          <div className="p-3 sm:p-4 border-b border-gray-700 flex-shrink-0">
+            <div className="flex items-center justify-between mb-2 sm:mb-3">
+              <h2 className="text-base sm:text-lg font-bold text-white truncate">
+                {getRoleDisplayName()}
+              </h2>
+              <button
+                onClick={() => setShowSidebar(false)}
+                className="text-gray-400 hover:text-white transition p-1 flex-shrink-0 ml-2"
               >
-                <div className="flex items-center justify-between">
-                  <div className="flex-1 min-w-0">
-                    <h4 className="font-semibold text-white truncate">{teammate.name}</h4>
-                    <p className="text-sm text-gray-400 truncate">{teammate.email}</p>
-                    {teammate.lastMessage && (
-                      <p className="text-xs text-gray-500 mt-1 truncate">
-                        {teammate.lastMessage.isFileMessage ? 
-                          `📎 ${teammate.lastMessage.fileName}` : 
-                          teammate.lastMessage.text
-                        }
+                <FaTimes className="w-4 h-4" />
+              </button>
+            </div>
+            <p className="text-xs sm:text-sm text-gray-400 mb-2">
+              {currentRole === 'team' ? 'Chat privately with your teammates' : 'Chat privately with global users'}
+            </p>
+            <div className="text-xs text-gray-500">
+              User: {user.name} | Role: {user.role}
+            </div>
+          </div>
+          
+          {/* TEAMMATES LIST */}
+          <div className="overflow-y-auto h-full overscroll-contain">
+            {teammates.length === 0 ? (
+              <div className="p-4 text-center text-gray-400">
+                <FaUsers className="mx-auto mb-2 text-xl sm:text-2xl" />
+                <p className="text-sm sm:text-base">No {currentRole} members available</p>
+                {connectionStatus === 'connecting' && (
+                  <div className="mt-2 text-xs">Connecting...</div>
+                )}
+              </div>
+            ) : (
+              teammates.map((teammate) => (
+                <div
+                  key={teammate._id}
+                  onClick={() => selectTeammate(teammate)}
+                  className={`
+                    p-3 sm:p-4 cursor-pointer hover:bg-gray-700/50 active:bg-gray-700/70 
+                    transition border-b border-gray-700/50
+                    ${selectedTeammate?._id === teammate._id ? 'bg-blue-600/20 border-blue-500/30' : ''}
+                  `}
+                >
+                  <div className="flex items-center justify-between min-w-0">
+                    <div className="flex-1 min-w-0">
+                      <h4 className="font-semibold text-white truncate text-sm sm:text-base">
+                        {teammate.name}
+                      </h4>
+                      <p className="text-xs sm:text-sm text-gray-400 truncate">
+                        {teammate.email}
                       </p>
+                      {teammate.lastMessage && (
+                        <p className="text-xs text-gray-500 mt-1 truncate">
+                          {teammate.lastMessage.isFileMessage ? 
+                            `📎 ${teammate.lastMessage.fileName}` : 
+                            teammate.lastMessage.text
+                          }
+                        </p>
+                      )}
+                    </div>
+                    {teammate.unreadCount > 0 && (
+                      <div className="bg-red-500 text-white text-xs rounded-full px-2 py-1 ml-2 flex-shrink-0">
+                        {teammate.unreadCount}
+                      </div>
                     )}
                   </div>
-                  {teammate.unreadCount > 0 && (
-                    <div className="bg-red-500 text-white text-xs rounded-full px-2 py-1 ml-2">
-                      {teammate.unreadCount}
-                    </div>
-                  )}
                 </div>
-              </div>
-            ))
-          )}
+              ))
+            )}
+          </div>
         </div>
       </div>
 
       {/* MAIN CHAT AREA */}
-      <div className="flex flex-col flex-1 h-full">
+      <div className="flex flex-col flex-1 h-full min-w-0">
         {!selectedTeammate ? (
-          <div className="flex flex-col items-center justify-center h-full text-white">
-            <FaUsers className="text-6xl mb-4 text-gray-600" />
-            <h3 className="text-xl font-semibold mb-2">Select a {currentRole} member</h3>
-            <p className="text-gray-400 text-center">
-              Choose someone from the sidebar to start a private conversation
+          <div className="flex flex-col items-center justify-center h-full text-white p-4">
+            {/* Show sidebar button when no teammate selected */}
+            {!showSidebar && (
+              <div className="absolute top-4 left-4">
+                <button
+                  onClick={() => setShowSidebar(true)}
+                  className="bg-gray-800/90 backdrop-blur-sm text-white p-2 rounded-full hover:bg-gray-700 transition shadow-lg border border-gray-600"
+                >
+                  <FaBars className="w-4 h-4 sm:w-5 sm:h-5" />
+                </button>
+              </div>
+            )}
+            
+            <FaUsers className="text-4xl sm:text-6xl mb-4 text-gray-600" />
+            <h3 className="text-lg sm:text-xl font-semibold mb-2 text-center">
+              Select a {currentRole} member
+            </h3>
+            <p className="text-gray-400 text-center text-sm sm:text-base max-w-sm">
+              {isMobile 
+                ? 'Tap the menu button to choose someone to start a private conversation'
+                : 'Choose someone from the sidebar to start a private conversation'
+              }
             </p>
-            <div className="mt-4 text-sm text-gray-500">
+            <div className="mt-4 text-xs sm:text-sm text-gray-500 text-center">
               Status: <span className="capitalize text-blue-400">{connectionStatus}</span>
             </div>
           </div>
         ) : (
           <>
             {/* CHAT HEADER */}
-            <div className="border-b border-gray-700 bg-gradient-to-r from-blue-900/50 to-purple-900/50 backdrop-blur-sm">
-              <div className="py-4 px-6">
+            <div className="border-b border-gray-700 bg-gradient-to-r from-blue-900/50 to-purple-900/50 backdrop-blur-sm flex-shrink-0">
+              <div className="py-3 sm:py-4 px-4 sm:px-6">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2 sm:gap-3 min-w-0">
                     <button
                       onClick={() => setShowSidebar(true)}
-                      className="lg:hidden text-gray-400 hover:text-white transition"
+                      className="text-gray-400 hover:text-white transition flex-shrink-0"
                     >
-                      <FaArrowLeft />
+                      <FaBars className="w-4 h-4 sm:w-5 sm:h-5" />
                     </button>
-                    <div>
-                      <h1 className="text-xl font-bold text-white">{selectedTeammate.name}</h1>
-                      <p className="text-sm text-gray-300">{selectedTeammate.email}</p>
+                    <div className="min-w-0 flex-1">
+                      <h1 className="text-lg sm:text-xl font-bold text-white truncate">
+                        {selectedTeammate.name}
+                      </h1>
+                      <p className="text-xs sm:text-sm text-gray-300 truncate">
+                        {selectedTeammate.email}
+                      </p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-3">
-                    <div className={`h-3 w-3 rounded-full ${
+                  <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+                    <div className={`h-2 w-2 sm:h-3 sm:w-3 rounded-full ${
                       connectionStatus === 'connected' ? 'bg-green-500' : 
                       connectionStatus === 'connecting' ? 'bg-yellow-500' : 'bg-red-500'
                     }`}></div>
-                    <span className="text-xs text-gray-400 capitalize">{connectionStatus}</span>
+                    <span className="text-xs text-gray-400 capitalize hidden sm:inline">
+                      {connectionStatus}
+                    </span>
                   </div>
                 </div>
                 {messages.length > 0 && (
@@ -709,19 +785,21 @@ useEffect(() => {
             </div>
 
             {/* MESSAGES AREA */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-4 scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-transparent">
+            <div className="flex-1 overflow-y-auto p-2 sm:p-4 space-y-2 sm:space-y-4 scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-transparent min-h-0">
               {connectionStatus === 'connecting' && (
                 <div className="flex justify-center items-center py-8">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
-                  <span className="ml-3 text-gray-400">Connecting...</span>
+                  <div className="animate-spin rounded-full h-6 w-6 sm:h-8 sm:w-8 border-b-2 border-blue-500"></div>
+                  <span className="ml-3 text-gray-400 text-sm sm:text-base">Connecting...</span>
                 </div>
               )}
 
               {sortedMessages.length === 0 && connectionStatus === 'connected' && (
                 <div className="flex flex-col items-center justify-center py-12 text-gray-400">
-                  <div className="text-6xl mb-4">💬</div>
-                  <h3 className="text-lg font-semibold mb-2">No messages yet</h3>
-                  <p className="text-sm text-center">
+                  <div className="text-4xl sm:text-6xl mb-4">💬</div>
+                  <h3 className="text-base sm:text-lg font-semibold mb-2 text-center">
+                    No messages yet
+                  </h3>
+                  <p className="text-xs sm:text-sm text-center max-w-sm">
                     Start your private conversation with {selectedTeammate.name}
                   </p>
                 </div>
@@ -741,11 +819,11 @@ useEffect(() => {
                   <div
                     key={m._id}
                     id={`message-container-${m._id}`}
-                    className={`relative group max-w-[85%] flex ${
+                    className={`relative group max-w-[90%] sm:max-w-[85%] flex ${
                       isMine ? "justify-end ml-auto" : "justify-start mr-auto"
-                    } mb-6`}
+                    } mb-4 sm:mb-6`}
                     onMouseEnter={() => {
-                      if (
+                      if (!isMobile &&
                         showQuickReactionBarForMsgId !== m._id &&
                         fullPickerMessageId !== m._id
                       ) {
@@ -753,7 +831,7 @@ useEffect(() => {
                       }
                     }}
                     onMouseLeave={() => {
-                      if (
+                      if (!isMobile &&
                         showQuickReactionBarForMsgId !== m._id &&
                         fullPickerMessageId !== m._id
                       ) {
@@ -761,25 +839,24 @@ useEffect(() => {
                       }
                     }}
                   >
-                    {/* MESSAGE BUBBLE - Same as original */}
+                    {/* MESSAGE BUBBLE */}
                     <div
-                      className={`relative px-4 py-3 rounded-2xl text-sm break-words transition-all duration-200 min-w-[120px] shadow-lg
+                      className={`relative px-3 sm:px-4 py-2 sm:py-3 rounded-2xl text-sm break-words transition-all duration-200 min-w-[120px] shadow-lg
                         ${isMine
                           ? "bg-gradient-to-br from-blue-600 to-blue-700 text-white border-r-4 border-blue-400 rounded-br-md"
                           : "bg-gradient-to-br from-gray-700 to-gray-800 text-white border-l-4 border-purple-500 rounded-bl-md"
                         }`}
                     >
-                      {/* Rest of the message rendering logic stays the same... */}
                       {/* USER NAME */}
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="text-xs font-semibold text-gray-200">
-                          {m.sender?.name || "Unknown"}
-                          <span className="ml-2 px-2 py-0.5 bg-green-600 text-white rounded-full text-[10px]">
+                      <div className="flex items-center justify-between mb-1 sm:mb-2">
+                        <div className="text-xs font-semibold text-gray-200 min-w-0">
+                          <span className="truncate">{m.sender?.name || "Unknown"}</span>
+                          <span className="ml-1 sm:ml-2 px-1 sm:px-2 py-0.5 bg-green-600 text-white rounded-full text-[8px] sm:text-[10px]">
                             PRIVATE
                           </span>
                         </div>
                         {(isPinned || isStarred) && (
-                          <div className="flex gap-1">
+                          <div className="flex gap-1 flex-shrink-0 ml-2">
                             {isPinned && <FaThumbtack className="text-yellow-400 text-xs" />}
                             {isStarred && <FaStar className="text-yellow-300 text-xs" />}
                           </div>
@@ -787,7 +864,7 @@ useEffect(() => {
                       </div>
 
                       {/* MESSAGE CONTENT */}
-                      <div className="text-base leading-relaxed">
+                      <div className="text-sm sm:text-base leading-relaxed">
                         {m.isFileMessage || m.fileUrl ? (
                           <div>
                             {m.text && <div className="mb-2">{m.text}</div>}
@@ -799,7 +876,7 @@ useEffect(() => {
                                     <img 
                                       src={m.fileUrl} 
                                       alt={m.fileName || "Image"} 
-                                      className="max-w-xs max-h-48 rounded-lg border border-gray-600 object-cover"
+                                      className="max-w-[200px] sm:max-w-xs max-h-32 sm:max-h-48 rounded-lg border border-gray-600 object-cover"
                                       loading="lazy"
                                     />
                                   </div>
@@ -808,7 +885,7 @@ useEffect(() => {
                                 {/* Audio player for audio files */}
                                 {m.fileType === 'audio' && (
                                   <div className="mb-2">
-                                    <audio controls className="w-full max-w-xs">
+                                    <audio controls className="w-full max-w-[200px] sm:max-w-xs">
                                       <source src={m.fileUrl} />
                                       Your browser does not support the audio element.
                                     </audio>
@@ -818,7 +895,7 @@ useEffect(() => {
                                 {/* Video player for video files */}
                                 {m.fileType === 'video' && (
                                   <div className="mb-2">
-                                    <video controls className="w-full max-w-xs max-h-48 rounded-lg">
+                                    <video controls className="w-full max-w-[200px] sm:max-w-xs max-h-32 sm:max-h-48 rounded-lg">
                                       <source src={m.fileUrl} />
                                       Your browser does not support the video element.
                                     </video>
@@ -830,11 +907,15 @@ useEffect(() => {
                                   href={m.fileUrl}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className="inline-flex items-center gap-2 underline text-blue-200 hover:text-blue-100 transition bg-black/20 px-3 py-2 rounded-lg hover:bg-black/30"
+                                  className="inline-flex items-center gap-1 sm:gap-2 underline text-blue-200 hover:text-blue-100 transition bg-black/20 px-2 sm:px-3 py-1 sm:py-2 rounded-lg hover:bg-black/30 text-xs sm:text-sm"
                                 >
                                   <span>📎</span>
-                                  <span>{m.fileName || "Download File"}</span>
-                                  <span className="text-xs text-gray-300">({m.fileType || "file"})</span>
+                                  <span className="truncate max-w-[120px] sm:max-w-none">
+                                    {m.fileName || "Download File"}
+                                  </span>
+                                  <span className="text-xs text-gray-300 hidden sm:inline">
+                                    ({m.fileType || "file"})
+                                  </span>
                                 </a>
                               </div>
                             )}
@@ -845,8 +926,11 @@ useEffect(() => {
                       </div>
 
                       {/* TIMESTAMP */}
-                      <div className="text-[10px] text-gray-400 text-right mt-2">
-                        {dayjs(m.createdAt).format("MMM DD, h:mm A")}
+                      <div className="text-[9px] sm:text-[10px] text-gray-400 text-right mt-1 sm:mt-2">
+                        {isMobile 
+                          ? dayjs(m.createdAt).format("MMM DD, h:mm A")
+                          : dayjs(m.createdAt).format("MMM DD, h:mm A")
+                        }
                         {m.updatedAt && m.updatedAt !== m.createdAt && (
                           <span className="ml-1 text-orange-400">(edited)</span>
                         )}
@@ -855,14 +939,16 @@ useEffect(() => {
                       {/* REACTION BADGES */}
                       {Object.keys(reactionCounts).length > 0 && (
                         <div
-                          className={`absolute -bottom-4 ${
-                            isMine ? "left-0" : "right-0"
-                          } flex gap-1 flex-wrap`}
+                          className={`absolute -bottom-3 sm:-bottom-4 ${
+                            isMobile 
+                              ? (isMine ? "left-0" : "right-0")
+                              : (isMine ? "left-0" : "right-0")
+                          } flex gap-1 flex-wrap max-w-[200px]`}
                         >
                           {Object.entries(reactionCounts).map(([emoji, count]) => (
                             <span
                               key={emoji}
-                              className="bg-gray-800/90 backdrop-blur-sm text-white px-2 py-1 rounded-full text-sm shadow-lg cursor-pointer hover:scale-110 transition-all duration-200 border border-gray-600"
+                              className="bg-gray-800/90 backdrop-blur-sm text-white px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full text-xs sm:text-sm shadow-lg cursor-pointer hover:scale-110 transition-all duration-200 border border-gray-600"
                               onClick={() => handleReaction(m._id, emoji)}
                             >
                               {emoji}
@@ -877,9 +963,13 @@ useEffect(() => {
                       {/* MESSAGE OPTIONS BUTTON */}
                       <div
                         id={`options-button-${m._id}`}
-                        className={`absolute top-2 ${
-                          isMine ? "left-2" : "right-2"
-                        } cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity duration-200`}
+                        className={`absolute top-1 sm:top-2 ${
+                          isMobile 
+                            ? (isMine ? "left-1" : "right-1")
+                            : (isMine ? "left-2" : "right-2")
+                        } cursor-pointer ${
+                          isMobile ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+                        } transition-opacity duration-200`}
                         onClick={() =>
                           setSelectedMsgIdForOptions(
                             m._id === selectedMsgIdForOptions ? null : m._id
@@ -895,13 +985,16 @@ useEffect(() => {
                       {selectedMsgIdForOptions === m._id && (
                         <div
                           id={`options-menu-${m._id}`}
-                          className={`absolute z-40 bg-gray-800 border border-gray-600 rounded-lg shadow-2xl text-sm top-8 min-w-[120px]
-                            ${isMine ? "left-0" : "right-0"}`}
+                          className={`absolute z-40 bg-gray-800 border border-gray-600 rounded-lg shadow-2xl text-sm top-6 sm:top-8 min-w-[120px]
+                            ${isMobile 
+                              ? (isMine ? "left-0" : "right-0")
+                              : (isMine ? "left-0" : "right-0")
+                            }`}
                         >
                           {options.map((opt) => (
                             <div
                               key={opt}
-                              className="px-4 py-2 hover:bg-gray-700 cursor-pointer transition text-white first:rounded-t-lg last:rounded-b-lg"
+                              className="px-3 sm:px-4 py-2 hover:bg-gray-700 cursor-pointer transition text-white first:rounded-t-lg last:rounded-b-lg text-xs sm:text-sm"
                               onClick={() => handleOptionClick(opt, m)}
                             >
                               <span className="capitalize">{opt}</span>
@@ -912,8 +1005,8 @@ useEffect(() => {
                         </div>
                       )}
 
-                      {/* REACTION TRIGGER ICON */}
-                      {showTriggerSmileyForMsgId === m._id &&
+                      {/* REACTION TRIGGER ICON - Only show on desktop */}
+                      {!isMobile && showTriggerSmileyForMsgId === m._id &&
                         !showQuickReactionBarForMsgId &&
                         !fullPickerMessageId && (
                           <div
@@ -930,24 +1023,27 @@ useEffect(() => {
                           </div>
                         )}
 
-                      {/* QUICK REACTION BAR */}
+                      {/* QUICK REACTION BAR - Responsive positioning */}
                       {showQuickReactionBarForMsgId === m._id && (
                         <div
                           id={`reaction-menu-${m._id}`}
-                          className={`absolute z-30 flex gap-2 bg-gray-800 p-2 rounded-full shadow-2xl transition-all duration-200 border border-gray-600
-                            ${isMine ? "left-[-280px]" : "right-[-280px]"} top-1/2 -translate-y-1/2`}
+                          className={`absolute z-30 flex gap-1 sm:gap-2 bg-gray-800 p-1.5 sm:p-2 rounded-full shadow-2xl transition-all duration-200 border border-gray-600 max-w-[280px] overflow-x-auto
+                            ${isMobile
+                              ? (isMine ? "bottom-full mb-2 right-0" : "bottom-full mb-2 left-0")
+                              : (isMine ? "left-[-280px]" : "right-[-280px]")
+                            } ${isMobile ? '' : 'top-1/2 -translate-y-1/2'}`}
                         >
                           {quickReactions.map((emoji, i) => (
                             <button
                               key={i}
-                              className="p-2 text-xl rounded-full hover:bg-gray-600 transition-all duration-150 hover:scale-125"
+                              className="p-1.5 sm:p-2 text-lg sm:text-xl rounded-full hover:bg-gray-600 transition-all duration-150 hover:scale-125 flex-shrink-0"
                               onClick={() => handleReaction(m._id, emoji)}
                             >
                               {emoji}
                             </button>
                           ))}
                           <button
-                            className="p-2 rounded-full hover:bg-gray-600 transition-all duration-150 text-white text-lg flex items-center justify-center hover:scale-125"
+                            className="p-1.5 sm:p-2 rounded-full hover:bg-gray-600 transition-all duration-150 text-white text-sm sm:text-lg flex items-center justify-center hover:scale-125 flex-shrink-0"
                             onClick={() => setFullPickerMessageId(m._id)}
                           >
                             <FaPlus />
@@ -956,20 +1052,22 @@ useEffect(() => {
                       )}
                     </div>
 
-                    {/* FULL EMOJI PICKER */}
+                    {/* FULL EMOJI PICKER - Responsive positioning */}
                     {fullPickerMessageId === m._id && (
                       <div
                         id={`full-picker-${m._id}`}
-                        className={`absolute z-50 ${
-                          isMine ? "left-0" : "right-0"
-                        } bottom-12 shadow-2xl rounded-lg overflow-hidden`}
+                        className={`absolute z-50 shadow-2xl rounded-lg overflow-hidden
+                          ${isMobile
+                            ? "fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2"
+                            : (isMine ? "left-0" : "right-0") + " bottom-12"
+                          }`}
                       >
                         <Picker
                           onEmojiClick={(emojiData) =>
                             handleReaction(m._id, emojiData.emoji)
                           }
-                          height={350}
-                          width={300}
+                          height={isMobile ? 300 : 350}
+                          width={isMobile ? 280 : 300}
                           emojiVersion="1.0"
                           theme="dark"
                         />
@@ -980,9 +1078,9 @@ useEffect(() => {
               })}
 
               {uploadProgress > 0 && (
-                <div className="w-full bg-gray-700 rounded-full h-3 overflow-hidden">
+                <div className="w-full bg-gray-700 rounded-full h-2 sm:h-3 overflow-hidden mx-4">
                   <div
-                    className="bg-gradient-to-r from-blue-500 to-blue-600 h-3 rounded-full transition-all duration-300"
+                    className="bg-gradient-to-r from-blue-500 to-blue-600 h-2 sm:h-3 rounded-full transition-all duration-300"
                     style={{ width: `${uploadProgress}%` }}
                   ></div>
                   <div className="text-xs text-gray-400 mt-1 text-center">
@@ -992,18 +1090,18 @@ useEffect(() => {
               )}
 
               {previewUrl && previewType === "image" && (
-                <div className="mt-2 flex justify-center">
+                <div className="mt-2 flex justify-center px-4">
                   <img
                     src={previewUrl}
                     alt="preview"
-                    className="max-w-xs rounded-lg shadow-lg border border-gray-600"
+                    className="max-w-[200px] sm:max-w-xs rounded-lg shadow-lg border border-gray-600"
                   />
                 </div>
               )}
 
               {previewUrl && previewType === "audio" && (
-                <div className="mt-2 flex justify-center">
-                  <audio controls className="rounded-lg">
+                <div className="mt-2 flex justify-center px-4">
+                  <audio controls className="rounded-lg w-full max-w-xs">
                     <source src={previewUrl} type="audio/mpeg" />
                     Your browser does not support the audio element.
                   </audio>
@@ -1014,7 +1112,7 @@ useEffect(() => {
             </div>
 
             {/* INPUT BAR */}
-            <div className="border-t border-gray-700 p-4 bg-gradient-to-r from-gray-800/90 to-gray-900/90 backdrop-blur-sm">
+            <div className="border-t border-gray-700 p-2 sm:p-4 bg-gradient-to-r from-gray-800/90 to-gray-900/90 backdrop-blur-sm flex-shrink-0">
               <input
                 type="file"
                 ref={fileInputRef}
@@ -1024,16 +1122,18 @@ useEffect(() => {
 
               {/* REPLY PREVIEW */}
               {replyTo && (
-                <div className="text-sm text-gray-300 mb-3 p-3 bg-gray-800/50 rounded-lg border border-gray-600">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <span className="font-semibold text-blue-400">
+                <div className="text-xs sm:text-sm text-gray-300 mb-2 sm:mb-3 p-2 sm:p-3 bg-gray-800/50 rounded-lg border border-gray-600">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0 flex-1">
+                      <span className="font-semibold text-blue-400 text-xs sm:text-sm">
                         Replying to {replyTo.sender?.name || "Unknown"}:
                       </span>
-                      <div className="text-gray-400 italic mt-1">{replyTo.text}</div>
+                      <div className="text-gray-400 italic mt-1 truncate text-xs sm:text-sm">
+                        {replyTo.text}
+                      </div>
                     </div>
                     <button
-                      className="text-gray-400 hover:text-white transition ml-3"
+                      className="text-gray-400 hover:text-white transition flex-shrink-0"
                       onClick={() => setReplyTo(null)}
                     >
                       ✕
@@ -1042,12 +1142,12 @@ useEffect(() => {
                 </div>
               )}
 
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-1 sm:gap-3">
                 {/* ATTACHMENT BUTTON */}
                 <div className="relative">
                   <button
                     onClick={() => setShowAttachmentMenu(!showAttachmentMenu)}
-                    className="text-xl p-3 rounded-full hover:bg-gray-700 transition-all duration-200 text-blue-400 hover:text-blue-300 hover:scale-110"
+                    className="text-lg sm:text-xl p-2 sm:p-3 rounded-full hover:bg-gray-700 transition-all duration-200 text-blue-400 hover:text-blue-300 hover:scale-110"
                   >
                     <FaPaperclip />
                   </button>
@@ -1061,10 +1161,10 @@ useEffect(() => {
                       ].map((item) => (
                         <div
                           key={item.type}
-                          className="cursor-pointer p-3 hover:bg-gray-700 transition text-white min-w-[180px] border-b border-gray-700 last:border-b-0"
+                          className="cursor-pointer p-2 sm:p-3 hover:bg-gray-700 transition text-white min-w-[160px] sm:min-w-[180px] border-b border-gray-700 last:border-b-0"
                           onClick={() => handleAttachClick(item.type)}
                         >
-                          <div className="font-medium">{item.label}</div>
+                          <div className="font-medium text-xs sm:text-sm">{item.label}</div>
                           <div className="text-xs text-gray-400">{item.desc}</div>
                         </div>
                       ))}
@@ -1075,7 +1175,7 @@ useEffect(() => {
                 {/* EMOJI BUTTON */}
                 <button
                   onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-                  className="text-xl p-3 rounded-full hover:bg-gray-700 transition-all duration-200 text-yellow-400 hover:text-yellow-300 hover:scale-110"
+                  className="text-lg sm:text-xl p-2 sm:p-3 rounded-full hover:bg-gray-700 transition-all duration-200 text-yellow-400 hover:text-yellow-300 hover:scale-110"
                 >
                   <FaSmile />
                 </button>
@@ -1085,7 +1185,7 @@ useEffect(() => {
                   type="text"
                   value={msg}
                   onChange={(e) => setMsg(e.target.value)}
-                  className="flex-1 border border-gray-600 bg-gray-800/50 backdrop-blur-sm p-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-white placeholder-gray-400 transition-all duration-200"
+                  className="flex-1 border border-gray-600 bg-gray-800/50 backdrop-blur-sm p-2 sm:p-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-white placeholder-gray-400 transition-all duration-200 text-sm sm:text-base min-w-0"
                   placeholder={`Send a private message to ${selectedTeammate.name}...`}
                   onKeyDown={(e) => e.key === "Enter" && sendMessage()}
                   disabled={connectionStatus !== 'connected'}
@@ -1095,7 +1195,7 @@ useEffect(() => {
                 <button
                   onClick={sendMessage}
                   disabled={!msg.trim() || connectionStatus !== 'connected'}
-                  className="bg-gradient-to-r from-blue-600 to-blue-700 text-white px-6 py-3 rounded-xl hover:from-blue-700 hover:to-blue-800 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl hover:scale-105"
+                  className="bg-gradient-to-r from-blue-600 to-blue-700 text-white px-3 sm:px-6 py-2 sm:py-3 rounded-xl hover:from-blue-700 hover:to-blue-800 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl hover:scale-105 text-xs sm:text-base font-medium flex-shrink-0"
                 >
                   Send
                 </button>
@@ -1103,11 +1203,11 @@ useEffect(() => {
 
               {/* EMOJI PICKER */}
               {showEmojiPicker && (
-                <div className="mt-3 rounded-lg overflow-hidden shadow-2xl">
+                <div className="mt-2 sm:mt-3 rounded-lg overflow-hidden shadow-2xl">
                   <Picker
                     onEmojiClick={onEmojiClick}
                     emojiVersion="1.0"
-                    height={350}
+                    height={isMobile ? 250 : 350}
                     width="100%"
                     theme="dark"
                   />
