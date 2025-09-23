@@ -47,7 +47,7 @@ import createEventRoutes from './routes/events.js';
 import notificationRoutes from './routes/notification.js';
 import noteRouter from './routes/noteRouter.js';
 import attendeeRoutes from './routes/attendeeRouter.js';
-import setupSocketHandlers from './routes/messageRouter.js';
+import setupchatSocketHandlers from './routes/messageRouter.js';
 import uploadRouter from './routes/fileUpload.js';
 import { fileRouter } from './routes/fileRoutes.js';
 import taskRouter from './routes/taskRouter.js';
@@ -167,9 +167,9 @@ app.use('/userRouter', userRouter);
 app.use('/api/reports', reportsRoutes);
 app.use('/api/complaints', complaintsRoutes);
 app.use('/api/personal-chat', personalChatRoutes);
-
-setupSocketHandlers(io);
 setupPersonalChatSocketHandlers(io);
+
+setupchatSocketHandlers(io);
 
 // Figma integration routes
 app.use('/api/auth', figmaAuthRoutes);
@@ -218,7 +218,6 @@ app.post('/notify', async (req, res) => {
 
 // Event and message handling
 app.use('/events', createEventRoutes(io));
-setupSocketHandlers(io);
 
 // Video conferencing routes
 app.use('/api', videoRouter);

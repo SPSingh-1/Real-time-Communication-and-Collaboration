@@ -28,11 +28,17 @@ const ChatBox = () => {
   const [pinnedMsgs, setPinnedMsgs] = useState([]);
   const [connectionStatus, setConnectionStatus] = useState('connecting');
   const [currentRole, setCurrentRole] = useState('single');
+  const [showLanguageSelector, setShowLanguageSelector] = useState(false);
+  const [selectedLanguage, setSelectedLanguage] = useState('en');
+  const [availableLanguages, setAvailableLanguages] = useState([]);
+  const [translating, setTranslating] = useState(false);
+    const [languageSearchTerm, setLanguageSearchTerm] = useState('');
 
   // Reaction states
   const [showTriggerSmileyForMsgId, setShowTriggerSmileyForMsgId] = useState(null);
   const [showQuickReactionBarForMsgId, setShowQuickReactionBarForMsgId] = useState(null);
   const [fullPickerMessageId, setFullPickerMessageId] = useState(null);
+  const [isSending, setIsSending] = useState(false);
 
   const fileInputRef = useRef();
   const messagesEndRef = useRef();
@@ -40,81 +46,111 @@ const ChatBox = () => {
   const quickReactions = ["ðŸ‘", "â¤ï¸", "ðŸ˜‚", "ðŸ˜®", "ðŸ˜¢", "ðŸ™"];
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (!token || !user) {
-      setConnectionStatus('error');
-      return;
-    }
+  const token = localStorage.getItem("token");
+  if (!token || !user) {
+    setConnectionStatus('error');
+    return;
+  }
 
-    socket.connect();
-    setConnectionStatus('connecting');
-    
-    socket.emit("init", token);
+  // Prevent multiple connections
+  if (socket.connected) {
+    socket.disconnect();
+  }
 
-    socket.on("initMessages", ({ userId, messages, role }) => {
-      setUserId(userId);
-      setMessages(messages || []);
-      setCurrentRole(role || 'single');
-      setConnectionStatus('connected');
+  socket.connect();
+  setConnectionStatus('connecting');
+  
+  socket.emit("init", token);
 
-      const initialStarred = new Set();
-      const initialPinned = [];
-      messages?.forEach((m) => {
-        if (m.isStarred) initialStarred.add(m._id);
-        if (m.isPinned) initialPinned.push(m);
-      });
-      setStarredMsgs(initialStarred);
-      setPinnedMsgs(initialPinned);
+  const handleInitMessages = ({ userId, messages, role }) => {
+    setUserId(userId);
+    setMessages(messages || []);
+    setCurrentRole(role || 'single');
+    setConnectionStatus('connected');
+
+    const initialStarred = new Set();
+    const initialPinned = [];
+    messages?.forEach((m) => {
+      if (m.isStarred) initialStarred.add(m._id);
+      if (m.isPinned) initialPinned.push(m);
     });
+    setStarredMsgs(initialStarred);
+    setPinnedMsgs(initialPinned);
+  };
 
-    socket.on("authError", (error) => {
-      console.error("Auth error:", error);
-      setConnectionStatus('error');
+  const handleNewMessage = (newMsg) => {
+    setMessages((prev) => [...prev, newMsg]);
+  };
+
+  const handleMessageDeleted = (id) => {
+    setMessages((prev) => prev.filter((m) => m._id !== id));
+    setPinnedMsgs((prev) => prev.filter((m) => m._id !== id));
+    setStarredMsgs((prev) => {
+      const newSet = new Set(prev);
+      newSet.delete(id);
+      return newSet;
     });
+  };
 
-    socket.on("messageError", (error) => {
-      console.error("Message error:", error);
-    });
+  const handleMessageUpdated = (updated) => {
+    setMessages((prev) => prev.map((m) => (m._id === updated._id ? updated : m)));
+    setPinnedMsgs((prev) => prev.map((m) => (m._id === updated._id ? updated : m)));
+  };
 
-    socket.on("message", (newMsg) => {
-      setMessages((prev) => [...prev, newMsg]);
-    });
+  const handleMessageReaction = ({ messageId, reactions }) => {
+    setMessages((prev) =>
+      prev.map((m) => (m._id === messageId ? { ...m, reactions } : m))
+    );
+    setPinnedMsgs((prev) =>
+      prev.map((m) => (m._id === messageId ? { ...m, reactions } : m))
+    );
+  };
 
-    socket.on("messageDeleted", (id) => {
-      setMessages((prev) => prev.filter((m) => m._id !== id));
-      setPinnedMsgs((prev) => prev.filter((m) => m._id !== id));
-      setStarredMsgs((prev) => {
-        const newSet = new Set(prev);
-        newSet.delete(id);
-        return newSet;
-      });
-    });
+  const handleAuthError = (error) => {
+    console.error("Auth error:", error);
+    setConnectionStatus('error');
+  };
 
-    socket.on("messageUpdated", (updated) => {
-      setMessages((prev) => prev.map((m) => (m._id === updated._id ? updated : m)));
-      setPinnedMsgs((prev) => prev.map((m) => (m._id === updated._id ? updated : m)));
-    });
+  const handleMessageError = (error) => {
+    console.error("Message error:", error);
+  };
 
-    socket.on("message-reaction", ({ messageId, reactions }) => {
-      setMessages((prev) =>
-        prev.map((m) => (m._id === messageId ? { ...m, reactions } : m))
-      );
-      setPinnedMsgs((prev) =>
-        prev.map((m) => (m._id === messageId ? { ...m, reactions } : m))
-      );
-    });
+  // Remove all existing listeners first
+  socket.off("initMessages");
+  socket.off("message");
+  socket.off("messageDeleted");
+  socket.off("messageUpdated");
+  socket.off("message-reaction");
+  socket.off("authError");
+  socket.off("messageError");
 
-    return () => {
-      socket.off("initMessages");
-      socket.off("message");
-      socket.off("messageDeleted");
-      socket.off("messageUpdated");
-      socket.off("message-reaction");
-      socket.off("authError");
-      socket.off("messageError");
-      socket.disconnect();
-    };
-  }, [user]);
+  // Add new listeners
+  socket.on("initMessages", handleInitMessages);
+  socket.on("message", handleNewMessage);
+  socket.on("messageDeleted", handleMessageDeleted);
+  socket.on("messageUpdated", handleMessageUpdated);
+  socket.on("message-reaction", handleMessageReaction);
+  socket.on("authError", handleAuthError);
+  socket.on("messageError", handleMessageError);
+
+  return () => {
+    socket.off("initMessages", handleInitMessages);
+    socket.off("message", handleNewMessage);
+    socket.off("messageDeleted", handleMessageDeleted);
+    socket.off("messageUpdated", handleMessageUpdated);
+    socket.off("message-reaction", handleMessageReaction);
+    socket.off("authError", handleAuthError);
+    socket.off("messageError", handleMessageError);
+    socket.disconnect();
+  };
+}, [user]);
+
+// Fetch supported languages on component mount
+useEffect(() => {
+  if (import.meta.env.VITE_GOOGLE_TRANSLATE_API_KEY) {
+    fetchSupportedLanguages();
+  }
+}, []);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -131,7 +167,8 @@ const ChatBox = () => {
         { id: `full-picker-${fullPickerMessageId}`, condition: fullPickerMessageId !== null },
         { id: `options-menu-${selectedMsgIdForOptions}`, condition: selectedMsgIdForOptions !== null },
         { id: `options-button-${selectedMsgIdForOptions}`, condition: selectedMsgIdForOptions !== null },
-        { class: 'attachment-menu', condition: showAttachmentMenu }
+        { class: 'attachment-menu', condition: showAttachmentMenu },
+        { class: 'language-selector', condition: showLanguageSelector }
       ];
 
       for (const element of controlledElements) {
@@ -167,15 +204,29 @@ const ChatBox = () => {
     fullPickerMessageId,
     selectedMsgIdForOptions,
     showAttachmentMenu,
+    showLanguageSelector
   ]);
 
-  const sendMessage = () => {
-    if (msg.trim() && connectionStatus === 'connected') {
-      socket.emit("message", { text: msg, replyTo: replyTo?._id || null });
-      setMsg("");
-      setReplyTo(null);
-    }
-  };
+  const sendMessage = async () => {
+  if (!msg.trim() || connectionStatus !== 'connected' || isSending) {
+    return;
+  }
+
+  setIsSending(true);
+  const messageText = msg.trim();
+  const replyToId = replyTo?._id || null;
+  
+  // Clear input immediately
+  setMsg("");
+  setReplyTo(null);
+  
+  try {
+    socket.emit("message", { text: messageText, replyTo: replyToId });
+  } finally {
+    // Reset sending state after a short delay
+    setTimeout(() => setIsSending(false), 500);
+  }
+};
 
   // FIXED: Updated attachment handling
   const handleAttachClick = (type) => {
@@ -347,6 +398,51 @@ const ChatBox = () => {
       }
     }
   };
+
+  // Fetch supported languages from Google Translate API
+const fetchSupportedLanguages = async () => {
+  try {
+    const response = await fetch(
+      `https://translation.googleapis.com/language/translate/v2/languages?key=${import.meta.env.VITE_GOOGLE_TRANSLATE_API_KEY}&target=en`
+    );
+    const data = await response.json();
+    setAvailableLanguages(data.data.languages || []);
+  } catch (error) {
+    console.error('Error fetching languages:', error);
+  }
+};
+
+// Translate text using Google Translate API
+const translateText = async (text, targetLanguage) => {
+  if (!text.trim()) return;
+  
+  setTranslating(true);
+  try {
+    const response = await fetch(
+      `https://translation.googleapis.com/language/translate/v2?key=${import.meta.env.VITE_GOOGLE_TRANSLATE_API_KEY}`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          q: text,
+          target: targetLanguage,
+          format: 'text'
+        })
+      }
+    );
+    const data = await response.json();
+    if (data.data?.translations?.[0]?.translatedText) {
+      setMsg(data.data.translations[0].translatedText);
+    }
+  } catch (error) {
+    console.error('Translation error:', error);
+    alert('Translation failed. Please try again.');
+  } finally {
+    setTranslating(false);
+  }
+};
 
   const handleOptionClick = (option, msg) => {
     if (option === "copy") {
@@ -859,24 +955,81 @@ const ChatBox = () => {
             <FaSmile />
           </button>
 
+          {/* LANGUAGE TRANSLATE BUTTON */}
+            <div className="relative">
+              <button
+                onClick={() => setShowLanguageSelector(!showLanguageSelector)}
+                className="text-xl p-3 rounded-full hover:bg-gray-700 transition-all duration-200 text-green-400 hover:text-green-300 hover:scale-110 relative"
+                title={`Translate to: ${availableLanguages.find(lang => lang.language === selectedLanguage)?.name || 'English'}`}
+              >
+                🌐
+                {selectedLanguage !== 'en' && (
+                  <span className="absolute -top-1 -right-1 bg-green-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">
+                    !
+                  </span>
+                )}
+              </button>
+            {showLanguageSelector && (
+              <div className="language-selector absolute bottom-full mb-2 left-0 z-50 bg-gray-800 border border-gray-600 shadow-2xl rounded-lg overflow-hidden max-h-60 w-64">
+                <div className="p-2 border-b border-gray-600">
+                  <input
+                    type="text"
+                    placeholder="Search languages..."
+                    className="w-full bg-gray-700 text-white px-2 py-1 rounded text-sm"
+                    value={languageSearchTerm}
+                    onChange={(e) => setLanguageSearchTerm(e.target.value)}
+                    />
+                  </div>
+                  <div className="max-h-48 overflow-y-auto">
+                    {availableLanguages.filter(lang =>
+                      languageSearchTerm === '' || 
+                      lang.name?.toLowerCase().includes(languageSearchTerm.toLowerCase()) ||
+                      lang.language?.toLowerCase().includes(languageSearchTerm.toLowerCase())
+                    ).map((lang) => (
+                      <div
+                        key={lang.language}
+                        className="cursor-pointer p-2 hover:bg-gray-700 transition text-white text-sm border-b border-gray-700 last:border-b-0"
+                        onClick={() => {
+                          setSelectedLanguage(lang.language);
+                          if (msg.trim()) {
+                            translateText(msg, lang.language);
+                          }
+                          setLanguageSearchTerm(''); // Clear search term
+                          setShowLanguageSelector(false);
+                        }}
+                      >
+                      <div className="font-medium">{lang.name}</div>
+                      <div className="text-xs text-gray-400">{lang.language}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
           {/* MESSAGE INPUT */}
           <input
             type="text"
             value={msg}
             onChange={(e) => setMsg(e.target.value)}
             className="flex-1 border border-gray-600 bg-gray-800/50 backdrop-blur-sm p-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-white placeholder-gray-400 transition-all duration-200"
-            placeholder={`Type a message to ${getRoleDisplayName().toLowerCase()}...`}
-            onKeyDown={(e) => e.key === "Enter" && sendMessage()}
-            disabled={connectionStatus !== 'connected'}
+            placeholder={`Type a message to ${getRoleDisplayName().toLowerCase()}... ${translating ? '(Translating...)' : ''}`}
+            disabled={connectionStatus !== 'connected' || translating}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+              }
+            }}
           />
 
           {/* SEND BUTTON */}
           <button
             onClick={sendMessage}
-            disabled={!msg.trim() || connectionStatus !== 'connected'}
+            disabled={!msg.trim() || connectionStatus !== 'connected' || isSending}
             className="bg-gradient-to-r from-blue-600 to-blue-700 text-white px-6 py-3 rounded-xl hover:from-blue-700 hover:to-blue-800 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl hover:scale-105"
           >
-            Send
+            {isSending ? 'Sending...' : 'Send'}
           </button>
         </div>
 

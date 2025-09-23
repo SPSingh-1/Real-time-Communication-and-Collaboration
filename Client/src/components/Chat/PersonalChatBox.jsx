@@ -35,7 +35,11 @@ const PersonalChatBox = () => {
   const [currentRole, setCurrentRole] = useState('single');
   const [showSidebar, setShowSidebar] = useState(window.innerWidth >= 768);
   const [isMobile, setIsMobile] = useState(false);
-
+  const [showLanguageSelector, setShowLanguageSelector] = useState(false);
+  const [selectedLanguage, setSelectedLanguage] = useState('en');
+  const [availableLanguages, setAvailableLanguages] = useState([]);
+  const [translating, setTranslating] = useState(false);
+  const [languageSearchTerm, setLanguageSearchTerm] = useState('');
   // Reaction states
   const [showTriggerSmileyForMsgId, setShowTriggerSmileyForMsgId] = useState(null);
   const [showQuickReactionBarForMsgId, setShowQuickReactionBarForMsgId] = useState(null);
@@ -59,6 +63,13 @@ useEffect(() => {
   return () => window.removeEventListener('resize', checkScreenSize);
 }, []);
 
+// Fetch supported languages on component mount
+useEffect(() => {
+  if (import.meta.env.VITE_GOOGLE_TRANSLATE_API_KEY) {
+    fetchSupportedLanguages();
+  }
+}, []);
+
   // Initialize socket connection for personal chat
   useEffect(() => {
   const token = localStorage.getItem("token");
@@ -78,10 +89,18 @@ useEffect(() => {
 
   console.log("User loaded:", user);
   console.log("User role:", user.role);
+  console.log("User teamId:", user.teamId); // ADDED: Log teamId for debugging
 
   // Only allow team and global roles for personal chat
   if (user.role !== 'team' && user.role !== 'global') {
     console.log(`Personal chat not available for role: ${user.role}`);
+    setConnectionStatus('role-restricted');
+    return;
+  }
+
+  // ADDED: Additional validation for team users
+  if (user.role === 'team' && !user.teamId) {
+    console.error("Team user missing teamId");
     setConnectionStatus('role-restricted');
     return;
   }
@@ -98,7 +117,10 @@ useEffect(() => {
   socket.connect();
   setConnectionStatus('connecting');
   
+  console.log("Emitting init-personal-chat with token"); // ADDED: Debug log
   socket.emit("init-personal-chat", token);
+
+  // In PersonalChatBox.jsx, replace the socket event listeners section (around lines 112-150) with:
 
   socket.on("personal-chat-initialized", ({ userId: socketUserId, role }) => {
     console.log(`Personal chat initialized - Socket UserID: ${socketUserId}, Role: ${role}`);
@@ -109,20 +131,15 @@ useEffect(() => {
       console.warn("Socket user ID doesn't match context user ID");
     }
     
-    setConnectionStatus('connected');
+    setConnectionStatus('connected'); // This will trigger teammates fetch
     
     // Re-join conversation if we had one selected
     if (selectedTeammate) {
       console.log("Re-joining conversation with:", selectedTeammate._id);
       setTimeout(() => {
         socket.emit("join-personal-conversation", { teammateId: selectedTeammate._id });
-      }, 100); // Small delay to ensure socket is fully ready
+      }, 100);
     }
-  });
-
-  socket.on("personal-chat-error", (error) => {
-    console.error("Personal chat error:", error);
-    setConnectionStatus('error');
   });
 
   socket.on("personal-conversation-messages", ({ conversationId, messages: conversationMessages, teammateId }) => {
@@ -132,6 +149,7 @@ useEffect(() => {
       teammateId
     });
     
+    // FIXED: Ensure messages are set correctly
     setMessages(conversationMessages || []);
     
     const initialStarred = new Set();
@@ -147,10 +165,12 @@ useEffect(() => {
   });
 
   socket.on("new-personal-message", (newMsg) => {
+    console.log("Received new personal message:", newMsg._id); // ADDED: Debug log
     setMessages((prev) => [...prev, newMsg]);
   });
 
   socket.on("personal-message-deleted", (id) => {
+    console.log("Message deleted:", id); // ADDED: Debug log
     setMessages((prev) => prev.filter((m) => m._id !== id));
     setPinnedMsgs((prev) => prev.filter((m) => m._id !== id));
     setStarredMsgs((prev) => {
@@ -161,36 +181,19 @@ useEffect(() => {
   });
 
   socket.on("personal-message-updated", (updated) => {
+    console.log("Message updated:", updated._id); // ADDED: Debug log
     setMessages((prev) => prev.map((m) => (m._id === updated._id ? updated : m)));
     setPinnedMsgs((prev) => prev.map((m) => (m._id === updated._id ? updated : m)));
   });
 
   socket.on("personal-message-reaction", ({ messageId, reactions }) => {
+    console.log("Message reaction:", messageId); // ADDED: Debug log
     setMessages((prev) =>
       prev.map((m) => (m._id === messageId ? { ...m, reactions } : m))
     );
     setPinnedMsgs((prev) =>
       prev.map((m) => (m._id === messageId ? { ...m, reactions } : m))
     );
-  });
-
-  socket.on("conversation-updated", ({ conversationId: updatedConversationId, lastMessage }) => {
-    // Update teammates list with latest message info
-    setTeammates(prev => prev.map(teammate => {
-      if (updatedConversationId.includes(teammate._id)) {
-        return {
-          ...teammate,
-          lastMessage: {
-            text: lastMessage.text,
-            createdAt: lastMessage.createdAt,
-            senderName: lastMessage.sender.name,
-            isFileMessage: lastMessage.isFileMessage,
-            fileName: lastMessage.fileName
-          }
-        };
-      }
-      return teammate;
-    }));
   });
 
   return () => {
@@ -217,43 +220,88 @@ useEffect(() => {
   }
 }, [selectedTeammate, connectionStatus]);
 
-  // Fetch teammates
-  useEffect(() => {
-    const fetchTeammates = async () => {
-      if (!user || (user.role !== 'team' && user.role !== 'global') || connectionStatus !== 'connected') {
+  // Fetch teammates - FIXED VERSION
+useEffect(() => {
+  const fetchTeammates = async () => {
+    // Add more specific checks and logging
+    console.log("fetchTeammates called with:", {
+      user: user?._id,
+      role: user?.role,
+      connectionStatus,
+      teamId: user?.teamId
+    });
+
+    if (!user) {
+      console.log("No user context available");
+      return;
+    }
+    
+    if (user.role !== 'team' && user.role !== 'global') {
+      console.log("User role not eligible for personal chat:", user.role);
+      return;
+    }
+
+    if (connectionStatus !== 'connected') {
+      console.log("Socket not connected yet:", connectionStatus);
+      return;
+    }
+    
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        console.error("No token found for teammates fetch");
         return;
       }
+
+      let endpoint = '';
       
-      try {
-        const token = localStorage.getItem("token");
-        let endpoint = '';
-        
-        if (user.role === 'team') {
-          endpoint = `${import.meta.env.VITE_BACKEND_URL}/api/personal-chat/teammates`;
-        } else if (user.role === 'global') {
-          endpoint = `${import.meta.env.VITE_BACKEND_URL}/api/personal-chat/global-users`;
+      if (user.role === 'team') {
+        if (!user.teamId) {
+          console.error("Team user missing teamId");
+          setConnectionStatus('error');
+          return;
         }
-        
-        console.log(`Fetching teammates from: ${endpoint}`);
-        
-        const response = await axios.get(endpoint, {
-          headers: { "auth-token": token }
-        });
-        
-        console.log("Teammates fetched:", response.data);
-        setTeammates(response.data);
-      } catch (err) {
-        console.error('Error fetching teammates/global users:', err);
-        if (err.response?.status === 401) {
-          console.error("Authentication failed - token may be expired");
-          setConnectionStatus('auth-error');
-        }
+        endpoint = `${import.meta.env.VITE_BACKEND_URL}/api/personal-chat/teammates`;
+      } else if (user.role === 'global') {
+        endpoint = `${import.meta.env.VITE_BACKEND_URL}/api/personal-chat/global-users`;
       }
-    };
+      
+      console.log(`Fetching teammates from: ${endpoint}`);
+      
+      const response = await axios.get(endpoint, {
+        headers: { "auth-token": token }
+      });
+      
+      console.log("Teammates fetched successfully:", response.data);
+      setTeammates(response.data);
+      
+      // If no teammates, log for debugging
+      if (!response.data || response.data.length === 0) {
+        console.warn("No teammates/global users found");
+      }
+      
+    } catch (err) {
+      console.error('Error fetching teammates/global users:', err);
+      console.error('Error details:', {
+        status: err.response?.status,
+        statusText: err.response?.statusText,
+        data: err.response?.data,
+        url: err.config?.url
+      });
+      
+      if (err.response?.status === 401) {
+        console.error("Authentication failed - token may be expired");
+        setConnectionStatus('auth-error');
+      } else if (err.response?.status === 400) {
+        console.error("Bad request - user may not have proper role/teamId");
+        setConnectionStatus('role-restricted');
+      }
+    }
+  };
 
-    fetchTeammates();
-  }, [user, connectionStatus]);
-
+  // Call fetchTeammates when conditions are met
+  fetchTeammates();
+}, [user, connectionStatus]);
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, pinnedMsgs]);
@@ -269,7 +317,8 @@ useEffect(() => {
         { id: `full-picker-${fullPickerMessageId}`, condition: fullPickerMessageId !== null },
         { id: `options-menu-${selectedMsgIdForOptions}`, condition: selectedMsgIdForOptions !== null },
         { id: `options-button-${selectedMsgIdForOptions}`, condition: selectedMsgIdForOptions !== null },
-        { class: 'attachment-menu', condition: showAttachmentMenu }
+        { class: 'attachment-menu', condition: showAttachmentMenu },
+        { class: 'language-selector', condition: showLanguageSelector }
       ];
 
       for (const element of controlledElements) {
@@ -305,28 +354,78 @@ useEffect(() => {
     fullPickerMessageId,
     selectedMsgIdForOptions,
     showAttachmentMenu,
+    showLanguageSelector
   ]);
 
-  const selectTeammate = (teammate) => {
-    console.log("Selecting teammate:", teammate.name, teammate._id);
-    setSelectedTeammate(teammate);
-    setMessages([]);
-    setShowSidebar(false);
-    
-    
-    // Ensure socket is connected before joining conversation
-    if (connectionStatus === 'connected' && socket.connected) {
-      console.log("Joining conversation with teammate:", teammate._id);
-      socket.emit("join-personal-conversation", { teammateId: teammate._id });
-    } else {
-      console.error("Cannot join conversation - socket not connected:", connectionStatus);
-      setTimeout(() => {
-        if (connectionStatus !== 'connected') {
-          alert("Connection error. Please wait for connection to be established.");
-        }
-      }, 1000);
+  // Fetch supported languages from Google Translate API
+const fetchSupportedLanguages = async () => {
+  try {
+    const response = await fetch(
+      `https://translation.googleapis.com/language/translate/v2/languages?key=${import.meta.env.VITE_GOOGLE_TRANSLATE_API_KEY}&target=en`
+    );
+    const data = await response.json();
+    setAvailableLanguages(data.data.languages || []);
+  } catch (error) {
+    console.error('Error fetching languages:', error);
+  }
+};
+
+// Translate text using Google Translate API
+const translateText = async (text, targetLanguage) => {
+  if (!text.trim()) return;
+  
+  setTranslating(true);
+  try {
+    const response = await fetch(
+      `https://translation.googleapis.com/language/translate/v2?key=${import.meta.env.VITE_GOOGLE_TRANSLATE_API_KEY}`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          q: text,
+          target: targetLanguage,
+          format: 'text'
+        })
+      }
+    );
+    const data = await response.json();
+    if (data.data?.translations?.[0]?.translatedText) {
+      setMsg(data.data.translations[0].translatedText);
     }
-  };
+  } catch (error) {
+    console.error('Translation error:', error);
+    alert('Translation failed. Please try again.');
+  } finally {
+    setTranslating(false);
+  }
+};
+
+  // DELETE THIS BLOCK (lines 199-219)
+const selectTeammate = (teammate) => {
+  console.log("Selecting teammate:", teammate.name, teammate._id);
+  setSelectedTeammate(teammate);
+  setMessages([]); // Clear messages immediately
+  setShowSidebar(false);
+  
+  // Ensure socket is connected before joining conversation
+  if (connectionStatus === 'connected' && socket.connected) {
+    console.log("Joining conversation with teammate:", teammate._id);
+    socket.emit("join-personal-conversation", { teammateId: teammate._id });
+  } else {
+    console.error("Cannot join conversation - socket not connected:", connectionStatus);
+    // ADDED: Retry logic
+    setTimeout(() => {
+      if (connectionStatus === 'connected' && socket.connected) {
+        console.log("Retrying join conversation with teammate:", teammate._id);
+        socket.emit("join-personal-conversation", { teammateId: teammate._id });
+      } else {
+        alert("Connection error. Please wait for connection to be established.");
+      }
+    }, 1000);
+  }
+};
 
   const sendMessage = () => {
     console.log("Attempting to send message:", {
@@ -663,25 +762,25 @@ useEffect(() => {
           
           {/* TEAMMATES LIST */}
           <div className="overflow-y-auto h-full overscroll-contain">
-            {teammates.length === 0 ? (
-              <div className="p-4 text-center text-gray-400">
-                <FaUsers className="mx-auto mb-2 text-xl sm:text-2xl" />
-                <p className="text-sm sm:text-base">No {currentRole} members available</p>
-                {connectionStatus === 'connecting' && (
-                  <div className="mt-2 text-xs">Connecting...</div>
-                )}
-              </div>
-            ) : (
-              teammates.map((teammate) => (
-                <div
-                  key={teammate._id}
-                  onClick={() => selectTeammate(teammate)}
-                  className={`
-                    p-3 sm:p-4 cursor-pointer hover:bg-gray-700/50 active:bg-gray-700/70 
-                    transition border-b border-gray-700/50
-                    ${selectedTeammate?._id === teammate._id ? 'bg-blue-600/20 border-blue-500/30' : ''}
-                  `}
-                >
+           {teammates.length === 0 ? (
+            <div className="p-4 text-center text-gray-400">
+              <FaUsers className="mx-auto mb-2 text-xl sm:text-2xl" />
+              <p className="text-sm sm:text-base">No {currentRole} members available</p>
+              {connectionStatus === 'connecting' && (
+                <div className="mt-2 text-xs">Connecting...</div>
+              )}
+            </div>
+              ) : (
+                teammates.map((teammate) => (
+                  <div
+                    key={teammate._id}
+                    onClick={() => selectTeammate(teammate)}
+                    className={`
+                      p-3 sm:p-4 cursor-pointer hover:bg-gray-700/50 active:bg-gray-700/70 
+                      transition border-b border-gray-700/50
+                      ${selectedTeammate?._id === teammate._id ? 'bg-blue-600/20 border-blue-500/30' : ''}
+                    `}
+                  >
                   <div className="flex items-center justify-between min-w-0">
                     <div className="flex-1 min-w-0">
                       <h4 className="font-semibold text-white truncate text-sm sm:text-base">
@@ -1180,15 +1279,67 @@ useEffect(() => {
                   <FaSmile />
                 </button>
 
+                {/* LANGUAGE TRANSLATE BUTTON */}
+                <div className="relative">
+                  <button
+                    onClick={() => setShowLanguageSelector(!showLanguageSelector)}
+                    className="text-lg sm:text-xl p-2 sm:p-3 rounded-full hover:bg-gray-700 transition-all duration-200 text-green-400 hover:text-green-300 hover:scale-110 relative"
+                    title={`Translate to: ${availableLanguages.find(lang => lang.language === selectedLanguage)?.name || 'English'}`}
+                  >
+                    🌍
+                    {selectedLanguage !== 'en' && (
+                      <span className="absolute -top-1 -right-1 bg-green-500 text-white text-xs rounded-full w-3 h-3 sm:w-4 sm:h-4 flex items-center justify-center">
+                        !
+                      </span>
+                    )}
+                  </button>
+                  {showLanguageSelector && (
+                    <div className="language-selector absolute bottom-full mb-2 left-0 z-50 bg-gray-800 border border-gray-600 shadow-2xl rounded-lg overflow-hidden max-h-60 w-64">
+                      <div className="p-2 border-b border-gray-600">
+                        <input
+                          type="text"
+                          placeholder="Search languages..."
+                          className="w-full bg-gray-700 text-white px-2 py-1 rounded text-sm"
+                          value={languageSearchTerm}
+                          onChange={(e) => setLanguageSearchTerm(e.target.value)}
+                        />
+                      </div>
+                      <div className="max-h-48 overflow-y-auto">
+                          {availableLanguages.filter(lang =>
+                            languageSearchTerm === '' || 
+                            lang.name?.toLowerCase().includes(languageSearchTerm.toLowerCase()) ||
+                            lang.language?.toLowerCase().includes(languageSearchTerm.toLowerCase())
+                          ).map((lang) => (
+                            <div
+                              key={lang.language}
+                              className="cursor-pointer p-2 hover:bg-gray-700 transition text-white text-sm border-b border-gray-700 last:border-b-0"
+                              onClick={() => {
+                                setSelectedLanguage(lang.language);
+                                if (msg.trim()) {
+                                  translateText(msg, lang.language);
+                                }
+                                setLanguageSearchTerm(''); // Clear search term
+                                setShowLanguageSelector(false);
+                              }}
+                            >
+                            <div className="font-medium">{lang.name}</div>
+                            <div className="text-xs text-gray-400">{lang.language}</div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
                 {/* MESSAGE INPUT */}
                 <input
                   type="text"
                   value={msg}
                   onChange={(e) => setMsg(e.target.value)}
                   className="flex-1 border border-gray-600 bg-gray-800/50 backdrop-blur-sm p-2 sm:p-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-white placeholder-gray-400 transition-all duration-200 text-sm sm:text-base min-w-0"
-                  placeholder={`Send a private message to ${selectedTeammate.name}...`}
+                  placeholder={`Send a private message to ${selectedTeammate.name}... ${translating ? '(Translating...)' : ''}`}
+                  disabled={connectionStatus !== 'connected' || translating}
                   onKeyDown={(e) => e.key === "Enter" && sendMessage()}
-                  disabled={connectionStatus !== 'connected'}
                 />
 
                 {/* SEND BUTTON */}

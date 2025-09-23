@@ -3,6 +3,7 @@ import express from 'express';
 import { google } from 'googleapis';
 import { OAuth2Client } from 'google-auth-library';
 import jwt from 'jsonwebtoken';
+import mongoose from 'mongoose';
 
 const router = express.Router();
 
@@ -13,11 +14,45 @@ let SCOPES;
 
 let JITSI_APP_ID;
 let JITSI_KID;
-let JITSI_PRIVATE_KEY; // This now directly holds the string content of the private key
-let JITSI_DOMAIN; // Added this to store the Jitsi Domain if passed
+let JITSI_PRIVATE_KEY;
+let JITSI_DOMAIN;
 
 let oauth2Client;
 let currentUserTokens = null;
+
+// Schema for role-based active meetings
+const roleMeetingSchema = new mongoose.Schema({
+    roomName: { type: String, required: true, unique: true },
+    meetingTitle: { type: String, required: true },
+    userRole: { type: String, required: true, enum: ['single', 'team', 'global'] },
+    userId: { type: String, required: true },
+    userName: { type: String, required: true },
+    teamId: { type: mongoose.Schema.Types.ObjectId, ref: 'Team', default: null },
+    globalId: { type: String, default: null },
+    participants: { type: Number, default: 1 },
+    isActive: { type: Boolean, default: true },
+    createdAt: { type: Date, default: Date.now },
+    lastActivity: { type: Date, default: Date.now }
+});
+
+const RoleMeeting = mongoose.model('RoleMeeting', roleMeetingSchema);
+
+// Middleware to verify JWT token using your existing auth system
+const verifyToken = (req, res, next) => {
+    const token = req.header('auth-token');
+    
+    if (!token) {
+        return res.status(401).json({ error: 'No token provided' });
+    }
+
+    try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        req.user = decoded;
+        next();
+    } catch (error) {
+        res.status(401).json({ error: 'Invalid token' });
+    }
+};
 
 // Function to initialize router with necessary credentials
 export const initVideoRouter = (config) => {
@@ -28,8 +63,8 @@ export const initVideoRouter = (config) => {
 
     JITSI_APP_ID = config.JITSI_APP_ID;
     JITSI_KID = config.JITSI_KID;
-    JITSI_PRIVATE_KEY = config.JITSI_PRIVATE_KEY; // Store the key content
-    JITSI_DOMAIN = config.JITSI_DOMAIN; // Store the domain
+    JITSI_PRIVATE_KEY = config.JITSI_PRIVATE_KEY;
+    JITSI_DOMAIN = config.JITSI_DOMAIN;
 
     console.log('Video Router: Jitsi configuration received for JWT generation.');
     console.log(`Video Router Init - Jitsi App ID: ${JITSI_APP_ID}`);
@@ -37,15 +72,147 @@ export const initVideoRouter = (config) => {
     console.log(`Video Router Init - Jitsi KID: ${JITSI_KID}`);
     console.log(`Video Router Init - Jitsi Private Key (first 10 chars): ${JITSI_PRIVATE_KEY ? JITSI_PRIVATE_KEY.substring(0, 10) + '...' : 'Not loaded'}`);
 
-
     // Only initialize OAuth2Client if credentials are provided
     if (CLIENT_ID && CLIENT_SECRET && REDIRECT_URI) {
         oauth2Client = new OAuth2Client(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
     } else {
         console.warn('Google OAuth credentials not fully configured. Google Meet features will be disabled.');
-        oauth2Client = null; // Ensure it's null if not configured
+        oauth2Client = null;
     }
 };
+
+// --- Role-Based Meeting Management Endpoints ---
+
+// Create a new role-based meeting
+router.post('/role-meetings', verifyToken, async (req, res) => {
+    try {
+        const { roomName, meetingTitle, userRole, userId, userName, teamId, globalId } = req.body;
+
+        // Check if meeting with same room name already exists and is active
+        const existingMeeting = await RoleMeeting.findOne({ 
+            roomName, 
+            isActive: true 
+        });
+
+        if (existingMeeting) {
+            // Update existing meeting
+            existingMeeting.lastActivity = new Date();
+            existingMeeting.participants = existingMeeting.participants + 1;
+            await existingMeeting.save();
+            
+            return res.json({ meeting: existingMeeting });
+        }
+
+        // Create new meeting
+        const meeting = new RoleMeeting({
+            roomName,
+            meetingTitle,
+            userRole,
+            userId,
+            userName,
+            teamId: teamId || null,
+            globalId: globalId || null,
+            participants: 1
+        });
+
+        await meeting.save();
+        console.log(`New ${userRole} meeting created: ${meetingTitle} by ${userName}`);
+        
+        res.json({ meeting });
+    } catch (error) {
+        console.error('Error creating role-based meeting:', error);
+        res.status(500).json({ error: 'Failed to create meeting' });
+    }
+});
+
+// Get active meetings based on user role
+router.get('/role-meetings/:role', verifyToken, async (req, res) => {
+    try {
+        const { role } = req.params;
+        const { userId, teamId, globalId } = req.query;
+
+        // Clean up old meetings (inactive for more than 2 hours)
+        const twoHoursAgo = new Date(Date.now() - 2 * 60 * 60 * 1000);
+        await RoleMeeting.updateMany(
+            { lastActivity: { $lt: twoHoursAgo }, isActive: true },
+            { isActive: false }
+        );
+
+        let query = { userRole: role, isActive: true };
+
+        // Apply role-based filtering
+        switch (role) {
+            case 'single':
+                // Single users can only see their own meetings
+                query.userId = userId;
+                break;
+            case 'team':
+                // Team users can see meetings from their team
+                if (teamId && teamId !== 'null') {
+                    query.teamId = teamId;
+                } else {
+                    query.userId = userId; // Fallback to own meetings if no team
+                }
+                break;
+            case 'global':
+                // Global users can see all global meetings
+                query.globalId = globalId || 'Global123';
+                break;
+        }
+
+        const meetings = await RoleMeeting.find(query).sort({ createdAt: -1 });
+
+        res.json({ meetings });
+    } catch (error) {
+        console.error('Error fetching role-based meetings:', error);
+        res.status(500).json({ error: 'Failed to fetch meetings' });
+    }
+});
+
+// End a role-based meeting
+router.delete('/role-meetings/:roomName', verifyToken, async (req, res) => {
+    try {
+        const { roomName } = req.params;
+
+        const meeting = await RoleMeeting.findOne({ 
+            roomName, 
+            isActive: true 
+        });
+
+        if (meeting) {
+            meeting.isActive = false;
+            await meeting.save();
+            console.log(`Role-based meeting ended: ${roomName} by ${req.user.name}`);
+        }
+
+        res.json({ success: true });
+    } catch (error) {
+        console.error('Error ending role-based meeting:', error);
+        res.status(500).json({ error: 'Failed to end meeting' });
+    }
+});
+
+// Update meeting activity (heartbeat)
+router.put('/role-meetings/:roomName/heartbeat', verifyToken, async (req, res) => {
+    try {
+        const { roomName } = req.params;
+
+        const meeting = await RoleMeeting.findOne({ 
+            roomName, 
+            isActive: true 
+        });
+
+        if (meeting) {
+            meeting.lastActivity = new Date();
+            await meeting.save();
+        }
+
+        res.json({ success: true });
+    } catch (error) {
+        console.error('Error updating meeting activity:', error);
+        res.status(500).json({ error: 'Failed to update meeting activity' });
+    }
+});
 
 // --- 1. Endpoint to initiate Google OAuth login ---
 router.get('/auth/google', (req, res) => {
@@ -171,9 +338,9 @@ googleMeetRouter.post('/schedule', async (req, res) => {
 
 router.use('/google-meet', googleMeetRouter);
 
-// --- Jitsi Jaas JWT Generation Endpoint ---
+// --- Jitsi Jaas JWT Generation Endpoint (Updated for role-based support) ---
 router.post('/jitsi/generate-jwt', (req, res) => {
-    const { room, userId, userName, userEmail, userAvatar, moderator } = req.body;
+    const { room, userId, userName, userEmail, userAvatar, moderator, userRole, teamId, globalId } = req.body;
 
     if (!JITSI_APP_ID || !JITSI_PRIVATE_KEY || !JITSI_DOMAIN || !JITSI_KID) {
         console.error('Jitsi Jaas credentials missing in videoRouter for JWT generation. Check initVideoRouter call in server.js.');
@@ -181,7 +348,6 @@ router.post('/jitsi/generate-jwt', (req, res) => {
     }
 
     // IMPORTANT: Ensure the 'room' variable is correctly trimmed or processed if it comes from user input.
-    // Sometimes leading/trailing spaces can cause mismatches.
     const cleanRoomName = room ? String(room).trim() : '*';
 
     const payload = {
@@ -209,8 +375,14 @@ router.post('/jitsi/generate-jwt', (req, res) => {
                 avatar: userAvatar || '',
                 email: userEmail || 'guest@example.com',
             },
+            // Add role context to JWT
+            role: {
+                type: userRole || 'single',
+                teamId: teamId || null,
+                globalId: globalId || null
+            }
         },
-        room: cleanRoomName, // Use the cleaned room name here
+        room: cleanRoomName,
     };
 
     // Corrected JWT signing block
@@ -218,15 +390,15 @@ router.post('/jitsi/generate-jwt', (req, res) => {
         const token = jwt.sign(payload, JITSI_PRIVATE_KEY, {
             algorithm: 'RS256',
             header: {
-                kid: JITSI_KID, // Use the JITSI_KID from initVideoRouter
-                typ: 'JWT' // Explicitly add typ
+                kid: JITSI_KID,
+                typ: 'JWT'
             }
         });
 
-        console.log('Video Router: Jitsi JWT generated successfully.');
+        console.log(`Video Router: Jitsi JWT generated successfully for ${userRole} user: ${userName}`);
         console.log("Video Router: Generated JWT Payload:", JSON.stringify(jwt.decode(token), null, 2));
         console.log('--- Generated Encoded JWT ---');
-        console.log(token); // Log the encoded token here
+        console.log(token);
         console.log('-----------------------------');
 
         res.json({ jwt: token });

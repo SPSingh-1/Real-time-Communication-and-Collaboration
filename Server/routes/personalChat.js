@@ -9,8 +9,20 @@ const router = express.Router();
 // GET /api/personal-chat/teammates - Get all teammates for sidebar (team members)
 router.get('/teammates', fetchUser, async (req, res) => {
   try {
-    if (req.user.role !== 'team' || !req.user.teamId) {
-      return res.status(400).json({ error: 'User must be in team role with valid teamId' });
+    console.log("Teammates endpoint hit by user:", {
+      id: req.user.id,
+      role: req.user.role,
+      teamId: req.user.teamId
+    }); // ADDED: Debug logging
+
+    if (req.user.role !== 'team') {
+      console.log("User role validation failed:", req.user.role);
+      return res.status(400).json({ error: 'User must be in team role' });
+    }
+
+    if (!req.user.teamId) {
+      console.log("User teamId validation failed:", req.user.teamId);
+      return res.status(400).json({ error: 'User must have valid teamId' });
     }
 
     // Get all team members except current user
@@ -19,6 +31,8 @@ router.get('/teammates', fetchUser, async (req, res) => {
       role: 'team',
       _id: { $ne: req.user.id }
     }).select('name email _id createdAt');
+
+    console.log("Found teammates:", teammates.length);
 
     // Get last message and unread count for each teammate
     const teammatesWithChatInfo = await Promise.all(

@@ -5,7 +5,7 @@ import FileModel from '../models/File.js';
 import jwt from 'jsonwebtoken';
 import mongoose from 'mongoose';
 
-export default function setupSocketHandlers(io) {
+export default function setupchatSocketHandlers(io) {
   io.on('connection', async (socket) => {
     console.log('Socket connected:', socket.id);
 
@@ -110,13 +110,13 @@ export default function setupSocketHandlers(io) {
           .populate('fileRef');
 
         // Emit only in the right room
-        if (socket.role === 'single') {
-          io.to(`user:${socket.userId}`).emit('message', populated);
-        } else if (socket.role === 'team' && socket.teamId) {
-          io.to(`team:${socket.teamId}`).emit('message', populated);
-        } else if (socket.role === 'global') {
-          io.to('global').emit('message', populated);
-        }
+      if (socket.role === 'single') {
+        socket.emit('message', populated);
+      } else if (socket.role === 'team' && socket.teamId) {
+        io.to(`team:${socket.teamId}`).emit('message', populated);
+      } else if (socket.role === 'global') {
+        io.to('global').emit('message', populated);
+      }
       } catch (error) {
         console.error('Error sending message:', error);
         socket.emit('messageError', 'Failed to send message');

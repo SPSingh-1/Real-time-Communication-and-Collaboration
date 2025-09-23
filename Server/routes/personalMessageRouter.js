@@ -2,6 +2,7 @@
 import dotenv from 'dotenv';
 dotenv.config();
 import PersonalMessage from '../models/PersonalMessage.js';
+import User from '../models/User.js';
 import FileModel from '../models/File.js';
 import jwt from 'jsonwebtoken';
 import mongoose from 'mongoose';
@@ -12,30 +13,40 @@ export function setupPersonalChatSocketHandlers(io) {
     
     // Initialize personal chat connection
     socket.on('init-personal-chat', async (token) => {
+      console.log('Received init-personal-chat from:', socket.id);
+      
       try {
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
         const userId = decoded.id;
 
-        socket.userId = userId;
-        socket.role = decoded.role || 'single';
-        socket.teamId = decoded.teamId || null;
-        socket.globalId = decoded.globalId || null;
+        // Get user details from database to get current role and teamId
+        const user = await User.findById(userId).select('role teamId');
+        if (!user) {
+          console.error('User not found:', userId);
+          socket.emit('personal-chat-error', 'User not found');
+          return;
+        }
 
-        console.log('Socket auth details:', {
+        socket.userId = userId;
+        socket.role = user.role;
+        socket.teamId = user.teamId;
+
+        console.log('Personal chat socket auth details:', {
           userId,
           role: socket.role,
-          teamId: socket.teamId,
-          globalId: socket.globalId
+          teamId: socket.teamId
         });
 
-        // FIXED: Allow both team AND global users (not just team)
+        // Validate role
         if (socket.role !== 'team' && socket.role !== 'global') {
+          console.log('Invalid role for personal chat:', socket.role);
           socket.emit('personal-chat-error', 'Personal chat only available for team and global members');
           return;
         }
 
         // Additional validation for team users
         if (socket.role === 'team' && !socket.teamId) {
+          console.log('Team user missing teamId');
           socket.emit('personal-chat-error', 'Team users must have a valid teamId');
           return;
         }
@@ -43,13 +54,13 @@ export function setupPersonalChatSocketHandlers(io) {
         // Join personal chat room for this user
         socket.join(`personal-chat:${userId}`);
 
-        console.log(`User ${userId} connected to personal chat -> role: ${socket.role}, team: ${socket.teamId}, global: ${socket.globalId}`);
+        console.log(`User ${userId} connected to personal chat -> role: ${socket.role}, team: ${socket.teamId}`);
 
+        // EMIT SUCCESS EVENT
         socket.emit('personal-chat-initialized', { 
           userId, 
           role: socket.role, 
-          teamId: socket.teamId,
-          globalId: socket.globalId 
+          teamId: socket.teamId
         });
 
       } catch (err) {
@@ -92,6 +103,7 @@ export function setupPersonalChatSocketHandlers(io) {
           currentConversation: socket.currentConversation,
           currentTeammate: socket.currentTeammate
         });
+
         // Fetch messages for this conversation
         const messages = await PersonalMessage.find({
           conversationId
