@@ -172,33 +172,7 @@ const VideoConferencePage = () => {
           </div>
         </div>
 
-        {/* Quick Switch Buttons - Mobile Only */}
-        <div className="fixed bottom-6 left-4 right-4 sm:hidden z-40">
-          <div className="flex gap-2">
-            <button
-              onClick={() => setActiveTab('video')}
-              className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-medium shadow-lg transition-all duration-200 ${
-                activeTab === 'video'
-                  ? 'bg-gradient-to-r from-purple-500 to-blue-500 text-white scale-105'
-                  : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
-              }`}
-            >
-              <Video className="w-4 h-4" />
-              Video
-            </button>
-            <button
-              onClick={() => setActiveTab('audio')}
-              className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-medium shadow-lg transition-all duration-200 ${
-                activeTab === 'audio'
-                  ? 'bg-gradient-to-r from-green-500 to-green-600 text-white scale-105'
-                  : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
-              }`}
-            >
-              <Phone className="w-4 h-4" />
-              Audio
-            </button>
-          </div>
-        </div>
+        
       </div>
 
       {/* Responsive Design Indicators */}

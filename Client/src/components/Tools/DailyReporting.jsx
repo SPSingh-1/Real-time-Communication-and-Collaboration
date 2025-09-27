@@ -23,8 +23,6 @@ import {
   UserCheck
 } from 'lucide-react';
 
-// Add base URL for API calls
-const API_BASE_URL = 'http://localhost:3001';
 
 const DailyReporting = () => {
   const [activeTab, setActiveTab] = useState(0);
@@ -104,7 +102,7 @@ const DailyReporting = () => {
         search: searchTerm
       });
       
-      const response = await fetch(`${API_BASE_URL}/api/reports/all?${params}`, {
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/reports/all?${params}`, {
         headers: getAuthHeaders()
       });
       
@@ -134,7 +132,7 @@ const DailyReporting = () => {
         search: searchTerm
       });
       
-      const response = await fetch(`${API_BASE_URL}/api/complaints/all?${params}`, {
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/complaints/all?${params}`, {
         headers: getAuthHeaders()
       });
       
@@ -156,7 +154,7 @@ const DailyReporting = () => {
 
   const fetchAssignedReports = async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/reports/assigned`, {
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/reports/assigned`, {
         headers: getAuthHeaders()
       });
       
@@ -178,7 +176,7 @@ const DailyReporting = () => {
 
   const fetchAssignedComplaints = async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/complaints/assigned`, {
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/complaints/assigned`, {
         headers: getAuthHeaders()
       });
       
@@ -201,7 +199,7 @@ const DailyReporting = () => {
   const fetchUsers = async () => {
     try {
       console.log('Fetching assignable users...');
-      const response = await fetch(`${API_BASE_URL}/api/reports/assignable-users`, {
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/reports/assignable-users`, {
         headers: getAuthHeaders()
       });
       
@@ -227,14 +225,14 @@ const DailyReporting = () => {
 
   const fetchStats = async () => {
   try {
-    console.log('Fetching stats from:', `${API_BASE_URL}/api/reports/stats`); // Add this
+    console.log('Fetching stats from:', `${import.meta.env.VITE_BACKEND_URL}/api/reports/stats`); // Add this
     console.log('Auth token:', localStorage.getItem('token')); // Add this
     
     const [reportResponse, complaintResponse] = await Promise.all([
-      fetch(`${API_BASE_URL}/api/reports/stats`, {
+      fetch(`${import.meta.env.VITE_BACKEND_URL}/api/reports/stats`, {
         headers: getAuthHeaders()
       }),
-      fetch(`${API_BASE_URL}/api/complaints/stats`, {
+      fetch(`${import.meta.env.VITE_BACKEND_URL}/api/complaints/stats`, {
         headers: getAuthHeaders()
       })
     ]);
@@ -282,7 +280,7 @@ const DailyReporting = () => {
         formDataObj.append('attachments', file);
       });
 
-      const response = await fetch(`${API_BASE_URL}/api/reports/create`, {
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/reports/create`, {
         method: 'POST',
         headers: {
           'auth-token': localStorage.getItem('token')
@@ -337,7 +335,7 @@ const DailyReporting = () => {
         formDataObj.append('attachments', file);
       });
 
-      const response = await fetch(`${API_BASE_URL}/api/complaints/create`, {
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/complaints/create`, {
         method: 'POST',
         headers: {
           'auth-token': localStorage.getItem('token')
@@ -383,7 +381,7 @@ const DailyReporting = () => {
 
   const updateReportStatus = async (reportId, status, feedback = '') => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/reports/${reportId}/status`, {
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/reports/${reportId}/status`, {
         method: 'PATCH',
         headers: getAuthHeaders(),
         body: JSON.stringify({ status, feedback })
@@ -411,7 +409,7 @@ const DailyReporting = () => {
 
   const updateComplaintStatus = async (complaintId, status, resolution = '') => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/complaints/${complaintId}/status`, {
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/complaints/${complaintId}/status`, {
         method: 'PATCH',
         headers: getAuthHeaders(),
         body: JSON.stringify({ status, resolution })
@@ -439,7 +437,7 @@ const DailyReporting = () => {
 
   const assignComplaint = async (complaintId, assignedTo, dueDate = '') => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/complaints/${complaintId}/assign`, {
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/complaints/${complaintId}/assign`, {
         method: 'PATCH',
         headers: getAuthHeaders(),
         body: JSON.stringify({ assignedTo, dueDate })
@@ -467,7 +465,7 @@ const DailyReporting = () => {
   const addComment = async (id, content, type = 'report') => {
     try {
       const endpoint = type === 'complaint' ? 'complaints' : 'reports';
-      const response = await fetch(`${API_BASE_URL}/api/${endpoint}/${id}/comment`, {
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/${endpoint}/${id}/comment`, {
         method: 'POST',
         headers: getAuthHeaders(),
         body: JSON.stringify({ content })
