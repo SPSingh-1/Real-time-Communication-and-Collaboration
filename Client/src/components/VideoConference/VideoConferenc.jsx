@@ -86,7 +86,7 @@ const VideoConference = ({ user }) => {
 
         try {
             const response = await axios.get(`${API_BASE_URL}/role-meetings/${user.role}`, {
-                headers: { Authorization: `Bearer ${user.token}` },
+                headers: { 'auth-token': user.token },
                 params: { 
                     userId: user.id,
                     teamId: user.teamId,
@@ -107,7 +107,7 @@ const VideoConference = ({ user }) => {
         if (currentMeetingRoomName && user?.token) {
             try {
                 await axios.delete(`${API_BASE_URL}/role-meetings/${currentMeetingRoomName}`, {
-                    headers: { Authorization: `Bearer ${user.token}` }
+                    headers: { 'auth-token': user.token }
                 });
             } catch (err) {
                 console.error('Error notifying backend about meeting end:', err);

@@ -40,6 +40,8 @@ const __dirname = path.dirname(__filename);
 
 // Import video router
 import videoRouter, { initVideoRouter } from './routes/videoRouter.js';
+// Import audio router
+import audioRouter, { initaudioRouter } from './routes/audioRouter.js';
 
 // Import routes
 import authRoutes from './routes/auth.js';
@@ -119,16 +121,22 @@ const GOOGLE_SCOPES = [
 
 // Initialize video router
 initVideoRouter({
-    CLIENT_ID: GOOGLE_CLIENT_ID,
-    CLIENT_SECRET: GOOGLE_CLIENT_SECRET,
-    REDIRECT_URI: GOOGLE_REDIRECT_URI,
-    SCOPES: GOOGLE_SCOPES,
     JITSI_APP_ID: JITSI_APP_ID,
     JITSI_KID: JITSI_KID,
     JITSI_PRIVATE_KEY: privateKey,
     JITSI_DOMAIN: JITSI_DOMAIN
 });
-console.log('✅ Video Router initialized with Google and Jitsi configurations.');
+console.log('✅ Video Router initialized with Jitsi configurations.');
+
+// Initialize audio router
+initaudioRouter({
+    JITSI_APP_ID: JITSI_APP_ID,
+    JITSI_KID: JITSI_KID,
+    JITSI_PRIVATE_KEY: privateKey,
+    JITSI_DOMAIN: JITSI_DOMAIN
+});
+console.log('✅ Audio Router initialized with Jitsi configurations.');
+
 
 // --- UPDATED CORS CONFIGURATION FOR EXPRESS ---
 app.use(cors({
@@ -221,6 +229,9 @@ app.use('/events', createEventRoutes(io));
 
 // Video conferencing routes
 app.use('/api', videoRouter);
+
+// audio conferencing routes
+app.use('/api', audioRouter);
 
 // MongoDB connection
 mongoose.connect(MONGODB_URI)
