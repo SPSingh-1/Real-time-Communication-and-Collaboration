@@ -1,7 +1,6 @@
 // Sidebar.jsx
 import { FaSignOutAlt, FaTasks, FaFileAlt, FaComments, FaClipboardList, FaCalendarAlt, FaVideo } from 'react-icons/fa';
 import { TbLayoutDashboardFilled } from "react-icons/tb";
-import { FiChevronRight, FiChevronLeft } from "react-icons/fi";
 import useAppContext from '../../context/useAppContext';
 import './Sidebar.css';
 
@@ -49,13 +48,6 @@ const Sidebar = ({ activeTab, setActiveTab, collapsed, setCollapsed }) => {
                   : "Guest"}
               </span>
             </button>
-            <div
-              className="sidebar-toggle expanded"
-              onClick={() => setCollapsed(true)}
-              title="Collapse Sidebar"
-            >
-              <FiChevronLeft size={20} />
-            </div>
           </div>
           <nav className="sidebar-nav">
             <SidebarButton 

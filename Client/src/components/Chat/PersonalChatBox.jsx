@@ -11,7 +11,7 @@ const socket = io(`${import.meta.env.VITE_BACKEND_URL}`, {
   autoConnect: false,
 });
 
-const PersonalChatBox = () => {
+const PersonalChatBox = ({ showTeammatesList, setShowTeammatesList }) => {
   const { user } = useAppContext();
   
   // Chat states
@@ -33,7 +33,7 @@ const PersonalChatBox = () => {
   const [pinnedMsgs, setPinnedMsgs] = useState([]);
   const [connectionStatus, setConnectionStatus] = useState('connecting');
   const [currentRole, setCurrentRole] = useState('single');
-  const [showSidebar, setShowSidebar] = useState(window.innerWidth >= 768);
+  //const [showTeammatesList, setShowTeammatesList] = useState(window.innerWidth >= 768);
   const [isMobile, setIsMobile] = useState(false);
   const [showLanguageSelector, setShowLanguageSelector] = useState(false);
   const [selectedLanguage, setSelectedLanguage] = useState('en');
@@ -407,7 +407,7 @@ const selectTeammate = (teammate) => {
   console.log("Selecting teammate:", teammate.name, teammate._id);
   setSelectedTeammate(teammate);
   setMessages([]); // Clear messages immediately
-  setShowSidebar(false);
+  setShowTeammatesList(false);
   
   // Ensure socket is connected before joining conversation
   if (connectionStatus === 'connected' && socket.connected) {
@@ -718,16 +718,16 @@ const selectTeammate = (teammate) => {
   return (
     <div className="flex h-full bg-gradient-to-br from-gray-900 to-gray-800 relative">
       {/* MOBILE OVERLAY */}
-      {isMobile && showSidebar && (
+      {isMobile && showTeammatesList && (
         <div 
           className="fixed inset-0 bg-black/50 z-40 md:hidden"
-          onClick={() => setShowSidebar(false)}
+          onClick={() => setShowTeammatesList(false)}
         />
       )}
 
       {/* SIDEBAR - Teammates List */}
       <div className={`
-        ${showSidebar 
+        ${showTeammatesList 
           ? 'w-full sm:w-80 md:w-80 lg:w-80' 
           : 'w-0'
         } 
@@ -746,7 +746,7 @@ const selectTeammate = (teammate) => {
                 {getRoleDisplayName()}
               </h2>
               <button
-                onClick={() => setShowSidebar(false)}
+                onClick={() => setShowTeammatesList(false)}
                 className="text-gray-400 hover:text-white transition p-1 flex-shrink-0 ml-2"
               >
                 <FaTimes className="w-4 h-4" />
@@ -777,7 +777,7 @@ const selectTeammate = (teammate) => {
                     onClick={() => selectTeammate(teammate)}
                     className={`
                       p-3 sm:p-4 cursor-pointer hover:bg-gray-700/50 active:bg-gray-700/70 
-                      transition border-b border-gray-700/50
+                      transition border-b border-gray-700/50 min-h-[60px] flex items-center
                       ${selectedTeammate?._id === teammate._id ? 'bg-blue-600/20 border-blue-500/30' : ''}
                     `}
                   >
@@ -816,10 +816,10 @@ const selectTeammate = (teammate) => {
         {!selectedTeammate ? (
           <div className="flex flex-col items-center justify-center h-full text-white p-4">
             {/* Show sidebar button when no teammate selected */}
-            {!showSidebar && (
+            {!showTeammatesList && (
               <div className="absolute top-4 left-4">
                 <button
-                  onClick={() => setShowSidebar(true)}
+                  onClick={() => setShowTeammatesList(true)}
                   className="bg-gray-800/90 backdrop-blur-sm text-white p-2 rounded-full hover:bg-gray-700 transition shadow-lg border border-gray-600"
                 >
                   <FaBars className="w-4 h-4 sm:w-5 sm:h-5" />
@@ -849,7 +849,7 @@ const selectTeammate = (teammate) => {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2 sm:gap-3 min-w-0">
                     <button
-                      onClick={() => setShowSidebar(true)}
+                      onClick={() => setShowTeammatesList(true)}
                       className="text-gray-400 hover:text-white transition flex-shrink-0"
                     >
                       <FaBars className="w-4 h-4 sm:w-5 sm:h-5" />
@@ -1283,7 +1283,7 @@ const selectTeammate = (teammate) => {
                 <div className="relative">
                   <button
                     onClick={() => setShowLanguageSelector(!showLanguageSelector)}
-                    className="text-lg sm:text-xl p-2 sm:p-3 rounded-full hover:bg-gray-700 transition-all duration-200 text-green-400 hover:text-green-300 hover:scale-110 relative"
+                    className="text-lg sm:text-xl p-2 sm:p-3 rounded-full hover:bg-gray-700 transition-all duration-200 text-green-400 hover:text-green-300 hover:scale-110 relative flex-shrink-0"
                     title={`Translate to: ${availableLanguages.find(lang => lang.language === selectedLanguage)?.name || 'English'}`}
                   >
                     🌍
@@ -1336,7 +1336,7 @@ const selectTeammate = (teammate) => {
                   type="text"
                   value={msg}
                   onChange={(e) => setMsg(e.target.value)}
-                  className="flex-1 border border-gray-600 bg-gray-800/50 backdrop-blur-sm p-2 sm:p-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-white placeholder-gray-400 transition-all duration-200 text-sm sm:text-base min-w-0"
+                  className="flex-1 border border-gray-600 bg-gray-800/50 backdrop-blur-sm p-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-white placeholder-gray-400 transition-all duration-200 text-sm sm:text-base min-w-0"
                   placeholder={`Send a private message to ${selectedTeammate.name}... ${translating ? '(Translating...)' : ''}`}
                   disabled={connectionStatus !== 'connected' || translating}
                   onKeyDown={(e) => e.key === "Enter" && sendMessage()}

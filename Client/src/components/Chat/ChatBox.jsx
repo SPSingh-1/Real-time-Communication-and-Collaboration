@@ -6,7 +6,7 @@ import { FaAngleDown, FaStar, FaThumbtack } from "react-icons/fa6";
 import Picker from "emoji-picker-react";
 import dayjs from "dayjs";
 import useAppContext from "../../context/useAppContext";
-import AuthDebug from './AuthDebug';
+//import AuthDebug from './AuthDebug';
 
 const socket = io(`${import.meta.env.VITE_BACKEND_URL}`, {
   autoConnect: false,
@@ -538,7 +538,7 @@ const translateText = async (text, targetLanguage) => {
 
   return (
     <div className="flex flex-col flex-1 h-full bg-gradient-to-br from-gray-900 to-gray-800">
-      <AuthDebug />
+      {/* <AuthDebug /> */}
       {/* ENHANCED HEADER */}
       <div className="border-b border-gray-700 bg-gradient-to-r from-blue-900/50 to-purple-900/50 backdrop-blur-sm">
         <div className="py-4 px-6">
@@ -922,7 +922,7 @@ const translateText = async (text, targetLanguage) => {
           <div className="relative">
             <button
               onClick={() => setShowAttachmentMenu(!showAttachmentMenu)}
-              className="text-xl p-3 rounded-full hover:bg-gray-700 transition-all duration-200 text-blue-400 hover:text-blue-300 hover:scale-110"
+              className="text-base sm:text-xl p-1.5 sm:p-3 rounded-full hover:bg-gray-700 transition-all duration-200 text-blue-400 hover:text-blue-300 hover:scale-110 flex-shrink-0"
             >
               <FaPaperclip />
             </button>
@@ -950,7 +950,7 @@ const translateText = async (text, targetLanguage) => {
           {/* EMOJI BUTTON */}
           <button
             onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-            className="text-xl p-3 rounded-full hover:bg-gray-700 transition-all duration-200 text-yellow-400 hover:text-yellow-300 hover:scale-110"
+            className="text-base sm:text-xl p-1.5 sm:p-3 rounded-full hover:bg-gray-700 transition-all duration-200 text-yellow-400 hover:text-yellow-300 hover:scale-110 flex-shrink-0"
           >
             <FaSmile />
           </button>
@@ -959,7 +959,7 @@ const translateText = async (text, targetLanguage) => {
             <div className="relative">
               <button
                 onClick={() => setShowLanguageSelector(!showLanguageSelector)}
-                className="text-xl p-3 rounded-full hover:bg-gray-700 transition-all duration-200 text-green-400 hover:text-green-300 hover:scale-110 relative"
+                className="text-base sm:text-xl p-1.5 sm:p-3 rounded-full hover:bg-gray-700 transition-all duration-200 text-green-400 hover:text-green-300 hover:scale-110 relative flex-shrink-0"
                 title={`Translate to: ${availableLanguages.find(lang => lang.language === selectedLanguage)?.name || 'English'}`}
               >
                 🌐
@@ -1012,7 +1012,7 @@ const translateText = async (text, targetLanguage) => {
             type="text"
             value={msg}
             onChange={(e) => setMsg(e.target.value)}
-            className="flex-1 border border-gray-600 bg-gray-800/50 backdrop-blur-sm p-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-white placeholder-gray-400 transition-all duration-200"
+            className="flex-1 border border-gray-600 bg-gray-800/50 backdrop-blur-sm p-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-white placeholder-gray-400 transition-all duration-200 text-xs sm:text-base min-w-0"
             placeholder={`Type a message to ${getRoleDisplayName().toLowerCase()}... ${translating ? '(Translating...)' : ''}`}
             disabled={connectionStatus !== 'connected' || translating}
             onKeyDown={(e) => {
@@ -1027,7 +1027,7 @@ const translateText = async (text, targetLanguage) => {
           <button
             onClick={sendMessage}
             disabled={!msg.trim() || connectionStatus !== 'connected' || isSending}
-            className="bg-gradient-to-r from-blue-600 to-blue-700 text-white px-6 py-3 rounded-xl hover:from-blue-700 hover:to-blue-800 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl hover:scale-105"
+            className="bg-gradient-to-r from-blue-600 to-blue-700 text-white px-2 sm:px-6 py-2 sm:py-3 rounded-xl hover:from-blue-700 hover:to-blue-800 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl hover:scale-105 text-xs sm:text-base font-medium flex-shrink-0"
           >
             {isSending ? 'Sending...' : 'Send'}
           </button>

@@ -12,6 +12,8 @@ const ChatPage = () => {
   const [activeChat, setActiveChat] = useState('group');
   const [showChatSidebar, setShowChatSidebar] = useState(false); // Default false for mobile-first
   const [isMobile, setIsMobile] = useState(false);
+  const [showTeammatesList, setShowTeammatesList] = useState(true);
+
 
   // Detect screen size changes
   useEffect(() => {
@@ -44,7 +46,8 @@ const ChatPage = () => {
   // Handle chat navigation
   const handleChatChange = (type) => {
   setActiveChat(type);
-  setShowChatSidebar(false); // Add this line to auto-collapse
+  setShowChatSidebar(false); // Close chat type selector
+  setShowTeammatesList(true); // Show teammates list when switching to personal
   if (type === 'personal') {
     navigate('/dashboard/chat/personal');
   } else {
@@ -233,26 +236,37 @@ const ChatPage = () => {
       <div className="flex flex-col flex-1 h-full min-w-0">
         {/* Show/Hide Sidebar Button */}
         {!showChatSidebar && (
-          <div className="absolute top-2 sm:top-4 left-2 sm:left-4 z-20">
-            <button
-              onClick={() => setShowChatSidebar(true)}
-              className="
-                bg-gray-800/95 backdrop-blur-sm text-white p-2 sm:p-2.5 rounded-full 
-                hover:bg-gray-700 active:bg-gray-600 transition shadow-lg border border-gray-600
-                text-sm sm:text-base
-              "
-              title="Show chat types"
-            >
-              <FaBars className="w-4 h-4 sm:w-5 sm:h-5" />
-            </button>
-          </div>
-        )}
+        <div className="absolute top-2 sm:top-4 left-2 sm:left-4 z-20">
+          <button
+            onClick={() => {
+              setShowChatSidebar(true);
+              if (activeChat === 'personal') {
+                setShowTeammatesList(false); // Hide teammates when showing chat types
+              }
+            }}
+            className="
+              bg-gray-800/95 backdrop-blur-sm text-white p-2 sm:p-2.5 rounded-full 
+              hover:bg-gray-700 active:bg-gray-600 transition shadow-lg border border-gray-600
+              text-sm sm:text-base
+            "
+            title="Show chat types"
+          >
+            <FaBars className="w-4 h-4 sm:w-5 sm:h-5" />
+          </button>
+        </div>
+      )}
+
 
         {/* MOBILE HEADER - Shows active chat info when sidebar is closed */}
         {isMobile && !showChatSidebar && (
           <div className="bg-gray-800/90 backdrop-blur-sm border-b border-gray-700 p-3 flex items-center gap-3 flex-shrink-0">
             <button
-              onClick={() => setShowChatSidebar(true)}
+              onClick={() => {
+                setShowChatSidebar(true);
+                if (activeChat === 'personal') {
+                  setShowTeammatesList(false);
+                }
+              }}
               className="text-gray-400 hover:text-white transition p-1"
             >
               <FaBars className="w-5 h-5" />
@@ -282,7 +296,9 @@ const ChatPage = () => {
 
         {activeChat === 'personal' && (user?.role === 'team' || user?.role === 'global') && (
           <div className="h-full flex-1 min-h-0">
-            <PersonalChatBox />
+            <PersonalChatBox  showTeammatesList={showTeammatesList}
+              setShowTeammatesList={setShowTeammatesList}
+            />
           </div>
         )}
 
