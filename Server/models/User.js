@@ -7,11 +7,25 @@ const UserSchema = new mongoose.Schema(
     phoneno: { type: String, required: true },
     password: { type: String, required: true },
 
-    role: { type: String, enum: ['single', 'team', 'global'], default: 'single' },
+    role: { type: String, enum: ['single', 'team', 'global', 'superadmin', 'admin'], default: 'single' },
+    isSuperAdmin: { type: Boolean, default: false },
 
     teamId: { type: mongoose.Schema.Types.ObjectId, ref: 'Team', default: null },
 
     globalId: { type: String, default: 'Global123' },
+
+    // ── Team Membership Status ───────────────────────────────────
+    // null  = single user (not in any team)
+    // pending  = waiting for admin approval
+    // approved = full team access
+    // rejected = admin rejected, can re-apply (max 5 times)
+    teamStatus: {
+      type: String,
+      enum: ['pending', 'approved', 'rejected', null],
+      default: null
+    },
+    teamApplyCount: { type: Number, default: 0 }, // tracks re-apply attempts
+    teamJoinedAt:   { type: Date, default: null },
 
     // ✅ New fields
     photo: { type: String, default: '' }, // Cloudinary URL of profile picture
@@ -31,7 +45,11 @@ const UserSchema = new mongoose.Schema(
     figmaOAuthStateExpiry: {
       type: Date,
       default: null
-    }
+    },
+
+    // ── Password Reset (for Forgot Password flow) ────────────────
+    resetPasswordToken:  { type: String,  default: null },
+    resetPasswordExpiry: { type: Date,    default: null }
   },
   { timestamps: true }
 );

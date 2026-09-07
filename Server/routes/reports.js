@@ -9,7 +9,10 @@ import { body, validationResult } from 'express-validator';
 import mongoose from 'mongoose';
 
 const router = express.Router();
-const upload = multer({ storage: multer.memoryStorage() });
+const upload = multer({ 
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024 }
+});
 
 // Helper function for cloudinary upload
 const uploadToCloudinary = (fileBuffer, folder, resourceType = "auto") => {

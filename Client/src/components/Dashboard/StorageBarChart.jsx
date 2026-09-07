@@ -3,32 +3,38 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGri
 import { Database } from "lucide-react";
 
 const StorageBarChart = ({ data }) => {
-  if (!data || data.length === 0) {
+  if (!data || !Array.isArray(data) || data.length === 0) {
     return (
-      <div className="bg-white/10 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 p-8 flex items-center justify-center">
-        <div className="text-center text-white/60">
-          <Database className="w-12 h-12 mx-auto mb-3 opacity-50" />
-          <p>No storage data available</p>
-        </div>
+      <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 text-center text-slate-500 text-xs">
+        <Database className="w-8 h-8 mx-auto mb-2 opacity-40 text-slate-400" />
+        <p>No storage data available</p>
       </div>
     );
   }
 
-  const formattedData = data.map((col) => ({
-    name: col.name,
-    storageKB: parseFloat((col.storageSize / 1024).toFixed(2)),
-  }));
+  // Filter out 0-byte items or sort top items to display
+  const formattedData = [...data]
+    .filter((col) => (col && ((col.count > 0) || (col.storageSize > 0))))
+    .sort((a, b) => (b?.storageSize || 0) - (a?.storageSize || 0))
+    .slice(0, 7)
+    .map((col) => ({
+      name: col?.name || 'Unknown',
+      count: col?.count || 0,
+      storageKB: parseFloat((((col?.storageSize || 0)) / 1024).toFixed(1)),
+      realBytes: col?.storageSize || 0
+    }));
 
   const CustomTooltip = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
+      const item = payload[0].payload || {};
       return (
-        <div className="bg-gray-900/90 backdrop-blur-sm border border-white/20 rounded-xl p-3 shadow-xl">
-          <p className="text-white font-medium">{`Collection: ${label}`}</p>
-          <p className="text-blue-400">
-            {`Storage: ${payload[0].value} KB`}
+        <div className="bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 shadow-2xl text-xs">
+          <p className="text-white font-bold mb-1">{`Module: ${label}`}</p>
+          <p className="text-blue-400 font-semibold">
+            {`Records: ${item.count || 0}`}
           </p>
-          <p className="text-blue-300 text-sm">
-            {`${(payload[0].value / 1024).toFixed(2)} MB`}
+          <p className="text-emerald-400 text-[11px]">
+            {`Storage: ${item.storageKB} KB`}
           </p>
         </div>
       );
@@ -37,46 +43,43 @@ const StorageBarChart = ({ data }) => {
   };
 
   return (
-    <div className="bg-white/10 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 overflow-hidden hover:bg-white/15 transition-all duration-300">
-      <div className="p-6 border-b border-white/10">
-        <h2 className="text-xl font-semibold text-white flex items-center space-x-2">
-          <div className="p-2 bg-blue-500/20 rounded-lg">
-            <Database className="w-5 h-5 text-blue-400" />
-          </div>
-          <span>Storage per Collection</span>
+    <div className="bg-slate-900 border border-slate-800 rounded-xl p-5">
+      <div className="pb-3 mb-4 border-b border-slate-800">
+        <h2 className="text-sm font-bold text-white flex items-center gap-2">
+          <Database className="w-4 h-4 text-blue-400" />
+          <span>Storage per Collection (Top Categories)</span>
         </h2>
-        <p className="text-white/60 text-sm mt-1">Storage usage breakdown by collection</p>
+        <p className="text-slate-400 text-xs mt-0.5">Top collection sizes in KB</p>
       </div>
-      <div className="p-4">
-        <ResponsiveContainer width="100%" height={300}>
-          <BarChart data={formattedData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+      <div>
+        <ResponsiveContainer width="100%" height={260}>
+          <BarChart data={formattedData} margin={{ top: 10, right: 15, left: -15, bottom: 25 }}>
             <defs>
-              <linearGradient id="storageGradient" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#3B82F6" stopOpacity={0.8} />
-                <stop offset="100%" stopColor="#1D4ED8" stopOpacity={1} />
+              <linearGradient id="storageBarGradient" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#2563eb" stopOpacity={0.9} />
+                <stop offset="100%" stopColor="#1d4ed8" stopOpacity={0.4} />
               </linearGradient>
             </defs>
-            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.1)" />
+            <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
             <XAxis 
               dataKey="name" 
-              stroke="rgba(255, 255, 255, 0.7)"
-              fontSize={12}
-              angle={-45}
+              stroke="#64748b"
+              fontSize={11}
+              angle={-25}
               textAnchor="end"
-              height={80}
+              interval={0}
             />
             <YAxis 
-              stroke="rgba(255, 255, 255, 0.7)"
-              fontSize={12}
-              tickFormatter={(value) => `${value} KB`}
+              stroke="#64748b"
+              fontSize={11}
+              tickFormatter={(value) => `${value}KB`}
             />
             <Tooltip content={<CustomTooltip />} />
             <Bar 
               dataKey="storageKB" 
-              fill="url(#storageGradient)"
+              fill="url(#storageBarGradient)"
               radius={[4, 4, 0, 0]}
-              stroke="rgba(59, 130, 246, 0.5)"
-              strokeWidth={1}
+              minPointSize={10}
             />
           </BarChart>
         </ResponsiveContainer>

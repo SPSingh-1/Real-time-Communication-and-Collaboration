@@ -7,6 +7,11 @@ import LandingPage from "./pages/LandingPage";
 import EventDetailPage from "./pages/EventDetailPage";
 import About from "./pages/About";
 import Legal from "./pages/Legal";
+import ForgotPasswordPage from "./pages/ForgotPasswordPage";
+import ResetPasswordPage from "./pages/ResetPasswordPage";
+import PendingApprovalPage from "./pages/PendingApprovalPage";
+import RejectedPage from "./pages/RejectedPage";
+import AuthCallback from "./pages/AuthCallback";
 
 // Tools
 import FigmaTool from "./components/Tools/FigmaTool";
@@ -15,6 +20,7 @@ import TaskManager from "./components/Tools/TaskManager";
 import FileManager from "./components/Tools/FileManager";
 import VideoCallTool from "./components/Tools/VideoConferenc";
 import DailyReporting from "./components/Tools/DailyReporting";
+import ClientPortalPage from "./pages/ClientPortalPage";
 
 // Helpers
 import { ToastContainer } from "react-toastify";
@@ -71,6 +77,19 @@ function App() {
         <Route path="/company" element={<About />} />
         <Route path="/legal" element={<Legal />} />
 
+        {/* Auth helper routes */}
+        <Route path="/auth/callback" element={<AuthCallback />} />
+        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+        <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
+        <Route path="/reset-password" element={<ResetPasswordPage />} />
+
+        {/* Magic link join — auto-fills invite key on register page */}
+        <Route path="/join/:inviteKey" element={<RegisterPage />} />
+
+        {/* Team status pages — for pending/rejected members */}
+        <Route path="/pending-approval" element={<PendingApprovalPage />} />
+        <Route path="/rejected" element={<RejectedPage />} />
+
         {/* Protected Routes - Dashboard and its nested routes */}
         <Route
           path="/dashboard"
@@ -102,6 +121,33 @@ function App() {
         
         <Route
           path="/dashboard/profile"
+          element={
+            <ProtectedRoute roles={["single", "team", "global"]}>
+              <DashboardPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/dashboard/team-admin"
+          element={
+            <ProtectedRoute roles={["single", "team", "global"]}>
+              <DashboardPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/dashboard/subscriptions"
+          element={
+            <ProtectedRoute roles={["single", "team", "global"]}>
+              <DashboardPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/dashboard/admin/:adminTab"
           element={
             <ProtectedRoute roles={["single", "team", "global"]}>
               <DashboardPage />
@@ -156,6 +202,16 @@ function App() {
           }
         />
 
+        {/* Dedicated Meeting Hub (Attendance, Chat, Recording) */}
+        <Route
+          path="/dashboard/tools/meetings"
+          element={
+            <ProtectedRoute roles={["single", "team", "global"]}>
+              <DashboardPage />
+            </ProtectedRoute>
+          }
+        />
+
         <Route
           path="/dashboard/tools/reporting"
           element={
@@ -164,6 +220,18 @@ function App() {
             </ProtectedRoute>
           }
         />
+
+        <Route
+          path="/dashboard/tools/crm"
+          element={
+            <ProtectedRoute roles={["single", "team", "global"]}>
+              <DashboardPage />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Public Client Portal (No Login Required) */}
+        <Route path="/portal/:portalToken" element={<ClientPortalPage />} />
 
         {/* Events - All roles */}
         <Route
@@ -185,6 +253,7 @@ function App() {
         <Route path="/tools/files" element={<Navigate to="/dashboard/tools/files" replace />} />
         <Route path="/tools/video" element={<Navigate to="/dashboard/tools/video" replace />} />
         <Route path="/tools/reporting" element={<Navigate to="/dashboard/tools/reporting" replace />} />
+        <Route path="/tools/crm" element={<Navigate to="/dashboard/tools/crm" replace />} />
 
         {/* Catch-all route */}
         <Route 

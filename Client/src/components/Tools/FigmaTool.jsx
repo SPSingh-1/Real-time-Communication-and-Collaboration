@@ -1,6 +1,6 @@
 // FigmaTool.jsx - Using Personal Access Token instead of OAuth
 import React, { useState, useEffect } from 'react';
-import { Settings, FileText, Star, Search, Filter, AlertCircle, CheckCircle, ExternalLink, Key } from 'lucide-react';
+import { Settings, FileText, AlertCircle, CheckCircle, ExternalLink, Key } from 'lucide-react';
 import axios from 'axios';
 import FigmaFiles from './FigmaFiles';
 
@@ -12,14 +12,14 @@ const ErrorNotification = ({ error, onClose }) => {
   if (!error) return null;
   
   return (
-    <div className="fixed top-4 right-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded z-50 max-w-md">
+    <div className="fixed top-4 right-4 bg-red-950/90 border border-red-800 text-red-300 px-4 py-3 rounded-lg z-50 max-w-md shadow-xl backdrop-blur-md">
       <div className="flex items-start space-x-2">
-        <AlertCircle className="w-5 h-5 mt-0.5 flex-shrink-0" />
+        <AlertCircle className="w-5 h-5 mt-0.5 flex-shrink-0 text-red-400" />
         <div className="flex-1">
-          <p className="font-medium">Error</p>
+          <p className="font-medium text-red-200">Error</p>
           <p className="text-sm">{error}</p>
         </div>
-        <button onClick={onClose} className="text-red-500 hover:text-red-700">
+        <button onClick={onClose} className="text-red-400 hover:text-red-200">
           ×
         </button>
       </div>
@@ -32,14 +32,14 @@ const SuccessNotification = ({ message, onClose }) => {
   if (!message) return null;
   
   return (
-    <div className="fixed top-4 right-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded z-50 max-w-md">
+    <div className="fixed top-4 right-4 bg-emerald-950/90 border border-emerald-800 text-emerald-300 px-4 py-3 rounded-lg z-50 max-w-md shadow-xl backdrop-blur-md">
       <div className="flex items-start space-x-2">
-        <CheckCircle className="w-5 h-5 mt-0.5 flex-shrink-0" />
+        <CheckCircle className="w-5 h-5 mt-0.5 flex-shrink-0 text-emerald-400" />
         <div className="flex-1">
-          <p className="font-medium">Success!</p>
+          <p className="font-medium text-emerald-200">Success</p>
           <p className="text-sm">{message}</p>
         </div>
-        <button onClick={onClose} className="text-green-500 hover:text-green-700">
+        <button onClick={onClose} className="text-emerald-400 hover:text-emerald-200">
           ×
         </button>
       </div>
@@ -155,9 +155,9 @@ const FigmaConnection = ({ onStatusChange }) => {
 
   if (figmaStatus.loading) {
     return (
-      <div className="flex items-center justify-center p-6">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
-        <span className="ml-2 text-gray-600">Checking Figma connection...</span>
+      <div className="flex items-center justify-center p-8">
+        <div className="w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+        <span className="ml-3 text-slate-400 text-sm">Checking Figma connection...</span>
       </div>
     );
   }
@@ -167,15 +167,15 @@ const FigmaConnection = ({ onStatusChange }) => {
       <ErrorNotification error={error} onClose={() => setError(null)} />
       <SuccessNotification message={success} onClose={() => setSuccess(null)} />
       
-      <div className="bg-white rounded-lg shadow-md p-6 border border-gray-200">
-        <div className="flex items-center justify-between mb-4">
+      <div className="bg-slate-900 rounded-xl p-5 sm:p-6 border border-slate-800">
+        <div className="flex items-center justify-between mb-6">
           <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-lg">F</span>
+            <div className="w-10 h-10 bg-blue-600/20 border border-blue-500/30 rounded-lg flex items-center justify-center">
+              <span className="text-blue-400 font-bold text-lg">F</span>
             </div>
             <div>
-              <h3 className="text-lg font-semibold text-gray-900">Figma Integration</h3>
-              <p className="text-sm text-gray-600">
+              <h3 className="text-base font-semibold text-white">Figma Workspace Integration</h3>
+              <p className="text-xs text-slate-400">
                 {figmaStatus.connected ? 'Connected via Personal Token' : 'Not connected'}
               </p>
             </div>
@@ -183,8 +183,8 @@ const FigmaConnection = ({ onStatusChange }) => {
           
           <div className={`px-3 py-1 rounded-full text-xs font-medium ${
             figmaStatus.connected 
-              ? 'bg-green-100 text-green-800' 
-              : 'bg-gray-100 text-gray-800'
+              ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' 
+              : 'bg-slate-800 text-slate-400 border border-slate-700'
           }`}>
             {figmaStatus.connected ? 'Active' : 'Inactive'}
           </div>
@@ -192,8 +192,8 @@ const FigmaConnection = ({ onStatusChange }) => {
 
         {figmaStatus.connected ? (
           <div className="space-y-4">
-            <div className="flex items-center space-x-3 p-3 bg-green-50 rounded-lg border border-green-200">
-              <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-200">
+            <div className="flex items-center space-x-3 p-4 bg-slate-950 rounded-xl border border-slate-800">
+              <div className="w-10 h-10 rounded-full overflow-hidden bg-slate-800 flex-shrink-0">
                 {figmaStatus.figmaUser?.img_url ? (
                   <img 
                     src={figmaStatus.figmaUser.img_url} 
@@ -201,29 +201,29 @@ const FigmaConnection = ({ onStatusChange }) => {
                     className="w-full h-full object-cover"
                   />
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center text-xs">
+                  <div className="w-full h-full flex items-center justify-center text-xs text-slate-300 font-bold">
                     {figmaStatus.figmaUser?.handle?.charAt(0)?.toUpperCase() || 'U'}
                   </div>
                 )}
               </div>
               <div>
-                <p className="text-sm font-medium text-gray-900">
+                <p className="text-sm font-semibold text-white">
                   {figmaStatus.figmaUser?.handle || figmaStatus.figmaUser?.email || 'Unknown User'}
                 </p>
-                <p className="text-xs text-gray-600">Personal Access Token Connected</p>
+                <p className="text-xs text-emerald-400">Personal Access Token Active</p>
               </div>
             </div>
             
-            <div className="flex space-x-2">
+            <div className="flex space-x-3 pt-2">
               <button
                 onClick={checkFigmaStatus}
-                className="flex-1 bg-blue-50 text-blue-700 px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-100 transition-colors"
+                className="flex-1 bg-slate-800 hover:bg-slate-700 text-slate-200 px-4 py-2.5 rounded-lg text-xs font-medium transition-colors"
               >
                 Refresh Status
               </button>
               <button
                 onClick={disconnectFigma}
-                className="bg-red-50 text-red-700 px-4 py-2 rounded-lg text-sm font-medium hover:bg-red-100 transition-colors"
+                className="bg-red-950/40 hover:bg-red-900/60 border border-red-800/40 text-red-300 px-4 py-2.5 rounded-lg text-xs font-medium transition-colors"
               >
                 Disconnect
               </button>
@@ -231,9 +231,9 @@ const FigmaConnection = ({ onStatusChange }) => {
           </div>
         ) : (
           <div className="space-y-4">
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-              <h4 className="font-medium text-blue-900 mb-2">How to get your Personal Access Token:</h4>
-              <ol className="text-sm text-blue-800 space-y-1 list-decimal list-inside">
+            <div className="bg-slate-950 border border-slate-800 rounded-xl p-4">
+              <h4 className="font-semibold text-white text-xs sm:text-sm mb-2">How to get your Personal Access Token:</h4>
+              <ol className="text-xs text-slate-400 space-y-1 list-decimal list-inside">
                 <li>Go to Figma Settings → Security</li>
                 <li>Scroll to "Personal access tokens"</li>
                 <li>Click "Generate new token"</li>
@@ -243,9 +243,9 @@ const FigmaConnection = ({ onStatusChange }) => {
                 href="https://www.figma.com/settings" 
                 target="_blank" 
                 rel="noopener noreferrer"
-                className="inline-flex items-center space-x-1 text-blue-600 hover:text-blue-800 mt-2 text-sm"
+                className="inline-flex items-center space-x-1 text-blue-400 hover:text-blue-300 mt-2 text-xs font-medium"
               >
-                <ExternalLink className="w-3 h-3" />
+                <ExternalLink className="w-3.5 h-3.5" />
                 <span>Open Figma Settings</span>
               </a>
             </div>
@@ -253,7 +253,7 @@ const FigmaConnection = ({ onStatusChange }) => {
             {!showTokenInput ? (
               <button
                 onClick={() => setShowTokenInput(true)}
-                className="w-full bg-purple-600 text-white px-4 py-3 rounded-lg font-medium hover:bg-purple-700 transition-colors flex items-center justify-center space-x-2"
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-lg text-xs sm:text-sm font-medium transition-colors flex items-center justify-center space-x-2 shadow-sm"
               >
                 <Key className="w-4 h-4" />
                 <span>Connect with Personal Access Token</span>
@@ -261,7 +261,7 @@ const FigmaConnection = ({ onStatusChange }) => {
             ) : (
               <div className="space-y-3">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-xs font-semibold text-slate-300 mb-1.5">
                     Figma Personal Access Token
                   </label>
                   <input
@@ -269,26 +269,26 @@ const FigmaConnection = ({ onStatusChange }) => {
                     value={personalToken}
                     onChange={(e) => setPersonalToken(e.target.value)}
                     placeholder="figd_xxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-lg text-white text-sm placeholder-slate-500 focus:outline-none focus:border-blue-500"
                   />
-                  <p className="text-xs text-gray-500 mt-1">
-                    Your token starts with "figd_" and will not be stored in plain text
+                  <p className="text-[11px] text-slate-500 mt-1">
+                    Your token starts with "figd_" and will be securely encrypted
                   </p>
                 </div>
                 
-                <div className="flex space-x-2">
+                <div className="flex space-x-2 pt-1">
                   <button
                     onClick={connectFigmaWithToken}
                     disabled={connecting || !personalToken.trim()}
-                    className="flex-1 bg-purple-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center space-x-2"
+                    className="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-lg text-xs font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center space-x-2"
                   >
                     {connecting ? (
                       <>
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                        <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                         <span>Connecting...</span>
                       </>
                     ) : (
-                      <span>Connect</span>
+                      <span>Connect Token</span>
                     )}
                   </button>
                   <button
@@ -296,7 +296,7 @@ const FigmaConnection = ({ onStatusChange }) => {
                       setShowTokenInput(false);
                       setPersonalToken('');
                     }}
-                    className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                    className="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs font-medium transition-colors"
                   >
                     Cancel
                   </button>
@@ -304,14 +304,13 @@ const FigmaConnection = ({ onStatusChange }) => {
               </div>
             )}
 
-            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-              <h4 className="font-medium text-yellow-900 mb-2">What you'll get:</h4>
-              <ul className="text-sm text-yellow-800 space-y-1">
-                <li>• Access to your Figma files and projects</li>
-                <li>• File commenting and feedback</li>
-                <li>• Design export capabilities</li>
-                <li>• Version history access</li>
-                <li>• Secure token-based authentication</li>
+            <div className="bg-slate-950 border border-slate-800 rounded-xl p-4">
+              <h4 className="font-semibold text-slate-300 text-xs mb-2">Included Capabilities:</h4>
+              <ul className="text-xs text-slate-400 space-y-1">
+                <li>• Access to your Figma workspace files and projects</li>
+                <li>• File commenting and team design feedback</li>
+                <li>• Instant vector and asset preview</li>
+                <li>• Secure direct token-based authentication</li>
               </ul>
             </div>
           </div>
@@ -324,12 +323,11 @@ const FigmaConnection = ({ onStatusChange }) => {
 // Main Dashboard Integration Component
 const FigmaTool = ({ user }) => {
   const [figmaConnected, setFigmaConnected] = useState(false);
-  const [activeTab, setActiveTab] = useState('connection');
+  const [activeTab, setActiveTab] = useState('files'); // default to 'files' for instant interactive canvas
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
 
   useEffect(() => {
-    // Clear any OAuth-related URL parameters since we're not using OAuth anymore
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.has('figma_error') || urlParams.has('figma_success')) {
       window.history.replaceState({}, document.title, window.location.pathname);
@@ -341,67 +339,47 @@ const FigmaTool = ({ user }) => {
       <ErrorNotification error={error} onClose={() => setError(null)} />
       <SuccessNotification message={success} onClose={() => setSuccess(null)} />
       
-      <div className="max-w-7xl mx-auto p-6 space-y-6">
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <h1 className="text-2xl font-bold text-gray-900 mb-6">Figma Integration</h1>
-          
+      <div className="min-h-full bg-slate-950 text-slate-100 p-3 sm:p-6 max-w-7xl mx-auto">
+        <div className="bg-slate-900/90 rounded-3xl border border-slate-800/80 p-4 sm:p-6 mb-6 shadow-xl backdrop-blur-md">
           {/* Tab Navigation */}
-          <div className="border-b border-gray-200 mb-6">
-            <nav className="-mb-px flex space-x-8">
-              <button
-                onClick={() => setActiveTab('connection')}
-                className={`py-2 px-1 border-b-2 font-medium text-sm ${
-                  activeTab === 'connection'
-                    ? 'border-purple-500 text-purple-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }`}
-              >
-                <Settings className="w-4 h-4 inline mr-2" />
-                Connection
-              </button>
+          <div className="border-b border-slate-800 mb-6 flex items-center justify-between flex-wrap gap-4">
+            <nav className="-mb-px flex space-x-4 sm:space-x-8">
               <button
                 onClick={() => setActiveTab('files')}
-                disabled={!figmaConnected}
-                className={`py-2 px-1 border-b-2 font-medium text-sm ${
-                  activeTab === 'files' && figmaConnected
-                    ? 'border-purple-500 text-purple-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 disabled:text-gray-300 disabled:cursor-not-allowed'
+                className={`py-3 px-1 border-b-2 font-bold text-xs sm:text-sm flex items-center gap-2 transition-colors ${
+                  activeTab === 'files'
+                    ? 'border-purple-500 text-purple-400'
+                    : 'border-transparent text-slate-400 hover:text-white hover:border-slate-700'
                 }`}
               >
-                <FileText className="w-4 h-4 inline mr-2" />
-                Files
+                <FileText className="w-4 h-4" />
+                <span>Interactive Boards & Canvas</span>
+              </button>
+
+              <button
+                onClick={() => setActiveTab('connection')}
+                className={`py-3 px-1 border-b-2 font-bold text-xs sm:text-sm flex items-center gap-2 transition-colors ${
+                  activeTab === 'connection'
+                    ? 'border-purple-500 text-purple-400'
+                    : 'border-transparent text-slate-400 hover:text-white hover:border-slate-700'
+                }`}
+              >
+                <Settings className="w-4 h-4" />
+                <span>Token Connection (Optional)</span>
               </button>
             </nav>
           </div>
 
           {/* Tab Content */}
+          {activeTab === 'files' && (
+            <FigmaFiles />
+          )}
+
           {activeTab === 'connection' && (
             <FigmaConnection 
               user={user} 
               onStatusChange={setFigmaConnected}
             />
-          )}
-          
-          {activeTab === 'files' && figmaConnected && (
-            <FigmaFiles />
-          )}
-          
-          {!figmaConnected && activeTab === 'files' && (
-            <div className="text-center py-12">
-              <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Key className="w-8 h-8 text-gray-400" />
-              </div>
-              <h3 className="text-lg font-medium text-gray-900 mb-2">Connect Figma First</h3>
-              <p className="text-gray-600 mb-4">
-                You need to connect your Figma account using a personal access token to access your files.
-              </p>
-              <button
-                onClick={() => setActiveTab('connection')}
-                className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors"
-              >
-                Go to Connection Settings
-              </button>
-            </div>
           )}
         </div>
       </div>

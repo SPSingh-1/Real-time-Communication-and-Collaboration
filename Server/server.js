@@ -1,5 +1,16 @@
 // backend/server.js
+import dns from 'dns';
 import dotenv from 'dotenv';
+
+// Resolve MongoDB Atlas SRV DNS query issues on Windows/Node.js
+try {
+    dns.setServers(['8.8.8.8', '1.1.1.1']);
+    if (dns.setDefaultResultOrder) {
+        dns.setDefaultResultOrder('ipv4first');
+    }
+} catch (e) {
+    console.warn('DNS server override warning:', e.message);
+}
 
 // Load environment variables FIRST before any other imports
 dotenv.config();
@@ -8,22 +19,18 @@ console.log('JWT_SECRET available:', !!process.env.JWT_SECRET);
 console.log('JWT_SECRET value check:', process.env.JWT_SECRET?.substring(0, 10) + '...');
 
 // Validate critical environment variables
-const JWT_SECRET = process.env.JWT_SECRET;
-const MONGODB_URI = process.env.MONGODB_URI;
+const JWT_SECRET = process.env.JWT_SECRET || 'dev_secret_key_change_in_production_123456';
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/realtime_collab';
 
-if (!JWT_SECRET) {
-    console.error('❌ CRITICAL ERROR: JWT_SECRET is not defined in your .env file.');
-    console.error('Please add JWT_SECRET=your_secret_key to your .env file');
-    process.exit(1);
+if (!process.env.JWT_SECRET) {
+    console.warn('⚠️  WARNING: JWT_SECRET not found in .env. Using development fallback secret.');
 }
 
-if (!MONGODB_URI) {
-    console.error('❌ CRITICAL ERROR: MONGODB_URI is not defined in your .env file.');
-    process.exit(1);
+if (!process.env.MONGODB_URI) {
+    console.warn('⚠️  WARNING: MONGODB_URI not found in .env. Using default mongodb://127.0.0.1:27017/realtime_collab');
 }
 
-console.log("✅ JWT_SECRET loaded successfully:", JWT_SECRET);
-console.log("✅ Environment variables validated");
+console.log("✅ Environment configuration loaded");
 
 import express from 'express';
 import http from 'http';
@@ -44,7 +51,8 @@ import videoRouter, { initVideoRouter } from './routes/videoRouter.js';
 import audioRouter, { initaudioRouter } from './routes/audioRouter.js';
 
 // Import routes
-import authRoutes from './routes/auth.js';
+import authRoutes, { ensureSuperAdminAccount } from './routes/auth.js';
+import teamRoutes from './routes/team.js';
 import createEventRoutes from './routes/events.js';
 import notificationRoutes from './routes/notification.js';
 import noteRouter from './routes/noteRouter.js';
@@ -62,6 +70,11 @@ import reportsRoutes from './routes/reports.js';
 import complaintsRoutes from './routes/complaints.js';
 import personalChatRoutes from './routes/personalChat.js';
 import { setupPersonalChatSocketHandlers } from './routes/personalMessageRouter.js';
+import { setupWebRTCSignaling } from './routes/webrtcSignaling.js';
+import adminRouter from './routes/adminRouter.js';
+import planRoutes from './routes/planRoutes.js';
+import { createScheduledMeetingRoutes, startScheduledMeetingWorker } from './routes/scheduledMeetingRoutes.js';
+import teamCrmRoutes from './routes/teamCrmRoutes.js';
 
 
 // Middleware and Models
@@ -78,6 +91,9 @@ const io = new Server(server, {
         credentials: true,
     }
 });
+
+// ✅ Make io globally accessible so route handlers can emit events
+global.io = io;
 
 // Google API Configuration
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || '';
@@ -105,37 +121,29 @@ if (!FIGMA_CLIENT_ID || !FIGMA_CLIENT_SECRET || !FIGMA_REDIRECT_URI) {
 }
 
 // Read Jitsi Private Key
-const privateKey = process.env.JITSI_PRIVATE_KEY;
+const rawPrivateKey = process.env.JITSI_PRIVATE_KEY;
+const privateKey = rawPrivateKey ? rawPrivateKey.replace(/\\n/g, '\n').trim() : null;
 if (!privateKey) {
-    console.error('❌ CRITICAL ERROR: JITSI_PRIVATE_KEY is not defined in your .env or Render environment.');
-    process.exit(1);
+    console.warn('⚠️  WARNING: JITSI_PRIVATE_KEY is not defined in your .env. Jitsi video calls will be disabled.');
+} else {
+    // Initialize video router
+    initVideoRouter({
+        JITSI_APP_ID: JITSI_APP_ID,
+        JITSI_KID: JITSI_KID,
+        JITSI_PRIVATE_KEY: privateKey,
+        JITSI_DOMAIN: JITSI_DOMAIN
+    });
+    console.log('✅ Video Router initialized with Jitsi configurations.');
+
+    // Initialize audio router
+    initaudioRouter({
+        JITSI_APP_ID: JITSI_APP_ID,
+        JITSI_KID: JITSI_KID,
+        JITSI_PRIVATE_KEY: privateKey,
+        JITSI_DOMAIN: JITSI_DOMAIN
+    });
+    console.log('✅ Audio Router initialized with Jitsi configurations.');
 }
-
-// OAuth scopes
-const GOOGLE_SCOPES = [
-    'https://www.googleapis.com/auth/meetings.spaces.create',
-    'https://www.googleapis.com/auth/meetings',
-    'https://www.googleapis.com/auth/calendar.events',
-    'https://www.googleapis.com/auth/calendar',
-];
-
-// Initialize video router
-initVideoRouter({
-    JITSI_APP_ID: JITSI_APP_ID,
-    JITSI_KID: JITSI_KID,
-    JITSI_PRIVATE_KEY: privateKey,
-    JITSI_DOMAIN: JITSI_DOMAIN
-});
-console.log('✅ Video Router initialized with Jitsi configurations.');
-
-// Initialize audio router
-initaudioRouter({
-    JITSI_APP_ID: JITSI_APP_ID,
-    JITSI_KID: JITSI_KID,
-    JITSI_PRIVATE_KEY: privateKey,
-    JITSI_DOMAIN: JITSI_DOMAIN
-});
-console.log('✅ Audio Router initialized with Jitsi configurations.');
 
 
 // --- UPDATED CORS CONFIGURATION FOR EXPRESS ---
@@ -161,10 +169,13 @@ app.get('/api/test/jwt', (req, res) => {
 });
 
 app.use('/api/auth', authRoutes);
+app.use('/api/team', teamRoutes);  // ✅ Team invite + approval system
 app.use('/notifications', notificationRoutes);
 app.use('/notes', noteRouter);
 app.use('/attendees', attendeeRoutes);
 app.use("/api/dashboard", dashboardRoutes);
+app.use("/api/admin", adminRouter);
+app.use("/api/plans", planRoutes);
 
 // File management routes
 app.use('/collab_uploads', uploadRouter);  // For regular file uploads
@@ -178,6 +189,13 @@ app.use('/api/personal-chat', personalChatRoutes);
 setupPersonalChatSocketHandlers(io);
 
 setupchatSocketHandlers(io);
+setupWebRTCSignaling(io);
+
+// Scheduled meetings routes & background auto-caller
+const scheduledMeetingRouter = createScheduledMeetingRoutes(io);
+app.use('/api/scheduled-meetings', scheduledMeetingRouter);
+app.use('/scheduled-meetings', scheduledMeetingRouter);
+startScheduledMeetingWorker(io);
 
 // Figma integration routes
 app.use('/api/auth', figmaAuthRoutes);
@@ -185,6 +203,10 @@ console.log(`🎨 Figma Routes: /api/auth/figma/* - Ready ✅`);
 app.use('/api/figma', figmaFilesRoutes);
 console.log(`🎨 Figma Integration: ${FIGMA_CLIENT_ID ? 'Ready ✅' : 'Not Configured ❌'}`);
 console.log(`🔗 Figma Callback: ${FIGMA_REDIRECT_URI || 'NOT SET'}`);
+
+// Dynamic Team CRM & Client Portal routes
+app.use('/api/team-crm', teamCrmRoutes);
+console.log(`💼 Team CRM Routes: /api/team-crm/* - Ready ✅`);
 
 // Email notification endpoint
 app.post('/notify', async (req, res) => {
@@ -235,10 +257,13 @@ app.use('/api', audioRouter);
 
 // MongoDB connection
 mongoose.connect(MONGODB_URI)
-    .then(() => console.log('✅ Connected to MongoDB'))
+    .then(async () => {
+        console.log('✅ Connected to MongoDB');
+        await ensureSuperAdminAccount();
+    })
     .catch(err => {
-        console.error('❌ MongoDB connection error:', err);
-        process.exit(1);
+        console.error('❌ MongoDB connection error:', err.message);
+        console.warn('⚠️  Please ensure MongoDB is running locally or set MONGODB_URI in Server/.env to your MongoDB Atlas connection string.');
     });
 
 // Error handling middleware

@@ -233,71 +233,20 @@ const ChatPage = () => {
       </div>
 
       {/* MAIN CHAT AREA */}
-      <div className="flex flex-col flex-1 h-full min-w-0">
-        {/* Show/Hide Sidebar Button */}
-        {!showChatSidebar && (
-        <div className="absolute top-2 sm:top-4 left-2 sm:left-4 z-20">
-          <button
-            onClick={() => {
-              setShowChatSidebar(true);
-              if (activeChat === 'personal') {
-                setShowTeammatesList(false); // Hide teammates when showing chat types
-              }
-            }}
-            className="
-              bg-gray-800/95 backdrop-blur-sm text-white p-2 sm:p-2.5 rounded-full 
-              hover:bg-gray-700 active:bg-gray-600 transition shadow-lg border border-gray-600
-              text-sm sm:text-base
-            "
-            title="Show chat types"
-          >
-            <FaBars className="w-4 h-4 sm:w-5 sm:h-5" />
-          </button>
-        </div>
-      )}
-
-
-        {/* MOBILE HEADER - Shows active chat info when sidebar is closed */}
-        {isMobile && !showChatSidebar && (
-          <div className="bg-gray-800/90 backdrop-blur-sm border-b border-gray-700 p-3 flex items-center gap-3 flex-shrink-0">
-            <button
-              onClick={() => {
-                setShowChatSidebar(true);
-                if (activeChat === 'personal') {
-                  setShowTeammatesList(false);
-                }
-              }}
-              className="text-gray-400 hover:text-white transition p-1"
-            >
-              <FaBars className="w-5 h-5" />
-            </button>
-            <div className="flex items-center gap-2 min-w-0 flex-1">
-              <div className="p-2 bg-blue-600 rounded-full text-white text-sm">
-                {chatOptions.find(opt => opt.id === activeChat)?.icon}
-              </div>
-              <div className="min-w-0 flex-1">
-                <h3 className="font-semibold text-white truncate text-sm">
-                  {chatOptions.find(opt => opt.id === activeChat)?.name}
-                </h3>
-                <p className="text-xs text-gray-400 truncate">
-                  {chatOptions.find(opt => opt.id === activeChat)?.description}
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
-
+      <div className="flex flex-col flex-1 h-full min-w-0 overflow-hidden relative">
         {/* RENDER ACTIVE CHAT COMPONENT */}
         {activeChat === 'group' && (
           <div className="h-full flex-1 min-h-0">
-            <ChatBox />
+            <ChatBox onToggleChatSidebar={() => setShowChatSidebar(!showChatSidebar)} />
           </div>
         )}
 
         {activeChat === 'personal' && (user?.role === 'team' || user?.role === 'global') && (
           <div className="h-full flex-1 min-h-0">
-            <PersonalChatBox  showTeammatesList={showTeammatesList}
+            <PersonalChatBox 
+              showTeammatesList={showTeammatesList}
               setShowTeammatesList={setShowTeammatesList}
+              onToggleChatSidebar={() => setShowChatSidebar(!showChatSidebar)}
             />
           </div>
         )}

@@ -19,6 +19,12 @@ const fileSchema = new mongoose.Schema({
     // Chat file identifier
     isFromChat: { type: Boolean, default: false }, // Flag to identify files uploaded through chat
     
+    // Meeting file identifier & metadata
+    isFromMeeting: { type: Boolean, default: false },
+    meetingRoom: { type: String, default: null }, // Meeting room identifier/name
+    meetingHost: { type: String, default: null }, // Host who conducted the meeting
+    meetingHostId: { type: mongoose.Schema.Types.ObjectId, ref: 'user', default: null },
+    
     // File metadata
     size: { type: Number, default: 0 }, // File size in bytes
     mimetype: { type: String, default: null }, // Original MIME type

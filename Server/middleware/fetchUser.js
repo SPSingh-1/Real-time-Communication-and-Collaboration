@@ -4,22 +4,15 @@ import dotenv from 'dotenv';
 // Ensure dotenv is loaded
 dotenv.config();
 
-const JWT_SECRET = process.env.JWT_SECRET;
+const JWT_SECRET = process.env.JWT_SECRET || 'dev_secret_key_change_in_production_123456';
 
-// Debug logging to ensure JWT_SECRET is loaded
-if (!JWT_SECRET) {
-  console.error('CRITICAL ERROR: JWT_SECRET is not defined in environment variables');
-  console.error('Please check your .env file and ensure JWT_SECRET is set');
-  process.exit(1);
-}
-
-console.log('🔐 JWT_SECRET loaded in fetchUser middleware:', JWT_SECRET ? 'YES' : 'NO');
+console.log('🔐 JWT_SECRET loaded in fetchUser middleware:', !!JWT_SECRET);
 
 const fetchUser = (req, res, next) => {
   console.log('FetchUser middleware called for:', req.url);
   console.log('Headers present:', Object.keys(req.headers));
 
-  const token = req.header('auth-token');
+  const token = req.header('auth-token') || req.header('authorization')?.replace('Bearer ', '') || req.header('token');
   console.log('Token received:', token ? 'YES' : 'NO');
   
   if (!token) {
@@ -52,7 +45,7 @@ const fetchUser = (req, res, next) => {
     }
 
     // Validate and normalize role
-    const validRoles = ['single', 'team', 'global'];
+    const validRoles = ['single', 'team', 'global', 'superadmin', 'admin'];
     if (!validRoles.includes(userRole)) {
       console.log(`⚠️ Invalid role detected: ${userRole}, defaulting to 'single'`);
       userRole = 'single';
@@ -66,15 +59,15 @@ const fetchUser = (req, res, next) => {
 
     if (userRole === 'global' && !globalId && !teamId) {
       console.log("⚠️ Global role detected but no globalId/teamId found, setting default globalId");
-      // Could default to a system globalId or handle differently based on your needs
     }
 
     // Attach normalized and enhanced user info to request
     req.user = {
       id: userId,
       role: userRole,
+      isSuperAdmin: Boolean(data.isSuperAdmin || data.user?.isSuperAdmin || userRole === 'superadmin'),
       teamId: teamId,
-      globalId: globalId || (userRole === 'global' ? 'Global123' : null), // Default global ID
+      globalId: globalId || (userRole === 'global' ? 'Global123' : null),
       name: userName,
       email: userEmail,
       

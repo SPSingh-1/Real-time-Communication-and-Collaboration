@@ -1,5 +1,5 @@
 /* ===================================
-   MODERN SIDEBAR STYLES - NO ARROWS
+   MODERN SIDEBAR STYLES
    =================================== */
 
 /* Sidebar container */
@@ -7,27 +7,20 @@
   position: relative;
   width: 250px;
   min-height: 100vh;
-  background: linear-gradient(145deg, #1a1a2e, #252541);
+  background-color: #0f172a;
   color: #ffffff;
   display: flex;
   flex-direction: column;
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 4px 0 20px rgba(0, 0, 0, 0.5),
-              inset -2px 0 10px rgba(255, 255, 255, 0.03);
-  border-right: 1px solid rgba(255, 255, 255, 0.1);
-  z-index: 1000;
+  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border-right: 1px solid #1e293b;
+  z-index: 40;
   overflow-x: hidden;
 }
 
-/* Collapsed state - completely hidden */
+/* Collapsed state - compact icon-only rail */
 .sidebar.collapsed {
-  width: 0;
-  min-width: 0;
-  padding: 0;
-  border: none;
-  box-shadow: none;
-  opacity: 0;
-  pointer-events: none;
+  width: 64px;
+  min-width: 64px;
 }
 
 /* Sidebar hover subtle effect */

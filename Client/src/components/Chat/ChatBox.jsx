@@ -1,18 +1,38 @@
 import React, { useEffect, useRef, useState } from "react";
 import { io } from "socket.io-client";
 import axios from "axios";
-import { FaPaperclip, FaSmile, FaPlus } from "react-icons/fa";
+import { FaPaperclip, FaSmile, FaPlus, FaBars, FaFile, FaImage, FaMusic, FaComments } from "react-icons/fa";
 import { FaAngleDown, FaStar, FaThumbtack } from "react-icons/fa6";
 import Picker from "emoji-picker-react";
 import dayjs from "dayjs";
 import useAppContext from "../../context/useAppContext";
+import { getFileViewUrl, getFileDownloadUrl } from "../../Utils/helpers";
 //import AuthDebug from './AuthDebug';
 
 const socket = io(`${import.meta.env.VITE_BACKEND_URL}`, {
   autoConnect: false,
 });
 
-const ChatBox = () => {
+const DEFAULT_LANGUAGES = [
+  { language: 'en', name: 'English' },
+  { language: 'hi', name: 'Hindi (हिंदी)' },
+  { language: 'es', name: 'Spanish (Español)' },
+  { language: 'fr', name: 'French (Français)' },
+  { language: 'de', name: 'German (Deutsch)' },
+  { language: 'zh', name: 'Chinese (中文)' },
+  { language: 'ja', name: 'Japanese (日本語)' },
+  { language: 'ar', name: 'Arabic (العربية)' },
+  { language: 'ru', name: 'Russian (Русский)' },
+  { language: 'pt', name: 'Portuguese (Português)' },
+  { language: 'it', name: 'Italian (Italiano)' },
+  { language: 'bn', name: 'Bengali (বাংলা)' },
+  { language: 'ur', name: 'Urdu (اردو)' },
+  { language: 'ta', name: 'Tamil (தமிழ்)' },
+  { language: 'te', name: 'Telugu (తెలుగు)' },
+  { language: 'mr', name: 'Marathi (मराठी)' },
+];
+
+const ChatBox = ({ onToggleChatSidebar }) => {
   const { user } = useAppContext();
   const [messages, setMessages] = useState([]);
   const [msg, setMsg] = useState("");
@@ -30,7 +50,7 @@ const ChatBox = () => {
   const [currentRole, setCurrentRole] = useState('single');
   const [showLanguageSelector, setShowLanguageSelector] = useState(false);
   const [selectedLanguage, setSelectedLanguage] = useState('en');
-  const [availableLanguages, setAvailableLanguages] = useState([]);
+  const [availableLanguages, setAvailableLanguages] = useState(DEFAULT_LANGUAGES);
   const [translating, setTranslating] = useState(false);
     const [languageSearchTerm, setLanguageSearchTerm] = useState('');
 
@@ -43,7 +63,7 @@ const ChatBox = () => {
   const fileInputRef = useRef();
   const messagesEndRef = useRef();
 
-  const quickReactions = ["ðŸ‘", "â¤ï¸", "ðŸ˜‚", "ðŸ˜®", "ðŸ˜¢", "ðŸ™"];
+  const quickReactions = ["👍", "❤️", "😂", "😮", "😢", "🙏"];
 
   useEffect(() => {
   const token = localStorage.getItem("token");
@@ -147,9 +167,7 @@ const ChatBox = () => {
 
 // Fetch supported languages on component mount
 useEffect(() => {
-  if (import.meta.env.VITE_GOOGLE_TRANSLATE_API_KEY) {
-    fetchSupportedLanguages();
-  }
+  fetchSupportedLanguages();
 }, []);
 
   useEffect(() => {
@@ -168,7 +186,8 @@ useEffect(() => {
         { id: `options-menu-${selectedMsgIdForOptions}`, condition: selectedMsgIdForOptions !== null },
         { id: `options-button-${selectedMsgIdForOptions}`, condition: selectedMsgIdForOptions !== null },
         { class: 'attachment-menu', condition: showAttachmentMenu },
-        { class: 'language-selector', condition: showLanguageSelector }
+        { class: 'language-selector', condition: showLanguageSelector },
+        { class: 'emoji-picker-container', condition: showEmojiPicker }
       ];
 
       for (const element of controlledElements) {
@@ -193,6 +212,8 @@ useEffect(() => {
         setFullPickerMessageId(null);
         setSelectedMsgIdForOptions(null);
         setShowAttachmentMenu(false);
+        setShowLanguageSelector(false);
+        setShowEmojiPicker(false);
       }
     };
 
@@ -204,29 +225,46 @@ useEffect(() => {
     fullPickerMessageId,
     selectedMsgIdForOptions,
     showAttachmentMenu,
-    showLanguageSelector
+    showLanguageSelector,
+    showEmojiPicker
   ]);
 
-  const sendMessage = async () => {
-  if (!msg.trim() || connectionStatus !== 'connected' || isSending) {
-    return;
-  }
+  const handleInputChange = (e) => {
+    setMsg(e.target.value);
+  };
 
-  setIsSending(true);
-  const messageText = msg.trim();
-  const replyToId = replyTo?._id || null;
-  
-  // Clear input immediately
-  setMsg("");
-  setReplyTo(null);
-  
-  try {
-    socket.emit("message", { text: messageText, replyTo: replyToId });
-  } finally {
-    // Reset sending state after a short delay
-    setTimeout(() => setIsSending(false), 500);
-  }
-};
+  const sendMessage = async () => {
+    if (!msg.trim() || connectionStatus !== 'connected' || isSending) {
+      return;
+    }
+
+    setIsSending(true);
+    let messageText = msg.trim();
+    const replyToId = replyTo?._id || null;
+    
+    // Ensure full sentence is translated to target language before emitting if active
+    if (selectedLanguage !== 'en') {
+      try {
+        const translated = await translateText(messageText, selectedLanguage);
+        if (translated) {
+          messageText = translated;
+        }
+      } catch (e) {
+        console.error("Translation on send error:", e);
+      }
+    }
+
+    // Clear input
+    setMsg("");
+    setReplyTo(null);
+    
+    try {
+      socket.emit("message", { text: messageText, replyTo: replyToId });
+    } finally {
+      // Reset sending state after a short delay
+      setTimeout(() => setIsSending(false), 500);
+    }
+  };
 
   // FIXED: Updated attachment handling
   const handleAttachClick = (type) => {
@@ -289,9 +327,9 @@ useEffect(() => {
       return;
     }
 
-    // Check file size (50MB limit)
-    if (file.size > 50 * 1024 * 1024) {
-      alert("File size exceeds 50MB limit");
+    // Check file size (5MB limit)
+    if (file.size > 5 * 1024 * 1024) {
+      alert("File size exceeds the 5MB limit. Please select a file smaller than 5MB.");
       // Clear the input
       e.target.value = '';
       return;
@@ -399,50 +437,86 @@ useEffect(() => {
     }
   };
 
-  // Fetch supported languages from Google Translate API
-const fetchSupportedLanguages = async () => {
-  try {
-    const response = await fetch(
-      `https://translation.googleapis.com/language/translate/v2/languages?key=${import.meta.env.VITE_GOOGLE_TRANSLATE_API_KEY}&target=en`
-    );
-    const data = await response.json();
-    setAvailableLanguages(data.data.languages || []);
-  } catch (error) {
-    console.error('Error fetching languages:', error);
-  }
-};
 
-// Translate text using Google Translate API
-const translateText = async (text, targetLanguage) => {
-  if (!text.trim()) return;
-  
-  setTranslating(true);
-  try {
-    const response = await fetch(
-      `https://translation.googleapis.com/language/translate/v2?key=${import.meta.env.VITE_GOOGLE_TRANSLATE_API_KEY}`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          q: text,
-          target: targetLanguage,
-          format: 'text'
-        })
+  // Fetch supported languages from Google Translate API (or fallback)
+  const fetchSupportedLanguages = async () => {
+    try {
+      const apiKey = import.meta.env.VITE_GOOGLE_TRANSLATE_API_KEY;
+      if (apiKey) {
+        const response = await fetch(
+          `https://translation.googleapis.com/language/translate/v2/languages?key=${apiKey}&target=en`
+        );
+        const data = await response.json();
+        if (data.data?.languages?.length) {
+          setAvailableLanguages(data.data.languages);
+          return;
+        }
       }
-    );
-    const data = await response.json();
-    if (data.data?.translations?.[0]?.translatedText) {
-      setMsg(data.data.translations[0].translatedText);
+      setAvailableLanguages(DEFAULT_LANGUAGES);
+    } catch (error) {
+      console.warn('Using default language list:', error);
+      setAvailableLanguages(DEFAULT_LANGUAGES);
     }
-  } catch (error) {
-    console.error('Translation error:', error);
-    alert('Translation failed. Please try again.');
-  } finally {
-    setTranslating(false);
-  }
-};
+  };
+
+  // Translate text with Google multi-lingual API (supports English & Hinglish) or free MyMemory fallback
+  const translateText = async (text, targetLanguage) => {
+    if (!text || !text.trim() || targetLanguage === 'en') return text;
+    
+    setTranslating(true);
+    try {
+      // 1. Google Multi-Lingual API (Handles English, Hinglish, and all language auto-detection)
+      const gtxUrl = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${targetLanguage}&dt=t&q=${encodeURIComponent(text)}`;
+      const gtxRes = await fetch(gtxUrl);
+      if (gtxRes.ok) {
+        const gtxData = await gtxRes.json();
+        if (gtxData && gtxData[0] && Array.isArray(gtxData[0])) {
+          const translated = gtxData[0].map(item => item[0]).join('');
+          if (translated) {
+            setMsg(translated);
+            return translated;
+          }
+        }
+      }
+
+      // 2. Google Translate API key (if configured)
+      const apiKey = import.meta.env.VITE_GOOGLE_TRANSLATE_API_KEY;
+      if (apiKey) {
+        const response = await fetch(
+          `https://translation.googleapis.com/language/translate/v2?key=${apiKey}`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              q: text,
+              target: targetLanguage,
+              format: 'text'
+            })
+          }
+        );
+        const data = await response.json();
+        if (data.data?.translations?.[0]?.translatedText) {
+          setMsg(data.data.translations[0].translatedText);
+          return data.data.translations[0].translatedText;
+        }
+      }
+
+      // 3. Free fallback translation via MyMemory API
+      const fallbackRes = await fetch(
+        `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=autodetect|${targetLanguage}`
+      );
+      const fallbackData = await fallbackRes.json();
+      if (fallbackData.responseData?.translatedText) {
+        setMsg(fallbackData.responseData.translatedText);
+        return fallbackData.responseData.translatedText;
+      }
+    } catch (error) {
+      console.error('Translation error:', error);
+    } finally {
+      setTranslating(false);
+    }
+    return text;
+  };
 
   const handleOptionClick = (option, msg) => {
     if (option === "copy") {
@@ -537,48 +611,58 @@ const translateText = async (text, targetLanguage) => {
   }
 
   return (
-    <div className="flex flex-col flex-1 h-full bg-gradient-to-br from-gray-900 to-gray-800">
-      {/* <AuthDebug /> */}
+    <div className="flex flex-col flex-1 h-full bg-slate-950">
       {/* ENHANCED HEADER */}
-      <div className="border-b border-gray-700 bg-gradient-to-r from-blue-900/50 to-purple-900/50 backdrop-blur-sm">
-        <div className="py-4 px-6">
+      <div className="border-b border-slate-800 bg-slate-900 flex-shrink-0">
+        <div className="py-3 sm:py-4 px-4 sm:px-6">
           <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-xl font-bold text-white">{getRoleDisplayName()}</h1>
-              <p className="text-sm text-gray-300">{getRoleDescription()}</p>
+            <div className="flex items-center gap-3 min-w-0">
+              {onToggleChatSidebar && (
+                <button
+                  onClick={onToggleChatSidebar}
+                  className="p-1.5 sm:p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors flex-shrink-0"
+                  title="Switch Chat Type"
+                >
+                  <FaBars className="w-4 h-4" />
+                </button>
+              )}
+              <div className="min-w-0">
+                <h1 className="text-base sm:text-xl font-bold text-white truncate">{getRoleDisplayName()}</h1>
+                <p className="text-xs sm:text-sm text-slate-400 truncate">{getRoleDescription()}</p>
+              </div>
             </div>
-            <div className="flex items-center gap-3">
-              <div className={`h-3 w-3 rounded-full ${
+            <div className="flex items-center gap-2 flex-shrink-0">
+              <div className={`h-2.5 w-2.5 rounded-full ${
                 connectionStatus === 'connected' ? 'bg-green-500' : 
                 connectionStatus === 'connecting' ? 'bg-yellow-500' : 'bg-red-500'
               }`}></div>
-              <span className="text-xs text-gray-400 capitalize">{connectionStatus}</span>
+              <span className="text-xs text-slate-400 capitalize hidden sm:inline">{connectionStatus}</span>
             </div>
           </div>
           {messages.length > 0 && (
-            <div className="text-xs text-gray-400 mt-2">
-              {messages.length} message{messages.length !== 1 ? 's' : ''}
-              {pinnedMsgs.length > 0 && ` â€¢ ${pinnedMsgs.length} pinned`}
-              {starredMsgs.size > 0 && ` â€¢ ${starredMsgs.size} starred`}
+            <div className="text-xs text-slate-400 mt-2 flex flex-wrap gap-2">
+              <span>{messages.length} message{messages.length !== 1 ? 's' : ''}</span>
+              {pinnedMsgs.length > 0 && <span>• {pinnedMsgs.length} pinned</span>}
+              {starredMsgs.size > 0 && <span>• {starredMsgs.size} starred</span>}
             </div>
           )}
         </div>
       </div>
 
       {/* MESSAGES AREA */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4 scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-transparent">
+      <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar">
         {connectionStatus === 'connecting' && (
           <div className="flex justify-center items-center py-8">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
-            <span className="ml-3 text-gray-400">Connecting to chat...</span>
+            <span className="ml-3 text-slate-400">Connecting to chat...</span>
           </div>
         )}
 
         {sortedMessages.length === 0 && connectionStatus === 'connected' && (
-          <div className="flex flex-col items-center justify-center py-12 text-gray-400">
-            <div className="text-6xl mb-4">ðŸ’¬</div>
-            <h3 className="text-lg font-semibold mb-2">No messages yet</h3>
-            <p className="text-sm text-center">
+          <div className="flex flex-col items-center justify-center py-12 text-slate-400">
+            <div className="text-5xl mb-3">💬</div>
+            <h3 className="text-base font-semibold text-slate-200 mb-1">No messages yet</h3>
+            <p className="text-xs text-slate-400 text-center max-w-sm">
               {currentRole === 'single' && "Start your personal conversation"}
               {currentRole === 'team' && "Be the first to message your team"}
               {currentRole === 'global' && "Join the global conversation"}
@@ -599,9 +683,9 @@ const translateText = async (text, targetLanguage) => {
             <div
               key={m._id}
               id={`message-container-${m._id}`}
-              className={`relative group max-w-[85%] flex ${
+              className={`relative group max-w-[85%] sm:max-w-[70%] flex ${
                 isMine ? "justify-end ml-auto" : "justify-start mr-auto"
-              } mb-6`}
+              } mb-6 min-w-0`}
               onMouseEnter={() => {
                 if (
                   showQuickReactionBarForMsgId !== m._id &&
@@ -621,10 +705,10 @@ const translateText = async (text, targetLanguage) => {
             >
               {/* MESSAGE BUBBLE */}
               <div
-                className={`relative px-4 py-3 rounded-2xl text-sm break-words transition-all duration-200 min-w-[120px] shadow-lg
+                className={`relative px-4 py-3 rounded-2xl text-sm break-all [overflow-wrap:anywhere] transition-all duration-200 min-w-[120px] max-w-full shadow-md
                   ${isMine
-                    ? "bg-gradient-to-br from-blue-600 to-blue-700 text-white border-r-4 border-blue-400 rounded-br-md"
-                    : "bg-gradient-to-br from-gray-700 to-gray-800 text-white border-l-4 border-purple-500 rounded-bl-md"
+                    ? "bg-blue-600 text-white rounded-br-sm"
+                    : "bg-slate-800 border border-slate-700 text-white rounded-bl-sm"
                   }`}
               >
                 {/* REACTION TRIGGER ICON */}
@@ -633,8 +717,7 @@ const translateText = async (text, targetLanguage) => {
                   !fullPickerMessageId && (
                     <div
                       id={`smiley-trigger-${m._id}`}
-                      className={`absolute z-20 p-2 rounded-full bg-gray-800 shadow-xl text-yellow-400 text-lg cursor-pointer hover:bg-gray-700 transition-all duration-200 hover:scale-110
-                        ${isMine ? "left-[-45px]" : "right-[-45px]"} top-1/2 -translate-y-1/2`}
+                      className={`absolute z-20 p-1.5 rounded-full bg-slate-800 border border-slate-700 shadow-xl text-yellow-400 text-sm cursor-pointer hover:bg-slate-700 transition-all duration-150 -top-3.5 ${isMine ? "left-2" : "right-2"}`}
                       onClick={(e) => {
                         e.stopPropagation();
                         setShowQuickReactionBarForMsgId(m._id);
@@ -649,20 +732,19 @@ const translateText = async (text, targetLanguage) => {
                 {showQuickReactionBarForMsgId === m._id && (
                   <div
                     id={`reaction-menu-${m._id}`}
-                    className={`absolute z-30 flex gap-2 bg-gray-800 p-2 rounded-full shadow-2xl transition-all duration-200 border border-gray-600
-                      ${isMine ? "left-[-280px]" : "right-[-280px]"} top-1/2 -translate-y-1/2`}
+                    className={`absolute z-30 -top-11 ${isMine ? "right-0" : "left-0"} flex items-center gap-1.5 bg-slate-900 border border-slate-700 p-1.5 rounded-full shadow-2xl transition-all duration-200`}
                   >
                     {quickReactions.map((emoji, i) => (
                       <button
                         key={i}
-                        className="p-2 text-xl rounded-full hover:bg-gray-600 transition-all duration-150 hover:scale-125"
+                        className="p-1.5 text-lg rounded-full hover:bg-slate-800 transition-all duration-150 hover:scale-125"
                         onClick={() => handleReaction(m._id, emoji)}
                       >
                         {emoji}
                       </button>
                     ))}
                     <button
-                      className="p-2 rounded-full hover:bg-gray-600 transition-all duration-150 text-white text-lg flex items-center justify-center hover:scale-125"
+                      className="p-1.5 rounded-full hover:bg-slate-800 transition-all duration-150 text-slate-300 text-base flex items-center justify-center hover:scale-125"
                       onClick={() => setFullPickerMessageId(m._id)}
                     >
                       <FaPlus />
@@ -672,15 +754,15 @@ const translateText = async (text, targetLanguage) => {
 
                 {/* USER NAME & ROLE INDICATOR */}
                 <div className="flex items-center justify-between mb-2">
-                  <div className="text-xs font-semibold text-gray-200">
+                  <div className="text-xs font-semibold text-slate-200">
                     {m.user?.name || "Unknown"}
                     {currentRole === 'global' && (
-                      <span className="ml-2 px-2 py-0.5 bg-purple-600 text-white rounded-full text-[10px]">
+                      <span className="ml-2 px-2 py-0.5 bg-purple-900/60 border border-purple-700 text-purple-300 rounded-full text-[10px]">
                         GLOBAL
                       </span>
                     )}
                     {currentRole === 'team' && (
-                      <span className="ml-2 px-2 py-0.5 bg-green-600 text-white rounded-full text-[10px]">
+                      <span className="ml-2 px-2 py-0.5 bg-emerald-900/60 border border-emerald-700 text-emerald-300 rounded-full text-[10px]">
                         TEAM
                       </span>
                     )}
@@ -695,20 +777,20 @@ const translateText = async (text, targetLanguage) => {
 
                 {/* REPLY CONTEXT */}
                 {m.replyTo && (
-                  <div className="text-xs italic text-gray-300 mb-2 p-2 bg-black/20 rounded border-l-2 border-gray-500">
-                    <span className="font-semibold text-gray-200">
+                  <div className="text-xs italic text-slate-300 mb-2 p-2 bg-black/20 rounded border-l-2 border-slate-500">
+                    <span className="font-semibold text-slate-200">
                       {m.replyTo.user?.name || "Unknown"}:
                     </span>{" "}
-                    <em className="text-gray-400">{m.replyTo?.text || "Unknown message"}</em>
+                    <em className="text-slate-400">{m.replyTo?.text || "Unknown message"}</em>
                   </div>
                 )}
 
                 {/* MESSAGE CONTENT */}
-                <div className="text-base leading-relaxed">
+                <div className="text-sm leading-relaxed break-all [overflow-wrap:anywhere] whitespace-pre-wrap">
                   {/* ENHANCED FILE HANDLING */}
                   {m.isFileMessage || m.fileUrl ? (
                     <div>
-                      {m.text && <div className="mb-2">{m.text}</div>}
+                      {m.text && <div className="mb-2 break-all [overflow-wrap:anywhere]">{m.text}</div>}
                       {m.fileUrl && (
                         <div className="mt-2">
                           {/* Image preview for image files */}
@@ -717,7 +799,7 @@ const translateText = async (text, targetLanguage) => {
                               <img 
                                 src={m.fileUrl} 
                                 alt={m.fileName || "Image"} 
-                                className="max-w-xs max-h-48 rounded-lg border border-gray-600 object-cover"
+                                className="max-w-xs max-h-48 rounded-lg border border-slate-700 object-cover"
                                 loading="lazy"
                               />
                             </div>
@@ -743,17 +825,28 @@ const translateText = async (text, targetLanguage) => {
                             </div>
                           )}
                           
-                          {/* Download link for all files */}
-                          <a
-                            href={m.fileUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-2 underline text-blue-200 hover:text-blue-100 transition bg-black/20 px-3 py-2 rounded-lg hover:bg-black/30"
-                          >
-                            <span>ðŸ“Ž</span>
-                            <span>{m.fileName || "Download File"}</span>
-                            <span className="text-xs text-gray-300">({m.fileType || "file"})</span>
-                          </a>
+                          {/* View and Download links for documents and files */}
+                          <div className="flex items-center gap-2 mt-1">
+                            <a
+                              href={getFileViewUrl(m.fileUrl, m.fileName, m.fileType)}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1.5 text-blue-300 hover:text-white transition bg-slate-900/80 px-2.5 py-1.5 rounded-lg hover:bg-slate-900 border border-slate-700 text-xs font-medium"
+                            >
+                              <span>📄</span>
+                              <span className="truncate max-w-[140px]">{m.fileName || "View Document"}</span>
+                            </a>
+                            <a
+                              href={getFileDownloadUrl(m.fileUrl)}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              download={m.fileName || "download"}
+                              className="inline-flex items-center gap-1 text-slate-300 hover:text-white transition bg-slate-800 hover:bg-slate-700 px-2 py-1.5 rounded-lg border border-slate-700 text-xs"
+                              title="Download original file"
+                            >
+                              <span>⬇️</span>
+                            </a>
+                          </div>
                         </div>
                       )}
                     </div>
@@ -899,109 +992,167 @@ const translateText = async (text, targetLanguage) => {
 
         {/* REPLY PREVIEW */}
         {replyTo && (
-          <div className="text-sm text-gray-300 mb-3 p-3 bg-gray-800/50 rounded-lg border border-gray-600">
+          <div className="text-sm text-slate-300 mb-3 p-3 bg-slate-950 rounded-lg border border-slate-800">
             <div className="flex items-start justify-between">
               <div>
                 <span className="font-semibold text-blue-400">
                   Replying to {replyTo.user?.name || "Unknown"}:
                 </span>
-                <div className="text-gray-400 italic mt-1">{replyTo.text}</div>
+                <div className="text-slate-400 italic mt-1">{replyTo.text}</div>
               </div>
               <button
-                className="text-gray-400 hover:text-white transition ml-3"
+                className="text-slate-400 hover:text-white transition ml-3"
                 onClick={() => setReplyTo(null)}
               >
-                âœ•
+                ✕
               </button>
             </div>
           </div>
         )}
 
-        <div className="flex items-center gap-3">
+        {/* TRANSLATION STATUS BANNER */}
+        {selectedLanguage !== 'en' && (
+          <div className="flex items-center justify-between px-3 py-1.5 bg-blue-950/50 border border-blue-800/60 rounded-lg text-xs text-blue-300 mb-2">
+            <div className="flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></span>
+              <span>
+                Auto-Translating (English/Hinglish) ➔ <strong className="text-white">{availableLanguages.find(l => l.language === selectedLanguage)?.name || selectedLanguage}</strong>
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              {translating ? (
+                <span className="text-[11px] text-blue-400 font-medium animate-pulse">Translating...</span>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => translateText(msg, selectedLanguage)}
+                  className="px-2 py-0.5 bg-blue-600 hover:bg-blue-700 text-white rounded text-[11px] font-medium transition-colors"
+                >
+                  Translate Now
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={() => setSelectedLanguage('en')}
+                className="text-slate-400 hover:text-white text-xs px-1 hover:bg-slate-800 rounded"
+                title="Reset to English"
+              >
+                ✕
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* INPUT AND ACTION BAR */}
+        <div className="flex items-center space-x-1.5 sm:space-x-2">
           {/* ATTACHMENT BUTTON */}
           <div className="relative">
             <button
-              onClick={() => setShowAttachmentMenu(!showAttachmentMenu)}
-              className="text-base sm:text-xl p-1.5 sm:p-3 rounded-full hover:bg-gray-700 transition-all duration-200 text-blue-400 hover:text-blue-300 hover:scale-110 flex-shrink-0"
+              onClick={() => {
+                setShowAttachmentMenu(!showAttachmentMenu);
+                setShowLanguageSelector(false);
+                setShowEmojiPicker(false);
+              }}
+              className="text-base sm:text-xl p-2 sm:p-2.5 rounded-lg hover:bg-slate-800 transition-colors text-slate-400 hover:text-white flex-shrink-0"
+              title="Attach File"
             >
               <FaPaperclip />
             </button>
             {showAttachmentMenu && (
-              <div className="attachment-menu absolute bottom-full mb-2 left-0 z-50 bg-gray-800 border border-gray-600 shadow-2xl rounded-lg overflow-hidden">
-                {[
-                  { type: "document", label: "ðŸ“„ Document", desc: "PDF, DOC, TXT, Excel" },
-                  { type: "image", label: "ðŸ–¼ï¸ Photo", desc: "JPG, PNG, GIF" },
-                  { type: "audio", label: "ðŸŽ§ Audio", desc: "MP3, WAV" },
-                  { type: "video", label: "ðŸŽ¥ Video", desc: "MP4, MOV" },
-                ].map((item) => (
-                  <div
-                    key={item.type}
-                    className="cursor-pointer p-3 hover:bg-gray-700 transition text-white min-w-[180px] border-b border-gray-700 last:border-b-0"
-                    onClick={() => handleAttachClick(item.type)}
-                  >
-                    <div className="font-medium">{item.label}</div>
-                    <div className="text-xs text-gray-400">{item.desc}</div>
-                  </div>
-                ))}
+              <div className="attachment-menu absolute bottom-full mb-2 left-0 z-50 bg-slate-900 border border-slate-800 shadow-xl rounded-xl p-2 flex flex-col space-y-1 w-44">
+                <button
+                  onClick={() => handleAttachClick("document")}
+                  className="flex items-center space-x-2 p-2 rounded-lg hover:bg-slate-800 transition text-white text-xs text-left"
+                >
+                  <FaFile className="text-blue-400" />
+                  <span>Document</span>
+                </button>
+                <button
+                  onClick={() => handleAttachClick("image")}
+                  className="flex items-center space-x-2 p-2 rounded-lg hover:bg-slate-800 transition text-white text-xs text-left"
+                >
+                  <FaImage className="text-emerald-400" />
+                  <span>Photos & Videos</span>
+                </button>
+                <button
+                  onClick={() => handleAttachClick("audio")}
+                  className="flex items-center space-x-2 p-2 rounded-lg hover:bg-slate-800 transition text-white text-xs text-left"
+                >
+                  <FaMusic className="text-amber-400" />
+                  <span>Audio</span>
+                </button>
               </div>
             )}
           </div>
 
           {/* EMOJI BUTTON */}
           <button
-            onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-            className="text-base sm:text-xl p-1.5 sm:p-3 rounded-full hover:bg-gray-700 transition-all duration-200 text-yellow-400 hover:text-yellow-300 hover:scale-110 flex-shrink-0"
+            onClick={() => {
+              setShowEmojiPicker(!showEmojiPicker);
+              setShowAttachmentMenu(false);
+              setShowLanguageSelector(false);
+            }}
+            className="text-base sm:text-xl p-2 sm:p-2.5 rounded-lg hover:bg-slate-800 transition-colors text-yellow-400 hover:text-yellow-300 flex-shrink-0"
+            title="Emojis"
           >
             <FaSmile />
           </button>
 
           {/* LANGUAGE TRANSLATE BUTTON */}
-            <div className="relative">
-              <button
-                onClick={() => setShowLanguageSelector(!showLanguageSelector)}
-                className="text-base sm:text-xl p-1.5 sm:p-3 rounded-full hover:bg-gray-700 transition-all duration-200 text-green-400 hover:text-green-300 hover:scale-110 relative flex-shrink-0"
-                title={`Translate to: ${availableLanguages.find(lang => lang.language === selectedLanguage)?.name || 'English'}`}
-              >
-                🌐
-                {selectedLanguage !== 'en' && (
-                  <span className="absolute -top-1 -right-1 bg-green-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">
-                    !
-                  </span>
-                )}
-              </button>
+          <div className="relative">
+            <button
+              onClick={() => {
+                setShowLanguageSelector(!showLanguageSelector);
+                setShowAttachmentMenu(false);
+                setShowEmojiPicker(false);
+              }}
+              className="text-base sm:text-xl p-2 sm:p-2.5 rounded-lg hover:bg-slate-800 transition-colors text-blue-400 hover:text-blue-300 relative flex-shrink-0"
+              title={`Translate to: ${availableLanguages.find(lang => lang.language === selectedLanguage)?.name || 'English'}`}
+            >
+              🌐
+              {selectedLanguage !== 'en' && (
+                <span className="absolute -top-1 -right-1 bg-blue-600 text-white text-[10px] rounded-full w-4 h-4 flex items-center justify-center font-bold">
+                  !
+                </span>
+              )}
+            </button>
             {showLanguageSelector && (
-              <div className="language-selector absolute bottom-full mb-2 left-0 z-50 bg-gray-800 border border-gray-600 shadow-2xl rounded-lg overflow-hidden max-h-60 w-64">
-                <div className="p-2 border-b border-gray-600">
+              <div className="language-selector absolute bottom-full mb-2 left-0 z-50 bg-slate-900 border border-slate-800 shadow-xl rounded-xl overflow-hidden max-h-64 w-64">
+                <div className="p-2 border-b border-slate-800 bg-slate-950">
                   <input
                     type="text"
                     placeholder="Search languages..."
-                    className="w-full bg-gray-700 text-white px-2 py-1 rounded text-sm"
+                    className="w-full bg-slate-900 border border-slate-800 text-white placeholder-slate-500 px-3 py-1.5 rounded-lg text-xs focus:outline-none focus:border-blue-500"
                     value={languageSearchTerm}
                     onChange={(e) => setLanguageSearchTerm(e.target.value)}
-                    />
-                  </div>
-                  <div className="max-h-48 overflow-y-auto">
-                    {availableLanguages.filter(lang =>
+                  />
+                </div>
+                <div className="max-h-48 overflow-y-auto custom-scrollbar">
+                  {availableLanguages
+                    .filter(lang =>
                       languageSearchTerm === '' || 
                       lang.name?.toLowerCase().includes(languageSearchTerm.toLowerCase()) ||
                       lang.language?.toLowerCase().includes(languageSearchTerm.toLowerCase())
-                    ).map((lang) => (
+                    )
+                    .map((lang) => (
                       <div
                         key={lang.language}
-                        className="cursor-pointer p-2 hover:bg-gray-700 transition text-white text-sm border-b border-gray-700 last:border-b-0"
+                        className={`cursor-pointer p-2.5 hover:bg-slate-800 transition text-white text-xs border-b border-slate-800/60 last:border-b-0 flex items-center justify-between ${
+                          selectedLanguage === lang.language ? 'bg-blue-600/20 text-blue-400 font-semibold' : ''
+                        }`}
                         onClick={() => {
                           setSelectedLanguage(lang.language);
                           if (msg.trim()) {
                             translateText(msg, lang.language);
                           }
-                          setLanguageSearchTerm(''); // Clear search term
+                          setLanguageSearchTerm('');
                           setShowLanguageSelector(false);
                         }}
                       >
-                      <div className="font-medium">{lang.name}</div>
-                      <div className="text-xs text-gray-400">{lang.language}</div>
-                    </div>
-                  ))}
+                        <span className="font-medium">{lang.name}</span>
+                        <span className="text-[10px] text-slate-400 uppercase font-mono">{lang.language}</span>
+                      </div>
+                    ))}
                 </div>
               </div>
             )}
@@ -1011,10 +1162,10 @@ const translateText = async (text, targetLanguage) => {
           <input
             type="text"
             value={msg}
-            onChange={(e) => setMsg(e.target.value)}
-            className="flex-1 border border-gray-600 bg-gray-800/50 backdrop-blur-sm p-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-white placeholder-gray-400 transition-all duration-200 text-xs sm:text-base min-w-0"
-            placeholder={`Type a message to ${getRoleDisplayName().toLowerCase()}... ${translating ? '(Translating...)' : ''}`}
-            disabled={connectionStatus !== 'connected' || translating}
+            onChange={handleInputChange}
+            className="flex-1 border border-slate-800 bg-slate-950 px-4 py-2.5 rounded-lg focus:outline-none focus:border-blue-500 text-white placeholder-slate-500 text-xs sm:text-sm min-w-0"
+            placeholder={`Type in English or Hinglish (${selectedLanguage !== 'en' ? availableLanguages.find(l => l.language === selectedLanguage)?.name || selectedLanguage : 'English'})...`}
+            disabled={connectionStatus !== 'connected'}
             onKeyDown={(e) => {
               if (e.key === "Enter" && !e.shiftKey) {
                 e.preventDefault();
@@ -1027,7 +1178,7 @@ const translateText = async (text, targetLanguage) => {
           <button
             onClick={sendMessage}
             disabled={!msg.trim() || connectionStatus !== 'connected' || isSending}
-            className="bg-gradient-to-r from-blue-600 to-blue-700 text-white px-2 sm:px-6 py-2 sm:py-3 rounded-xl hover:from-blue-700 hover:to-blue-800 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl hover:scale-105 text-xs sm:text-base font-medium flex-shrink-0"
+            className="bg-blue-600 hover:bg-blue-700 text-white px-4 sm:px-6 py-2.5 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm text-xs sm:text-sm font-semibold flex-shrink-0"
           >
             {isSending ? 'Sending...' : 'Send'}
           </button>
@@ -1035,11 +1186,11 @@ const translateText = async (text, targetLanguage) => {
 
         {/* EMOJI PICKER */}
         {showEmojiPicker && (
-          <div className="mt-3 rounded-lg overflow-hidden shadow-2xl">
+          <div className="emoji-picker-container mt-3 rounded-xl overflow-hidden shadow-2xl border border-slate-800">
             <Picker
               onEmojiClick={onEmojiClick}
               emojiVersion="1.0"
-              height={350}
+              height={320}
               width="100%"
               theme="dark"
             />

@@ -1,9 +1,9 @@
 // src/pages/Dashboard.jsx
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback, useRef } from "react";
 import axios from "axios";
 //eslint-disable-next-line
 import { motion } from "framer-motion";
-import { Users, Database, FileText, Shield, TrendingUp, Activity, AlertTriangle } from "lucide-react";
+import { Users, Database, FileText, Shield, TrendingUp, Activity, AlertTriangle, RefreshCw, Radio } from "lucide-react";
 
 // Chart components
 import StorageBarChart from "./StorageBarChart";
@@ -18,6 +18,8 @@ import {
   ResponsiveContainer,
   LineChart,
   Line,
+  AreaChart,
+  Area,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -30,156 +32,150 @@ const Dashboard = () => {
   const [userInfo, setUserInfo] = useState(null);
   const [roleStats, setRoleStats] = useState({});
   const [loading, setLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [lastUpdated, setLastUpdated] = useState(null);
   const [error, setError] = useState(null);
   const [debugInfo, setDebugInfo] = useState(null);
+  const isFetchingRef = useRef(false);
 
-  useEffect(() => {
-    if (userInfo) {
-      console.log('Current user info:', userInfo);
-      console.log('User teamId:', userInfo.teamId);
-      console.log('User role:', userInfo.role);
-    }
-  }, [userInfo]);
+  const fetchDashboardData = useCallback(async (isManual = false) => {
+    if (isFetchingRef.current) return;
+    isFetchingRef.current = true;
 
-  useEffect(() => {
-    const fetchDashboardData = async () => {
-      try {
-        setLoading(true);
-        const token = localStorage.getItem('auth-token') || 
-              localStorage.getItem('token') || 
-              localStorage.getItem('authToken');
-
-          if (!token) {
-            console.log('No authentication token found in localStorage');
-            setError('Authentication required - please log in again');
-            return;
-          }
-
-          console.log('Using token:', token.substring(0, 20) + '...');
-
-        const headers = { 'auth-token': token };
-
-        try {
-          // Fetch all data in parallel with better error handling
-          const [statsRes, roleStatsRes, userRes] = await Promise.allSettled([
-            axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/dashboard/stats`, { headers }),
-            axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/dashboard/role-stats`, { headers }),
-            axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/dashboard/user-info`, { headers })
-          ]);
-
-          // Handle stats response
-          if (statsRes.status === 'fulfilled') {
-            setStats(statsRes.value.data);
-          } else {
-            console.error("Failed to fetch general stats:", statsRes.reason);
-          }
-
-          // Handle user info response
-          if (userRes.status === 'fulfilled') {
-            setUserInfo(userRes.value.data);
-            console.log('User info loaded:', userRes.value.data);
-          } else {
-            console.error("Failed to fetch user info:", userRes.reason);
-            setError('Failed to load user information');
-            return;
-          }
-
-          // Handle role stats response
-          if (roleStatsRes.status === 'fulfilled') {
-            const roleData = roleStatsRes.value.data;
-            console.log('Role stats loaded:', roleData);
-            setRoleStats(roleData);
-            
-            // Check for errors in role stats
-            if (roleData.error) {
-              console.warn('Role stats warning:', roleData.error);
-              setDebugInfo({
-                type: 'warning',
-                message: roleData.error,
-                details: roleData.debug
-              });
-            }
-          } else {
-            console.error("Failed to fetch role stats:", roleStatsRes.reason);
-            // Don't fail completely, show default stats
-            setRoleStats({
-              userDocuments: 0,
-              managedUsers: 0,
-              accessibleStorageMB: "0.00",
-              activeCollections: 0,
-              error: 'Failed to load role-specific data'
-            });
-          }
-
-          setLoading(false);
-        } catch (fetchError) {
-          console.error("Error during data fetching:", fetchError);
-          throw fetchError;
-        }
-      } catch (err) {
-        console.error("Error fetching dashboard data:", err);
-        console.error("Response data:", err.response?.data);
-        console.error("Response status:", err.response?.status);
-        
-        if (err.response?.status === 401) {
-          setError('Session expired - please log in again');
-        } else {
-          setError(err.response?.data?.message || err.message || 'Failed to load dashboard');
-        }
-        setLoading(false);
-      }
-    };
-    
-    fetchDashboardData();
-  }, []);
-
-  // Debug function to check team data
-  const fetchDebugInfo = async () => {
     try {
+      if (isManual) setIsRefreshing(true);
       const token = localStorage.getItem('auth-token') || 
             localStorage.getItem('token') || 
             localStorage.getItem('authToken');
-      
-      const response = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/dashboard/debug-team`, {
-        headers: { 'auth-token': token }
-      });
-      
-      setDebugInfo({
-        type: 'debug',
-        data: response.data
-      });
-      console.log('Debug info:', response.data);
+
+      if (!token) {
+        setError('Authentication required - please log in again');
+        setLoading(false);
+        setIsRefreshing(false);
+        isFetchingRef.current = false;
+        return;
+      }
+
+      const headers = { 'auth-token': token };
+
+      // Fetch all live data in parallel
+      const [statsRes, roleStatsRes, userRes] = await Promise.allSettled([
+        axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/dashboard/stats`, { headers }),
+        axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/dashboard/role-stats`, { headers }),
+        axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/dashboard/user-info`, { headers })
+      ]);
+
+      // Handle stats response
+      if (statsRes.status === 'fulfilled') {
+        setStats(statsRes.value.data);
+      } else {
+        console.error("Failed to fetch general stats:", statsRes.reason);
+      }
+
+      // Handle user info response
+      if (userRes.status === 'fulfilled') {
+        setUserInfo(userRes.value.data);
+      } else {
+        console.error("Failed to fetch user info:", userRes.reason);
+      }
+
+      // Handle role stats response
+      if (roleStatsRes.status === 'fulfilled') {
+        const roleData = roleStatsRes.value.data;
+        setRoleStats(roleData);
+      } else {
+        console.error("Failed to fetch role stats:", roleStatsRes.reason);
+      }
+
+      setLastUpdated(new Date());
+      setError(null);
+      setLoading(false);
+      setIsRefreshing(false);
     } catch (err) {
-      console.error('Debug fetch error:', err);
-      setDebugInfo({
-        type: 'error',
-        message: 'Failed to fetch debug info'
-      });
+      console.error("Error fetching dashboard data:", err);
+      if (err.response?.status === 401) {
+        setError('Session expired - please log in again');
+      } else {
+        setError(err.response?.data?.message || err.message || 'Failed to load dashboard');
+      }
+      setLoading(false);
+      setIsRefreshing(false);
+    } finally {
+      isFetchingRef.current = false;
     }
+  }, []);
+
+  // Initial load
+  useEffect(() => {
+    fetchDashboardData();
+  }, [fetchDashboardData]);
+
+  // Real-time live polling every 12 seconds
+  useEffect(() => {
+    const interval = setInterval(() => {
+      fetchDashboardData();
+    }, 12000);
+
+    return () => clearInterval(interval);
+  }, [fetchDashboardData]);
+
+  // Real-time Socket.IO trigger for instant data sync
+  useEffect(() => {
+    const socket = window._socket;
+    if (!socket) return;
+
+    const handleSync = () => {
+      fetchDashboardData();
+    };
+
+    socket.on('receive_message', handleSync);
+    socket.on('chat:message', handleSync);
+    socket.on('chat:new-message', handleSync);
+    socket.on('task_created', handleSync);
+    socket.on('task_updated', handleSync);
+    socket.on('file_uploaded', handleSync);
+    socket.on('system:dashboard-update', handleSync);
+
+    return () => {
+      socket.off('receive_message', handleSync);
+      socket.off('chat:message', handleSync);
+      socket.off('chat:new-message', handleSync);
+      socket.off('task_created', handleSync);
+      socket.off('task_updated', handleSync);
+      socket.off('file_uploaded', handleSync);
+      socket.off('system:dashboard-update', handleSync);
+    };
+  }, [fetchDashboardData]);
+
+  // Group active storage items so all team modules with data are visibly represented
+  const getCleanStorageData = () => {
+    if (!Array.isArray(stats) || stats.length === 0) return [];
+    const active = stats.filter(s => (s && ((s.count > 0) || (s.storageSize > 0))));
+    const target = active.length > 0 ? active : stats.slice(0, 5);
+
+    return target.map(s => ({
+      name: s?.name || 'Unknown',
+      value: Math.max(s?.storageSize || 0, (s?.count || 1) * 2048), // proportional visual weight
+      realSize: s?.storageSize || 0,
+      count: s?.count || 0,
+      formatted: `${(((s?.storageSize || 0)) / 1024).toFixed(1)} KB`
+    }));
   };
 
-  useEffect(() => {
-    if (userInfo?.role === 'team' || userInfo?.role === 'global') {
-      fetchDebugInfo();
-    }
-  }, [userInfo]);
+  const storageData = getCleanStorageData();
 
-  // Pie chart data for storage usage
-  const storageData = stats.map((s) => ({
-    name: s.name,
-    value: s.storageSize || 0,
-  }));
-
-  // Pie chart data for document count
-  const countData = stats.map((s) => ({
-    name: s.name,
-    value: s.count || 0,
+  // Activity & Record Distribution for Area Chart
+  const areaDistributionData = (Array.isArray(stats) ? stats : []).slice(0, 8).map(s => ({
+    name: s?.name ? (s.name.charAt(0).toUpperCase() + s.name.slice(1)) : 'Item',
+    records: s?.count || 0,
+    indexes: s?.nindexes || 0,
+    storageKB: parseFloat((((s?.storageSize || 0)) / 1024).toFixed(1))
   }));
 
   // Summary values
-  const totalDocuments = stats.reduce((acc, s) => acc + (s.count || 0), 0);
-  const totalStorageMB = (stats.reduce((acc, s) => acc + (s.storageSize || 0), 0) / (1024 * 1024)).toFixed(2);
-  const totalIndexes = stats.reduce((acc, s) => acc + (s.nindexes || 0), 0);
+  const totalDocuments = Array.isArray(stats) ? stats.reduce((acc, s) => acc + (s?.count || 0), 0) : 0;
+  const totalStorageMB = Array.isArray(stats) ? (stats.reduce((acc, s) => acc + (s?.storageSize || 0), 0) / (1024 * 1024)).toFixed(2) : '0.00';
+  const totalIndexes = Array.isArray(stats) ? stats.reduce((acc, s) => acc + (s?.nindexes || 0), 0) : 0;
 
   // Role-based greeting and permissions
   const getRoleDisplayName = (role) => {
@@ -191,513 +187,369 @@ const Dashboard = () => {
     }
   };
 
-  const getRoleIcon = (role) => {
-    switch (role) {
-      case 'global': return <Shield className="w-5 h-5" />;
-      case 'team': return <Users className="w-5 h-5" />;
-      case 'single': return <Activity className="w-5 h-5" />;
-      default: return <Activity className="w-5 h-5" />;
-    }
-  };
-
-  // Animation settings
-  const cardAnimation = {
-    initial: { opacity: 0, y: 30, scale: 0.95 },
-    whileInView: { opacity: 1, y: 0, scale: 1 },
-    viewport: { once: true, amount: 0.1 },
-    transition: { duration: 0.5, type: "spring", bounce: 0.2 },
-  };
-
-  const staggerContainer = {
-    initial: {},
-    whileInView: {
-      transition: {
-        staggerChildren: 0.1
-      }
-    }
-  };
-
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900 to-purple-900 flex items-center justify-center">
-        <motion.div 
-          className="text-center"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-        >
-          <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-white text-lg">Loading your dashboard...</p>
-        </motion.div>
+      <div className="min-h-full bg-slate-950 flex items-center justify-center p-12">
+        <div className="text-center">
+          <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
+          <p className="text-slate-400 text-sm">Loading workspace dashboard...</p>
+        </div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-red-900 to-purple-900 flex items-center justify-center">
-        <motion.div 
-          className="text-center bg-red-500/20 backdrop-blur-sm rounded-2xl p-8 border border-red-500/30"
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-        >
-          <p className="text-red-300 text-lg mb-4">⚠️ {error}</p>
+      <div className="min-h-full bg-slate-950 flex items-center justify-center p-6">
+        <div className="text-center bg-slate-900 border border-slate-800 rounded-xl p-6 max-w-md">
+          <p className="text-red-400 text-sm mb-4">⚠️ {error}</p>
           <button 
-            onClick={() => window.location.reload()}
-            className="px-6 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
+            onClick={() => fetchDashboardData(true)}
+            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-medium transition-colors"
           >
             Retry
           </button>
-        </motion.div>
+        </div>
       </div>
     );
   }
 
+// Custom high-contrast tooltips for bright text on dark background
+const CustomDonutTooltip = ({ active, payload }) => {
+  if (active && payload && payload.length) {
+    const data = payload[0];
+    const item = data.payload || {};
+    return (
+      <div className="bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 shadow-2xl text-xs">
+        <div className="flex items-center gap-1.5 mb-1">
+          <span className="w-2.5 h-2.5 rounded-full inline-block" style={{ backgroundColor: item.fill || '#3b82f6' }}></span>
+          <p className="text-white font-bold">{data.name}</p>
+        </div>
+        <p className="text-blue-400 font-semibold text-xs">
+          {item.count ? `${item.count} records` : '0 records'}
+        </p>
+        <p className="text-emerald-400 text-[11px]">
+          {item.realSize ? `${(item.realSize / 1024).toFixed(1)} KB` : `${item.formatted || '0 KB'}`}
+        </p>
+      </div>
+    );
+  }
+  return null;
+};
+
+const CustomAreaTooltip = ({ active, payload, label }) => {
+  if (active && payload && payload.length) {
+    return (
+      <div className="bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 shadow-2xl text-xs">
+        <p className="text-slate-300 font-medium mb-1">{label}</p>
+        <p className="text-white font-bold text-xs">
+          <span className="text-blue-400 mr-1 font-semibold">Count:</span>
+          {payload[0].value?.toLocaleString()} records
+        </p>
+      </div>
+    );
+  }
+  return null;
+};
+
+const CustomActivityTooltip = ({ active, payload, label }) => {
+  if (active && payload && payload.length) {
+    return (
+      <div className="bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 shadow-2xl text-xs">
+        <p className="text-slate-300 font-medium mb-1">Date: {label}</p>
+        <p className="text-white font-bold text-xs">
+          <span className="text-indigo-400 mr-1 font-semibold">Activity:</span>
+          {payload[0].value?.toLocaleString()} events
+        </p>
+      </div>
+    );
+  }
+  return null;
+};
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900 to-purple-900 p-6">
-      <div className="max-w-7xl mx-auto space-y-8">
-        {/* Header Section */}
-        <motion.div 
-          className="text-center space-y-4"
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-        >
-          <div className="flex items-center justify-center space-x-3">
-            <div className="p-3 bg-blue-500/20 backdrop-blur-sm rounded-2xl border border-blue-500/30">
-              <TrendingUp className="w-8 h-8 text-blue-400" />
-            </div>
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-400 via-purple-400 to-cyan-400 bg-clip-text text-transparent">
-              Analytics Dashboard
+    <div className="min-h-full bg-slate-950 text-slate-100 p-4 sm:p-6 max-w-7xl mx-auto space-y-6">
+      {/* Header Section */}
+      <div className="bg-slate-900 border border-slate-800 rounded-xl p-4 sm:p-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <div className="flex items-center gap-2 mb-1">
+            <h1 className="text-xl sm:text-2xl font-bold text-white">
+              Analytics & System Overview
             </h1>
+            <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-[11px] font-medium">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+              <span>Live Sync</span>
+            </div>
           </div>
-          
-                    {debugInfo && debugInfo.type === 'userDocs' && (
-            <motion.div 
-              className="bg-purple-500/20 backdrop-blur-sm rounded-2xl p-4 border border-purple-500/30 mx-auto max-w-6xl"
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-            >
-              <div className="text-left">
-                <h3 className="text-purple-300 font-medium mb-3">User Documents Analysis</h3>
-                
-                {/* Summary */}
-                <div className="bg-purple-900/30 p-3 rounded-lg mb-4">
-                  <h4 className="text-purple-200 font-medium mb-2">Summary for User ID: {debugInfo.data.userId}</h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <span className="text-purple-300">Total Documents Found: </span>
-                      <span className="text-white font-bold">{debugInfo.data.totalUserDocuments}</span>
-                    </div>
-                    <div>
-                      <span className="text-purple-300">Collections with Your Data: </span>
-                      <span className="text-white font-bold">{debugInfo.data.summary?.collectionsWithUserData || 0}</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Collections Details */}
-                <div className="space-y-3 max-h-96 overflow-y-auto">
-                  {debugInfo.data.collections?.map((col, index) => (
-                    <div key={index} className="bg-purple-900/20 rounded-lg p-3">
-                      <div className="flex justify-between items-start mb-2">
-                        <h5 className="text-white font-medium">{col.collection}</h5>
-                        <div className="text-sm text-purple-200">
-                          Total: {col.totalDocs || 0}
-                        </div>
-                      </div>
-                      
-                      {col.queryResults && col.queryResults.length > 0 ? (
-                        <div className="space-y-1">
-                          <p className="text-green-300 text-sm font-medium">Found your documents:</p>
-                          {col.queryResults.map((qr, qIndex) => (
-                            <div key={qIndex} className="text-sm bg-green-900/20 p-2 rounded">
-                              <span className="text-green-200">Field: {qr.field}</span> - 
-                              <span className="text-white font-bold ml-1">{qr.count} documents</span>
-                            </div>
-                          ))}
-                        </div>
-                      ) : (
-                        <div>
-                          <p className="text-gray-400 text-sm">No documents found for your user ID</p>
-                          {col.sampleDocs && col.sampleDocs.length > 0 && (
-                            <div className="mt-2">
-                              <p className="text-purple-300 text-xs">Sample document fields:</p>
-                              <div className="text-xs text-gray-300 bg-gray-800/20 p-1 rounded mt-1">
-                                {col.sampleDocs[0]?.fields.join(", ")}
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-
-                <div className="flex justify-between items-center mt-4">
-                  <p className="text-purple-200 text-sm">
-                    {debugInfo.data.totalUserDocuments === 0 ? 
-                      "No documents found - this explains why you're seeing zeros" : 
-                      `Found ${debugInfo.data.totalUserDocuments} documents across ${debugInfo.data.summary?.collectionsWithUserData || 0} collections`
-                    }
-                  </p>
-                  <button 
-                    onClick={() => setDebugInfo(null)}
-                    className="px-4 py-2 bg-purple-600/30 hover:bg-purple-600/50 text-purple-200 rounded-lg text-sm transition-colors"
-                  >
-                    Hide User Docs Debug
-                  </button>
-                </div>
-              </div>
-            </motion.div>
+          <p className="text-slate-400 text-xs sm:text-sm">Real-time collaboration metrics, document volume, and storage</p>
+        </div>
+        
+        <div className="flex items-center gap-3 flex-wrap sm:flex-nowrap">
+          {lastUpdated && (
+            <span className="text-[11px] text-slate-500 hidden md:inline">
+              Updated: {lastUpdated.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+            </span>
           )}
-          {userInfo && (
-            <motion.div 
-              className="flex items-center justify-center space-x-3 bg-white/10 backdrop-blur-sm rounded-2xl px-6 py-3 border border-white/20 mx-auto w-fit"
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.2 }}
-            >
-              <div className="p-2 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full">
-                {getRoleIcon(userInfo.role)}
-              </div>
-              <div className="text-left">
-                <p className="text-white font-semibold">Welcome, {userInfo.name}</p>
-                <p className="text-blue-300 text-sm">{getRoleDisplayName(userInfo.role)}</p>
-              </div>
-            </motion.div>
-          )}
-        </motion.div>
 
-        {/* Role-Specific Quick Stats */}
-        {roleStats && (
-          <motion.div 
-            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
-            variants={staggerContainer}
-            initial="initial"
-            whileInView="whileInView"
+          <button
+            onClick={() => fetchDashboardData(true)}
+            disabled={isRefreshing}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-xs font-medium transition-all active:scale-95 disabled:opacity-50"
+            title="Refresh Live Data"
           >
-            {/* Team Activity Count (for team/global users) or Message Count (for single users) */}
-            <motion.div variants={cardAnimation} className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20 hover:bg-white/15 transition-all duration-300">
-              <div className="flex items-center space-x-4">
-                <div className="p-3 bg-blue-500/20 rounded-2xl">
-                  <FileText className="w-6 h-6 text-blue-400" />
-                </div>
-                <div>
-                  <h3 className="text-blue-200 font-medium">
-                    Your Message Count
-                  </h3>
-                  <p className="text-2xl font-bold text-white">
-                    {roleStats.userDocuments || 0}
-                  </p>
-                </div>
+            <RefreshCw className={`w-3.5 h-3.5 text-blue-400 ${isRefreshing ? 'animate-spin' : ''}`} />
+            <span>{isRefreshing ? 'Syncing...' : 'Refresh'}</span>
+          </button>
+
+          {userInfo && (
+            <div className="flex items-center gap-2 pl-2 border-l border-slate-800">
+              <div className="text-left sm:text-right hidden sm:block">
+                <div className="text-[10px] text-slate-400">Welcome,</div>
+                <div className="text-xs font-semibold text-white truncate max-w-[120px]">{userInfo.name}</div>
               </div>
-            </motion.div>
-
-            {/* Team Documents (for team/global users) or keep original logic for single users */}
-            <motion.div variants={cardAnimation} className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20 hover:bg-white/15 transition-all duration-300">
-              <div className="flex items-center space-x-4">
-                <div className="p-3 bg-green-500/20 rounded-2xl">
-                  <FileText className="w-6 h-6 text-green-400" />
-                </div>
-                <div>
-                  <h3 className="text-green-200 font-medium">
-                    {userInfo?.role === 'single' ? 'Active Collections' : 'Team Documents'}
-                  </h3>
-                  <p className="text-2xl font-bold text-white">
-                    {userInfo?.role === 'single' ? (roleStats.activeCollections || 0) : (roleStats.teamDocuments || 0)}
-                  </p>
-                </div>
-              </div>
-            </motion.div>
-
-            {/* Team Storage (for team/global users) or Accessible Storage (for single users) */}
-            <motion.div variants={cardAnimation} className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20 hover:bg-white/15 transition-all duration-300">
-              <div className="flex items-center space-x-4">
-                <div className="p-3 bg-purple-500/20 rounded-2xl">
-                  <Database className="w-6 h-6 text-purple-400" />
-                </div>
-                <div>
-                  <h3 className="text-purple-200 font-medium">
-                    {userInfo?.role === 'single' ? 'Accessible Storage' : 'Team Storage'}
-                  </h3>
-                  <p className="text-2xl font-bold text-white">
-                    {userInfo?.role === 'single' 
-                      ? `${roleStats.accessibleStorageMB || 0} MB`
-                      : (() => {
-                          const bytes = roleStats.teamStorage || 0;
-                          const mb = bytes / (1024 * 1024);
-                          const kb = bytes / 1024;
-                          
-                          if (mb >= 1) {
-                            return `${mb.toFixed(2)} MB`;
-                          } else if (kb >= 1) {
-                            return `${kb.toFixed(2)} KB`;
-                          } else {
-                            return `${bytes} Bytes`;
-                          }
-                        })()
-                    }
-                  </p>
-                </div>
-              </div>
-            </motion.div>
-
-            {/* Team Members (for team/global users) - always show for non-single users */}
-            {userInfo?.role !== 'single' && (
-              <motion.div variants={cardAnimation} className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20 hover:bg-white/15 transition-all duration-300">
-                <div className="flex items-center space-x-4">
-                  <div className="p-3 bg-yellow-500/20 rounded-2xl">
-                    <Users className="w-6 h-6 text-yellow-400" />
-                  </div>
-                  <div>
-                    <h3 className="text-yellow-200 font-medium">
-                      {userInfo.role === 'global' ? 'All Users' : 'Team Members'}
-                    </h3>
-                    <p className="text-2xl font-bold text-white">{roleStats.managedUsers || 0}</p>
-                  </div>
-                </div>
-              </motion.div>
-            )}
-
-            {/* For single users, show Active Collections in the 4th position */}
-            {userInfo?.role === 'single' && (
-              <motion.div variants={cardAnimation} className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20 hover:bg-white/15 transition-all duration-300">
-                <div className="flex items-center space-x-4">
-                  <div className="p-3 bg-yellow-500/20 rounded-2xl">
-                    <Activity className="w-6 h-6 text-yellow-400" />
-                  </div>
-                  <div>
-                    <h3 className="text-yellow-200 font-medium">Active Collections</h3>
-                    <p className="text-2xl font-bold text-white">{roleStats.activeCollections || 0}</p>
-                  </div>
-                </div>
-              </motion.div>
-            )}
-          </motion.div>
-        )}
-
-        {/* Main Summary Cards */}
-        <motion.div 
-          className="grid grid-cols-1 md:grid-cols-3 gap-6"
-          variants={staggerContainer}
-          initial="initial"
-          whileInView="whileInView"
-        >
-          <motion.div variants={cardAnimation} className="bg-gradient-to-br from-blue-500/20 to-blue-600/20 backdrop-blur-sm text-blue-100 p-6 rounded-2xl shadow-xl border border-blue-500/30 hover:from-blue-500/30 hover:to-blue-600/30 transition-all duration-300">
-            <div className="flex items-center space-x-4">
-              <div className="p-3 bg-blue-500/30 rounded-2xl">
-                <FileText className="w-8 h-8 text-blue-300" />
-              </div>
-              <div>
-                <h2 className="text-lg font-semibold">Total Documents</h2>
-                <p className="text-3xl font-bold mt-1">{totalDocuments.toLocaleString()}</p>
+              <div className="px-2.5 py-1 rounded-lg bg-blue-600/20 border border-blue-500/30 text-blue-400 text-xs font-semibold">
+                {getRoleDisplayName(userInfo.role)}
               </div>
             </div>
-          </motion.div>
-
-          <motion.div variants={cardAnimation} className="bg-gradient-to-br from-green-500/20 to-green-600/20 backdrop-blur-sm text-green-100 p-6 rounded-2xl shadow-xl border border-green-500/30 hover:from-green-500/30 hover:to-green-600/30 transition-all duration-300">
-            <div className="flex items-center space-x-4">
-              <div className="p-3 bg-green-500/30 rounded-2xl">
-                <Database className="w-8 h-8 text-green-300" />
-              </div>
-              <div>
-                <h2 className="text-lg font-semibold">Total Storage</h2>
-                <p className="text-3xl font-bold mt-1">{totalStorageMB} MB</p>
-              </div>
-            </div>
-          </motion.div>
-
-          <motion.div variants={cardAnimation} className="bg-gradient-to-br from-purple-500/20 to-purple-600/20 backdrop-blur-sm text-purple-100 p-6 rounded-2xl shadow-xl border border-purple-500/30 hover:from-purple-500/30 hover:to-purple-600/30 transition-all duration-300">
-            <div className="flex items-center space-x-4">
-              <div className="p-3 bg-purple-500/30 rounded-2xl">
-                <TrendingUp className="w-8 h-8 text-purple-300" />
-              </div>
-              <div>
-                <h2 className="text-lg font-semibold">Total Indexes</h2>
-                <p className="text-3xl font-bold mt-1">{totalIndexes.toLocaleString()}</p>
-              </div>
-            </div>
-          </motion.div>
-        </motion.div>
-
-        {/* Charts Grid */}
-        <motion.div 
-          className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6"
-          variants={staggerContainer}
-          initial="initial"
-          whileInView="whileInView"
-        >
-          {/* Storage Usage Pie Chart */}
-          <motion.div variants={cardAnimation} className="bg-white/10 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 overflow-hidden hover:bg-white/15 transition-all duration-300">
-            <div className="p-6 border-b border-white/10">
-              <h2 className="text-xl font-semibold text-white flex items-center space-x-2">
-                <div className="p-2 bg-blue-500/20 rounded-lg">
-                  <Database className="w-5 h-5 text-blue-400" />
-                </div>
-                <span>Storage Distribution</span>
-              </h2>
-            </div>
-            <div className="p-4">
-              <ResponsiveContainer width="100%" height={280}>
-                <PieChart>
-                  <defs>
-                    {storageData.map((_, index) => (
-                      <linearGradient id={`grad-storage-${index}`} key={index} x1="0" y1="0" x2="1" y2="1">
-                        <stop offset="0%" stopColor={COLORS[index % COLORS.length]} stopOpacity={0.8} />
-                        <stop offset="100%" stopColor={COLORS[index % COLORS.length]} stopOpacity={1} />
-                      </linearGradient>
-                    ))}
-                  </defs>
-                  <Pie
-                    data={storageData}
-                    dataKey="value"
-                    nameKey="name"
-                    cx="50%"
-                    cy="50%"
-                    outerRadius={90}
-                    label={({ value }) => `${(value / (1024 * 1024)).toFixed(1)}MB`}
-                    isAnimationActive={true}
-                    animationDuration={1500}
-                  >
-                    {storageData.map((_, index) => (
-                      <Cell 
-                        key={index} 
-                        fill={`url(#grad-storage-${index})`} 
-                        stroke="#1F2937" 
-                        strokeWidth={2} 
-                      />
-                    ))}
-                  </Pie>
-                  <Tooltip 
-                    contentStyle={{ 
-                      backgroundColor: 'rgba(31, 41, 55, 0.9)', 
-                      border: '1px solid rgba(255, 255, 255, 0.2)',
-                      borderRadius: '12px',
-                      color: 'white'
-                    }} 
-                  />
-                  <Legend 
-                    verticalAlign="bottom" 
-                    height={40}
-                    wrapperStyle={{ color: 'white', fontSize: '14px' }}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-          </motion.div>
-
-          {/* Storage Bar Chart */}
-          <motion.div variants={cardAnimation}>
-            <StorageBarChart data={stats} />
-          </motion.div>
-
-          {/* Efficiency Scatter Chart */}
-          <motion.div variants={cardAnimation}>
-            <EfficiencyScatter data={stats} />
-          </motion.div>
-
-          {/* Documents vs Indexes Chart */}
-          <motion.div variants={cardAnimation}>
-            <DocumentsVsIndexesChart data={stats} />
-          </motion.div>
-
-          {/* Document Count Pie Chart */}
-          <motion.div variants={cardAnimation} className="bg-white/10 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 overflow-hidden hover:bg-white/15 transition-all duration-300">
-            <div className="p-6 border-b border-white/10">
-              <h2 className="text-xl font-semibold text-white flex items-center space-x-2">
-                <div className="p-2 bg-green-500/20 rounded-lg">
-                  <FileText className="w-5 h-5 text-green-400" />
-                </div>
-                <span>Document Distribution</span>
-              </h2>
-            </div>
-            <div className="p-4">
-              <ResponsiveContainer width="100%" height={280}>
-                <PieChart>
-                  <defs>
-                    {countData.map((_, index) => (
-                      <linearGradient id={`grad-count-${index}`} key={index} x1="0" y1="0" x2="1" y2="1">
-                        <stop offset="0%" stopColor={COLORS[index % COLORS.length]} stopOpacity={0.8} />
-                        <stop offset="100%" stopColor={COLORS[index % COLORS.length]} stopOpacity={1} />
-                      </linearGradient>
-                    ))}
-                  </defs>
-                  <Pie
-                    data={countData}
-                    dataKey="value"
-                    nameKey="name"
-                    cx="50%"
-                    cy="50%"
-                    outerRadius={90}
-                    label={({ value }) => value.toLocaleString()}
-                    isAnimationActive={true}
-                    animationDuration={1500}
-                  >
-                    {countData.map((_, index) => (
-                      <Cell 
-                        key={index} 
-                        fill={`url(#grad-count-${index})`} 
-                        stroke="#1F2937" 
-                        strokeWidth={2} 
-                      />
-                    ))}
-                  </Pie>
-                  <Tooltip 
-                    contentStyle={{ 
-                      backgroundColor: 'rgba(31, 41, 55, 0.9)', 
-                      border: '1px solid rgba(255, 255, 255, 0.2)',
-                      borderRadius: '12px',
-                      color: 'white'
-                    }} 
-                  />
-                  <Legend 
-                    verticalAlign="bottom" 
-                    height={40}
-                    wrapperStyle={{ color: 'white', fontSize: '14px' }}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-          </motion.div>
-
-          {/* Role-based additional chart */}
-          {userInfo?.role !== 'single' && roleStats.teamActivity && (
-            <motion.div variants={cardAnimation} className="bg-white/10 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 overflow-hidden hover:bg-white/15 transition-all duration-300">
-              <div className="p-6 border-b border-white/10">
-                <h2 className="text-xl font-semibold text-white flex items-center space-x-2">
-                  <div className="p-2 bg-purple-500/20 rounded-lg">
-                    <Activity className="w-5 h-5 text-purple-400" />
-                  </div>
-                  <span>Team Activity Trend</span>
-                </h2>
-              </div>
-              <div className="p-4">
-                <ResponsiveContainer width="100%" height={280}>
-                  <LineChart data={roleStats.teamActivity}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.1)" />
-                    <XAxis dataKey="date" stroke="rgba(255, 255, 255, 0.7)" />
-                    <YAxis stroke="rgba(255, 255, 255, 0.7)" />
-                    <Tooltip 
-                      contentStyle={{ 
-                        backgroundColor: 'rgba(31, 41, 55, 0.9)', 
-                        border: '1px solid rgba(255, 255, 255, 0.2)',
-                        borderRadius: '12px',
-                        color: 'white'
-                      }} 
-                    />
-                    <Line 
-                      type="monotone" 
-                      dataKey="activity" 
-                      stroke="#8B5CF6" 
-                      strokeWidth={3}
-                      dot={{ fill: '#8B5CF6', strokeWidth: 2, r: 6 }}
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
-            </motion.div>
           )}
-        </motion.div>
+        </div>
+      </div>
+
+      {/* Role-Specific Quick Stats */}
+      {roleStats && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+          <div className="bg-slate-900 border border-slate-800 rounded-xl p-4">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-slate-400 text-xs font-medium">Messages Tracked</span>
+              <FileText className="w-4 h-4 text-blue-400" />
+            </div>
+            <p className="text-2xl font-bold text-white">
+              {roleStats.userDocuments || 0}
+            </p>
+          </div>
+
+          <div className="bg-slate-900 border border-slate-800 rounded-xl p-4">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-slate-400 text-xs font-medium">
+                {userInfo?.role === 'single' ? 'Active Collections' : 'Team Documents'}
+              </span>
+              <Database className="w-4 h-4 text-emerald-400" />
+            </div>
+            <p className="text-2xl font-bold text-white">
+              {userInfo?.role === 'single' ? (roleStats.activeCollections || 0) : (roleStats.teamDocuments || 0)}
+            </p>
+          </div>
+
+          <div className="bg-slate-900 border border-slate-800 rounded-xl p-4">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-slate-400 text-xs font-medium">
+                {userInfo?.role === 'single' ? 'Accessible Storage' : 'Team Storage'}
+              </span>
+              <TrendingUp className="w-4 h-4 text-amber-400" />
+            </div>
+            <p className="text-2xl font-bold text-white">
+              {userInfo?.role === 'single' 
+                ? `${roleStats.accessibleStorageMB || 0} MB`
+                : (() => {
+                    const bytes = roleStats.teamStorage || 0;
+                    const mb = bytes / (1024 * 1024);
+                    const kb = bytes / 1024;
+                    if (mb >= 1) return `${mb.toFixed(2)} MB`;
+                    if (kb >= 1) return `${kb.toFixed(2)} KB`;
+                    return `${bytes} Bytes`;
+                  })()
+              }
+            </p>
+          </div>
+
+          {userInfo?.role !== 'single' ? (
+            <div className="bg-slate-900 border border-slate-800 rounded-xl p-4">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-slate-400 text-xs font-medium">Managed Users</span>
+                <Users className="w-4 h-4 text-indigo-400" />
+              </div>
+              <p className="text-2xl font-bold text-white">
+                {roleStats.managedUsers || 0}
+              </p>
+            </div>
+          ) : (
+            <div className="bg-slate-900 border border-slate-800 rounded-xl p-4">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-slate-400 text-xs font-medium">Workspace Status</span>
+                <Shield className="w-4 h-4 text-emerald-400" />
+              </div>
+              <p className="text-sm font-semibold text-emerald-400 mt-2">Active & Secure</p>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Global Summary Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+        <div className="bg-slate-900 border border-slate-800 rounded-xl p-4">
+          <div className="flex items-center justify-between mb-1">
+            <span className="text-slate-400 text-xs">Total Records</span>
+            <FileText className="w-4 h-4 text-blue-400" />
+          </div>
+          <p className="text-2xl font-bold text-white">{totalDocuments.toLocaleString()}</p>
+        </div>
+
+        <div className="bg-slate-900 border border-slate-800 rounded-xl p-4">
+          <div className="flex items-center justify-between mb-1">
+            <span className="text-slate-400 text-xs">Total System Storage</span>
+            <Database className="w-4 h-4 text-emerald-400" />
+          </div>
+          <p className="text-2xl font-bold text-white">{totalStorageMB} MB</p>
+        </div>
+
+        <div className="bg-slate-900 border border-slate-800 rounded-xl p-4">
+          <div className="flex items-center justify-between mb-1">
+            <span className="text-slate-400 text-xs">Total Indexes</span>
+            <TrendingUp className="w-4 h-4 text-purple-400" />
+          </div>
+          <p className="text-2xl font-bold text-white">{totalIndexes.toLocaleString()}</p>
+        </div>
+      </div>
+
+      {/* Charts Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
+        {/* Clean Donut Chart (Storage Distribution - No overlapping labels) */}
+        <div className="bg-slate-900 border border-slate-800 rounded-xl p-5">
+          <div className="pb-3 mb-4 border-b border-slate-800">
+            <h2 className="text-sm font-bold text-white flex items-center gap-2">
+              <Database className="w-4 h-4 text-blue-400" />
+              <span>Storage Allocation ({userInfo?.role === 'single' ? 'My Workspace' : 'Active Team'})</span>
+            </h2>
+            <p className="text-slate-400 text-xs mt-0.5">Distribution across primary workspace services</p>
+          </div>
+          <div>
+            <ResponsiveContainer width="100%" height={260}>
+              <PieChart>
+                <Pie
+                  data={storageData}
+                  dataKey="value"
+                  nameKey="name"
+                  cx="50%"
+                  cy="45%"
+                  innerRadius={55}
+                  outerRadius={85}
+                  paddingAngle={3}
+                  minAngle={18}
+                  label={false}
+                >
+                  {storageData.map((_, index) => (
+                    <Cell 
+                      key={index} 
+                      fill={COLORS[index % COLORS.length]} 
+                      stroke="#0f172a" 
+                      strokeWidth={2} 
+                    />
+                  ))}
+                </Pie>
+                <Tooltip content={<CustomDonutTooltip />} />
+                <Legend 
+                  verticalAlign="bottom" 
+                  height={36}
+                  wrapperStyle={{ color: '#94a3b8', fontSize: '11px', paddingTop: '10px' }}
+                />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* Storage Bar Chart */}
+        <div className="bg-slate-900 border border-slate-800 rounded-xl">
+          <StorageBarChart data={stats} />
+        </div>
+
+        {/* Volume & Records Area Chart */}
+        <div className="bg-slate-900 border border-slate-800 rounded-xl p-5">
+          <div className="pb-3 mb-4 border-b border-slate-800">
+            <h2 className="text-sm font-bold text-white flex items-center gap-2">
+              <TrendingUp className="w-4 h-4 text-blue-400" />
+              <span>Record Volume ({userInfo?.role === 'single' ? 'My Data' : 'Active Team'})</span>
+            </h2>
+            <p className="text-slate-400 text-xs mt-0.5">Live document density across active team modules</p>
+          </div>
+          <div>
+            <ResponsiveContainer width="100%" height={260}>
+              <AreaChart data={areaDistributionData} margin={{ top: 10, right: 15, left: -15, bottom: 25 }}>
+                <defs>
+                  <linearGradient id="areaGradientBlue" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#2563eb" stopOpacity={0.8} />
+                    <stop offset="100%" stopColor="#2563eb" stopOpacity={0.05} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
+                <XAxis 
+                  dataKey="name" 
+                  stroke="#64748b" 
+                  fontSize={11} 
+                  angle={-25} 
+                  textAnchor="end"
+                  interval={0}
+                />
+                <YAxis stroke="#64748b" fontSize={11} />
+                <Tooltip content={<CustomAreaTooltip />} />
+                <Area 
+                  type="monotone" 
+                  dataKey="records" 
+                  stroke="#3b82f6" 
+                  strokeWidth={2}
+                  fillOpacity={1} 
+                  fill="url(#areaGradientBlue)" 
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* Documents vs Indexes Chart */}
+        <div className="bg-slate-900 border border-slate-800 rounded-xl">
+          <DocumentsVsIndexesChart data={stats} />
+        </div>
+
+        {/* Storage Efficiency Scatter Chart */}
+        <div className="bg-slate-900 border border-slate-800 rounded-xl">
+          <EfficiencyScatter data={stats} />
+        </div>
+
+        {/* Role-based Team Activity Trend */}
+        {userInfo?.role !== 'single' && roleStats.teamActivity && (
+          <div className="bg-slate-900 border border-slate-800 rounded-xl p-5">
+            <div className="pb-3 mb-4 border-b border-slate-800">
+              <h2 className="text-sm font-bold text-white flex items-center gap-2">
+                <Activity className="w-4 h-4 text-blue-400" />
+                <span>Team Activity Trend (Area)</span>
+              </h2>
+              <p className="text-slate-400 text-xs mt-0.5">Daily collaboration engagement volume</p>
+            </div>
+            <div>
+              <ResponsiveContainer width="100%" height={260}>
+                <AreaChart data={roleStats.teamActivity} margin={{ top: 10, right: 15, left: -15, bottom: 10 }}>
+                  <defs>
+                    <linearGradient id="areaGradientIndigo" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#4f46e5" stopOpacity={0.8} />
+                      <stop offset="100%" stopColor="#4f46e5" stopOpacity={0.05} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
+                  <XAxis dataKey="date" stroke="#64748b" fontSize={11} />
+                  <YAxis stroke="#64748b" fontSize={11} />
+                  <Tooltip content={<CustomActivityTooltip />} />
+                  <Area 
+                    type="monotone" 
+                    dataKey="activity" 
+                    stroke="#6366f1" 
+                    strokeWidth={2}
+                    fillOpacity={1}
+                    fill="url(#areaGradientIndigo)" 
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

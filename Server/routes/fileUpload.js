@@ -12,9 +12,27 @@ const router = express.Router();
 const upload = multer({ 
   storage: multer.memoryStorage(),
   limits: {
-    fileSize: 50 * 1024 * 1024, // 50MB limit
+    fileSize: 5 * 1024 * 1024, // 5MB limit
   }
 });
+
+// Middleware for multer error handling (e.g. 5MB file limit)
+const handleMulterUpload = (req, res, next) => {
+  upload.single('file')(req, res, (err) => {
+    if (err instanceof multer.MulterError) {
+      if (err.code === 'LIMIT_FILE_SIZE') {
+        return res.status(400).json({ 
+          success: false, 
+          error: 'File size exceeds the 5MB limit. Please upload a file smaller than 5MB.' 
+        });
+      }
+      return res.status(400).json({ success: false, error: err.message });
+    } else if (err) {
+      return res.status(400).json({ success: false, error: err.message });
+    }
+    next();
+  });
+};
 
 // Cloudinary config
 cloudinary.config({
@@ -24,7 +42,7 @@ cloudinary.config({
 });
 
 // POST /collab_uploads - Upload regular file (not from chat) with enhanced debugging
-router.post('/', fetchUser, upload.single('file'), async (req, res) => {
+router.post('/', fetchUser, handleMulterUpload, async (req, res) => {
   try {
     const file = req.file;
     if (!file) return res.status(400).json({ error: 'No file uploaded' });
@@ -60,11 +78,19 @@ router.post('/', fetchUser, upload.single('file'), async (req, res) => {
 
     // Upload to Cloudinary
     const base64String = `data:${file.mimetype};base64,${file.buffer.toString('base64')}`;
-    const result = await cloudinary.uploader.upload(base64String, {
-      folder: 'collab_uploads', // Different folder from chat uploads
-      resource_type: 'auto',
-      transformation: [{ width: 1200, crop: 'limit' }],
-    });
+    const isImage = file.mimetype.startsWith('image/');
+    const isDoc = file.mimetype.includes('pdf') || file.mimetype.includes('msword') || file.mimetype.includes('officedocument') || file.originalname.match(/\.(pdf|doc|docx|ppt|pptx|xls|xlsx|txt)$/i);
+    
+    const uploadOptions = {
+      folder: 'collab_uploads',
+      resource_type: isDoc ? 'raw' : (isImage ? 'image' : 'auto'),
+    };
+
+    if (isImage) {
+      uploadOptions.transformation = [{ width: 1200, crop: 'limit' }];
+    }
+
+    const result = await cloudinary.uploader.upload(base64String, uploadOptions);
 
     console.log("✅ Cloudinary upload successful:", result.secure_url);
 

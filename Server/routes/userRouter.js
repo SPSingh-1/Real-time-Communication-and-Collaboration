@@ -12,7 +12,10 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
-const upload = multer({ storage: multer.memoryStorage() });
+const upload = multer({ 
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024 }
+});
 
 // helper function: upload buffer to cloudinary
 const uploadToCloudinary = (fileBuffer, folder, resourceType = "image") => {

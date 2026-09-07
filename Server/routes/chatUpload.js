@@ -14,13 +14,31 @@ const router = express.Router();
 const upload = multer({ 
   storage: multer.memoryStorage(),
   limits: {
-    fileSize: 50 * 1024 * 1024, // 50MB limit
+    fileSize: 5 * 1024 * 1024, // 5MB limit
   },
   fileFilter: (req, file, cb) => {
     // Allow all file types for chat uploads
     cb(null, true);
   }
 });
+
+// Middleware for multer error handling (5MB limit)
+const handleChatMulterUpload = (req, res, next) => {
+  upload.single('file')(req, res, (err) => {
+    if (err instanceof multer.MulterError) {
+      if (err.code === 'LIMIT_FILE_SIZE') {
+        return res.status(400).json({ 
+          success: false, 
+          error: 'File size exceeds the 5MB limit. Please upload a file smaller than 5MB.' 
+        });
+      }
+      return res.status(400).json({ success: false, error: err.message });
+    } else if (err) {
+      return res.status(400).json({ success: false, error: err.message });
+    }
+    next();
+  });
+};
 
 // Cloudinary configuration
 cloudinary.config({
@@ -30,7 +48,7 @@ cloudinary.config({
 });
 
 // POST /api/chat/upload - Upload file from chat
-router.post('/upload', fetchUser, upload.single('file'), async (req, res) => {
+router.post('/upload', fetchUser, handleChatMulterUpload, async (req, res) => {
   try {
     const file = req.file;
     if (!file) {
@@ -61,16 +79,23 @@ router.post('/upload', fetchUser, upload.single('file'), async (req, res) => {
     // Upload to Cloudinary with chat_uploads folder
     console.log("☁️ Uploading to Cloudinary...");
     const base64String = `data:${file.mimetype};base64,${file.buffer.toString('base64')}`;
+    const isImage = file.mimetype.startsWith('image/');
+    const isDoc = file.mimetype.includes('pdf') || file.mimetype.includes('msword') || file.mimetype.includes('officedocument') || file.originalname.match(/\.(pdf|doc|docx|ppt|pptx|xls|xlsx|txt)$/i);
     
-    const cloudinaryResult = await cloudinary.uploader.upload(base64String, {
-      folder: 'chat_uploads', // Different folder for chat files
-      resource_type: 'auto',
+    const uploadOptions = {
+      folder: 'chat_uploads',
+      resource_type: isDoc ? 'raw' : (isImage ? 'image' : 'auto'),
       public_id: `chat_${Date.now()}_${file.originalname.replace(/[^a-zA-Z0-9]/g, '_')}`,
-      transformation: [
+    };
+
+    if (isImage) {
+      uploadOptions.transformation = [
         { width: 1200, crop: 'limit' },
         { quality: 'auto:good' }
-      ],
-    });
+      ];
+    }
+    
+    const cloudinaryResult = await cloudinary.uploader.upload(base64String, uploadOptions);
 
     console.log("✅ Cloudinary upload successful:", cloudinaryResult.secure_url);
 
@@ -113,11 +138,18 @@ router.post('/upload', fetchUser, upload.single('file'), async (req, res) => {
       scope = 'global';
     }
 
+    const isFromMeeting = req.body.isFromMeeting === 'true' || req.body.isFromMeeting === true;
+    const meetingRoom = req.body.meetingRoom || null;
+    const meetingHost = req.body.meetingHost || null;
+
     console.log("📊 File metadata:", {
       type,
       scope,
       teamId,
-      isFromChat: true
+      isFromChat: !isFromMeeting,
+      isFromMeeting,
+      meetingRoom,
+      meetingHost
     });
 
     // Save to MongoDB
@@ -129,7 +161,11 @@ router.post('/upload', fetchUser, upload.single('file'), async (req, res) => {
       uploadedById: req.user.id,
       scope,
       teamId,
-      isFromChat: true, // Mark as chat file
+      isFromChat: !isFromMeeting, // If from meeting, mark accordingly
+      isFromMeeting,
+      meetingRoom,
+      meetingHost,
+      meetingHostId: req.user.id,
       size: file.size,
       mimetype: file.mimetype,
       cloudinaryPublicId: cloudinaryResult.public_id,
@@ -137,7 +173,7 @@ router.post('/upload', fetchUser, upload.single('file'), async (req, res) => {
 
     const savedFile = await newChatFile.save();
     
-    console.log(`✅ Chat file saved: ${savedFile.filename} by ${req.user.name} (${scope} scope)`);
+    console.log(`✅ File saved: ${savedFile.filename} by ${req.user.name} (${scope} scope) [Meeting: ${isFromMeeting}]`);
 
     // Return the saved file data
     res.status(200).json({
@@ -150,16 +186,18 @@ router.post('/upload', fetchUser, upload.single('file'), async (req, res) => {
       scope: savedFile.scope,
       teamId: savedFile.teamId,
       isFromChat: savedFile.isFromChat,
+      isFromMeeting: savedFile.isFromMeeting,
+      meetingRoom: savedFile.meetingRoom,
+      meetingHost: savedFile.meetingHost,
       size: savedFile.size,
       mimetype: savedFile.mimetype,
       createdAt: savedFile.createdAt,
-      message: 'Chat file uploaded successfully'
+      message: 'File uploaded successfully'
     });
 
   } catch (err) {
-    console.error('❌ Chat file upload error:', err);
+    console.error('❌ File upload error:', err);
     
-    // Handle specific error types
     if (err.code === 'LIMIT_FILE_SIZE') {
       return res.status(400).json({ error: 'File size exceeds 50MB limit' });
     }
@@ -168,7 +206,6 @@ router.post('/upload', fetchUser, upload.single('file'), async (req, res) => {
       return res.status(400).json({ error: 'Invalid file format or corrupted file' });
     }
 
-    // Cloudinary specific errors
     if (err.error && err.error.message) {
       return res.status(500).json({ 
         error: 'File storage error', 
@@ -177,7 +214,7 @@ router.post('/upload', fetchUser, upload.single('file'), async (req, res) => {
     }
 
     res.status(500).json({ 
-      error: 'Chat file upload failed', 
+      error: 'File upload failed', 
       details: process.env.NODE_ENV === 'development' ? err.message : 'Internal server error'
     });
   }
@@ -186,15 +223,8 @@ router.post('/upload', fetchUser, upload.single('file'), async (req, res) => {
 // GET /api/chat/files - Get chat files based on user role
 router.get('/files', fetchUser, async (req, res) => {
   try {
-    console.log("🔍 Fetching chat files for user:", {
-      id: req.user.id,
-      role: req.user.role,
-      teamId: req.user.teamId
-    });
-
     let filter = { isFromChat: true }; // Only chat files
 
-    // Apply role-based filtering
     if (req.user.role === 'single') {
       filter.uploadedById = req.user.id;
       filter.scope = 'single';
@@ -210,19 +240,51 @@ router.get('/files', fetchUser, async (req, res) => {
       return res.status(400).json({ error: 'Invalid user role' });
     }
 
-    console.log("🔎 Chat files filter:", filter);
-
     const chatFiles = await FileModel.find(filter)
       .sort({ createdAt: -1 })
       .limit(100);
 
-    console.log(`📁 Found ${chatFiles.length} chat files`);
     res.json(chatFiles);
 
   } catch (err) {
     console.error('❌ Fetch chat files error:', err);
     res.status(500).json({ 
       error: 'Failed to fetch chat files', 
+      details: err.message 
+    });
+  }
+});
+
+// GET /api/chat/meeting-files - Get meeting-uploaded files with meeting & host metadata
+router.get('/meeting-files', fetchUser, async (req, res) => {
+  try {
+    let filter = { isFromMeeting: true };
+
+    if (req.user.role === 'single') {
+      filter.uploadedById = req.user.id;
+      filter.scope = 'single';
+    } else if (req.user.role === 'team') {
+      if (!req.user.teamId) {
+        return res.status(400).json({ error: 'Team ID required for team role' });
+      }
+      filter.teamId = req.user.teamId;
+      filter.scope = 'team';
+    } else if (req.user.role === 'global') {
+      filter.scope = 'global';
+    } else {
+      return res.status(400).json({ error: 'Invalid user role' });
+    }
+
+    const meetingFiles = await FileModel.find(filter)
+      .sort({ createdAt: -1 })
+      .limit(100);
+
+    res.json(meetingFiles);
+
+  } catch (err) {
+    console.error('❌ Fetch meeting files error:', err);
+    res.status(500).json({ 
+      error: 'Failed to fetch meeting files', 
       details: err.message 
     });
   }
@@ -294,20 +356,66 @@ router.delete('/files/:id', fetchUser, async (req, res) => {
   }
 });
 
-// GET /api/chat/upload/test - Test endpoint for debugging
-router.get('/upload/test', fetchUser, (req, res) => {
-  res.json({
-    message: 'Chat upload endpoint is working',
-    user: {
-      id: req.user.id,
-      name: req.user.name,
-      role: req.user.role,
-      teamId: req.user.teamId
-    },
-    jwtSecretAvailable: !!process.env.JWT_SECRET,
-    endpoint: '/api/chat/upload',
-    timestamp: new Date().toISOString()
-  });
+import axios from 'axios';
+
+// GET /api/chat/view/:id - Stream chat file directly to browser for preview
+router.get('/view/:id', async (req, res) => {
+  try {
+    const file = await FileModel.findById(req.params.id);
+    if (!file) return res.status(404).send('File not found');
+
+    let streamUrl = file.fileUrl;
+    if (streamUrl.includes('res.cloudinary.com')) {
+      if (streamUrl.includes('/image/upload/')) {
+        streamUrl = streamUrl.replace('/image/upload/', '/image/upload/fl_attachment/');
+      } else if (streamUrl.includes('/raw/upload/')) {
+        streamUrl = streamUrl.replace('/raw/upload/', '/raw/upload/fl_attachment/');
+      }
+    }
+
+    const response = await axios.get(streamUrl, { responseType: 'stream' });
+    res.setHeader('Content-Type', file.mimetype || 'application/pdf');
+    res.setHeader('Content-Disposition', `inline; filename="${encodeURIComponent(file.filename)}"`);
+    response.data.pipe(res);
+  } catch (err) {
+    console.error('❌ Direct chat file stream error:', err.message);
+    const file = await FileModel.findById(req.params.id);
+    if (file && file.fileUrl) {
+      res.redirect(file.fileUrl);
+    } else {
+      res.status(500).send('Unable to load file preview');
+    }
+  }
+});
+
+// GET /api/chat/download/:id - Direct download with correct filename
+router.get('/download/:id', async (req, res) => {
+  try {
+    const file = await FileModel.findById(req.params.id);
+    if (!file) return res.status(404).send('File not found');
+
+    let streamUrl = file.fileUrl;
+    if (streamUrl.includes('res.cloudinary.com')) {
+      if (streamUrl.includes('/image/upload/')) {
+        streamUrl = streamUrl.replace('/image/upload/', '/image/upload/fl_attachment/');
+      } else if (streamUrl.includes('/raw/upload/')) {
+        streamUrl = streamUrl.replace('/raw/upload/', '/raw/upload/fl_attachment/');
+      }
+    }
+
+    const response = await axios.get(streamUrl, { responseType: 'stream' });
+    res.setHeader('Content-Type', file.mimetype || 'application/octet-stream');
+    res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(file.filename)}"`);
+    response.data.pipe(res);
+  } catch (err) {
+    console.error('❌ Direct chat file download error:', err.message);
+    const file = await FileModel.findById(req.params.id);
+    if (file && file.fileUrl) {
+      res.redirect(file.fileUrl);
+    } else {
+      res.status(500).send('Unable to download file');
+    }
+  }
 });
 
 export default router;

@@ -1,654 +1,266 @@
-import React, { useEffect, useState } from "react";
+// src/pages/About.jsx
+import React, { useState } from "react";
 import { Link } from "react-router-dom";
-import { FaFacebookF } from "react-icons/fa";
-import { FaSquareXTwitter } from "react-icons/fa6";
-import { FaInstagramSquare } from "react-icons/fa";
-import { CiLinkedin } from "react-icons/ci";
-import { FaGithub } from "react-icons/fa";
-// eslint-disable-next-line no-unused-vars
-import { motion } from "framer-motion";
-import { Menu } from "lucide-react";
+import {
+  Video,
+  MessageSquare,
+  Briefcase,
+  Calendar,
+  Figma,
+  Layers,
+  Sparkles,
+  Shield,
+  Zap,
+  Globe,
+  Users,
+  Code2,
+  Lock,
+  Cpu,
+  ArrowRight,
+  Menu,
+  X,
+  CheckCircle2,
+  Heart
+} from "lucide-react";
+import { FaGithub, FaTwitter, FaLinkedin } from "react-icons/fa";
 
 const About = () => {
-    const [isVisible, setIsVisible] = useState({});
-    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-    
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-    useEffect(() => {
-        const observer = new IntersectionObserver(
-          (entries) => {
-            entries.forEach((entry) => {
-              if (entry.isIntersecting) {
-                setIsVisible(prev => ({
-                  ...prev,
-                  [entry.target.id]: true
-                }));
-              }
-            });
-          },
-          { threshold: 0.1 }
-        );
-    
-        const sections = document.querySelectorAll('.observe-section');
-        sections.forEach((section) => observer.observe(section));
-    
-        return () => observer.disconnect();
-      }, []);
-
-      const navItems = [
-    { href: "#about", label: "About" },
-    { href: "#careers", label: "Careers" },
-    { href: "#blog", label: "Blog" },
-    { href: "#contact", label: "Contact" }
+  const pillars = [
+    {
+      icon: <Video className="w-6 h-6 text-blue-400" />,
+      title: "Real-Time HD Video & Whiteboard",
+      category: "Media Streaming",
+      desc: "Peer-to-peer WebRTC video conferencing with sub-100ms latency, multi-user synchronized collaborative canvas whiteboard, in-call live polls, and floating emoji reactions."
+    },
+    {
+      icon: <MessageSquare className="w-6 h-6 text-purple-400" />,
+      title: "Multilingual AI Chat Engine",
+      category: "Unified Messaging",
+      desc: "Instant 16+ languages on-the-fly translation, voice audio messaging, rich media file attachments, reactions, starred bookmarks, and pinned conversation channels."
+    },
+    {
+      icon: <Briefcase className="w-6 h-6 text-emerald-400" />,
+      title: "Team CRM & Deal Pipelines",
+      category: "Revenue & Sales",
+      desc: "Complete client management with customizable sales stages, Kanban & Table views, currency conversions, linked design assets, and instant PDF invoice downloads."
+    },
+    {
+      icon: <Calendar className="w-6 h-6 text-amber-400" />,
+      title: "Smart Calendar & Meeting Hub",
+      category: "Scheduling & Alerts",
+      desc: "Conflict-free meeting scheduler with strict past-date prevention, expired session protection, and automated 1-click audio announcements and team ringing."
+    },
+    {
+      icon: <Figma className="w-6 h-6 text-pink-400" />,
+      title: "Embedded Figma Design Hub",
+      category: "Creative Workflow",
+      desc: "Direct integration with Figma boards and prototypes. Review designs, share assets, and comment without leaving the workspace."
+    },
+    {
+      icon: <Layers className="w-6 h-6 text-cyan-400" />,
+      title: "Cloud Tasks & File Storage",
+      category: "Sprint Management",
+      desc: "Agile Kanban boards, priority filters, multi-file uploads with instant preview, and daily end-of-day (EOD) reporting logs."
+    }
   ];
+
+  const techStack = [
+    { name: "WebRTC P2P", category: "Low-Latency Audio/Video & Media" },
+    { name: "Socket.IO 4.8", category: "Bi-Directional Event Signaling" },
+    { name: "React 19 & Vite", category: "Ultra-Fast Reactive Frontend" },
+    { name: "Node.js & Express", category: "Robust REST & Real-time Server" },
+    { name: "MongoDB Atlas", category: "Distributed Cloud Database" },
+    { name: "Tailwind CSS", category: "Modern Responsive Design System" }
+  ];
+
   return (
-    <div className="bg-gradient-to-br from-indigo-50 via-white to-blue-100">
-          {/* Header */}
-      <header style={{
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        right: 0,
-        zIndex: 1000,
-        background: 'linear-gradient(45deg, #667eea, #764ba2)',
-        backdropFilter: 'blur(20px)',
-        borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
-        padding: '1rem 2rem',
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        transition: 'all 0.3s ease'
-      }}>
-        {/* Logo */}
-        <div style={{
-          fontSize: 'clamp(1.2rem, 4vw, 1.4rem)',
-          fontWeight: 800,
-          display: 'flex',
-          alignItems: 'center',
-          gap: '0.5rem',
-          //background: 'linear-gradient(45deg, #667eea, #764ba2)',
-          WebkitBackgroundClip: 'text',
-          WebkitTextFillColor: 'white',
-          backgroundClip: 'text',
-          color: 'white',
-          cursor: 'pointer',
-          userSelect: 'none',
-        }}>
-          <img 
-            src="/logo.png" 
-            alt="Logo" 
-            style={{ 
-              height: 'clamp(30px, 8vw, 50px)', 
-              verticalAlign: 'middle',
-              borderRadius: '30px' 
-            }} 
-          />
-          Milapp
-        </div>
-        
-        {/* Desktop Navigation */}
-        <nav style={{ 
-          display: 'flex', 
-          gap: '2rem',
-          '@media (maxWidth: 768px)': {
-            display: 'none'
-          }
-        }} className="desktop-nav">
-          {navItems.map((item, index) => (
-            <a 
-              key={index}
-              href={item.href} 
-              style={{
-                color: 'white',
-                textDecoration: 'none',
-                fontWeight: 500,
-                padding: '0.5rem 1rem',
-                borderRadius: '8px',
-                transition: 'all 0.3s ease'
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = 'transparent';
-              }}
+    <div className="min-h-screen bg-slate-950 text-slate-100 font-sans antialiased relative overflow-x-hidden selection:bg-blue-600 selection:text-white">
+      {/* Background Ambient Glow Orbs */}
+      <div className="fixed top-0 left-1/3 w-96 h-96 bg-blue-600/15 rounded-full blur-[140px] pointer-events-none -z-10 animate-pulse"></div>
+      <div className="fixed bottom-10 right-1/4 w-[450px] h-[450px] bg-purple-600/15 rounded-full blur-[160px] pointer-events-none -z-10"></div>
+
+      {/* ── STICKY NAVBAR ── */}
+      <header className="fixed top-0 inset-x-0 z-50 bg-slate-950/80 backdrop-blur-xl border-b border-slate-800/80">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 sm:h-20 flex items-center justify-between">
+          <Link to="/" className="flex items-center gap-3 group">
+            <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white font-black text-xl shadow-lg shadow-blue-600/30 group-hover:scale-105 transition-transform">
+              M
+            </div>
+            <span className="text-lg sm:text-xl font-extrabold tracking-tight bg-gradient-to-r from-white via-slate-200 to-blue-400 bg-clip-text text-transparent">
+              Milapp
+            </span>
+          </Link>
+
+          <nav className="hidden md:flex items-center gap-8 text-xs font-semibold text-slate-300">
+            <Link to="/" className="hover:text-blue-400 transition-colors">Home</Link>
+            <Link to="/company" className="text-blue-400 font-bold transition-colors">About Project</Link>
+            <Link to="/legal" className="hover:text-blue-400 transition-colors">Security & Legal</Link>
+          </nav>
+
+          <div className="hidden md:flex items-center gap-3">
+            <Link
+              to="/login"
+              className="px-4 py-2 rounded-xl text-xs font-bold text-slate-300 hover:text-white hover:bg-slate-900 border border-transparent hover:border-slate-800 transition"
             >
-              {item.label}
-            </a>
-          ))}
-        </nav>
-        
-        {/* Desktop Auth Buttons */}
-        <div style={{ display: 'flex', gap: '1rem' }} className="desktop-auth">
-          <button style={{
-            padding: 'clamp(0.5rem, 2vw, 0.75rem) clamp(1rem, 3vw, 1.5rem)',
-            borderRadius: '50px',
-            fontWeight: 600,
-            border: '2px solid white',
-            color: 'white',
-            background: 'transparent',
-            cursor: 'pointer',
-            transition: 'all 0.3s ease',
-            fontSize: 'clamp(0.8rem, 2vw, 1rem)'
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.background = 'white';
-            e.currentTarget.style.color = '#667eea';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.background = 'transparent';
-            e.currentTarget.style.color = 'white';
-          }}
-          >
-            <Link to="/register" style={{ textDecoration: 'none', color: 'inherit' }}>
-              Sign up
+              Sign In
             </Link>
-          </button>
-          <button style={{
-            padding: 'clamp(0.5rem, 2vw, 0.75rem) clamp(1rem, 3vw, 1.5rem)',
-            borderRadius: '50px',
-            fontWeight: 600,
-            background: 'linear-gradient(45deg, #667eea, #764ba2)',
-            color: 'white',
-            border: 'none',
-            cursor: 'pointer',
-            transition: 'all 0.3s ease',
-            fontSize: 'clamp(0.8rem, 2vw, 1rem)'
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.transform = 'translateY(-2px)';
-            e.currentTarget.style.boxShadow = '0 10px 25px rgba(102, 126, 234, 0.3)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.transform = 'translateY(0)';
-            e.currentTarget.style.boxShadow = 'none';
-          }}
-          >
-            <Link to="/login" style={{ textDecoration: 'none', color: 'inherit' }}>
-              Log In
+            <Link
+              to="/register"
+              className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-xs font-bold shadow-lg shadow-blue-600/25 transition transform hover:scale-[1.02] active:scale-[0.98] flex items-center gap-1.5"
+            >
+              <span>Get Started Free</span>
+              <ArrowRight className="w-3.5 h-3.5" />
             </Link>
+          </div>
+
+          <button
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            className="md:hidden p-2 text-slate-400 hover:text-white rounded-lg hover:bg-slate-900 transition"
+          >
+            {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
           </button>
         </div>
 
-        {/* Mobile Menu Button */}
-        <button 
-          className="mobile-menu-btn"
-          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-          style={{
-            display: 'none',
-            background: 'none',
-            border: 'none',
-            color: 'white',
-            fontSize: '1.5rem',
-            cursor: 'pointer',
-            padding: '0.5rem',
-            borderRadius: '8px',
-            transition: 'all 0.3s ease'
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.background = 'none';
-          }}
-        >
-          {isMobileMenuOpen ? <X /> : <Menu />}
-        </button>
-
-        {/* Mobile Menu Overlay */}
+        {/* Mobile Nav */}
         {isMobileMenuOpen && (
-          <div 
-            className="mobile-menu"
-            style={{
-              position: 'fixed',
-              top: '80px',
-              left: 0,
-              right: 0,
-              background: 'rgba(102, 126, 234, 0.95)',
-              backdropFilter: 'blur(20px)',
-              padding: '2rem',
-              zIndex: 999,
-              animation: 'slideDown 0.3s ease-out'
-            }}
-          >
-            <nav style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', marginBottom: '2rem' }}>
-              {navItems.map((item, index) => (
-                <a 
-                  key={index}
-                  href={item.href}
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  style={{
-                    color: 'white',
-                    textDecoration: 'none',
-                    fontWeight: 500,
-                    padding: '1rem',
-                    borderRadius: '12px',
-                    transition: 'all 0.3s ease',
-                    textAlign: 'center',
-                    fontSize: '1.1rem'
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.background = 'transparent';
-                  }}
-                >
-                  {item.label}
-                </a>
-              ))}
+          <div className="md:hidden bg-slate-950/95 border-b border-slate-800 p-5 space-y-4 animate-fadeIn">
+            <nav className="flex flex-col gap-3 text-sm font-semibold text-slate-300">
+              <Link to="/" onClick={() => setIsMobileMenuOpen(false)} className="py-2 hover:text-blue-400">Home</Link>
+              <Link to="/company" onClick={() => setIsMobileMenuOpen(false)} className="py-2 text-blue-400 font-bold">About Project</Link>
+              <Link to="/legal" onClick={() => setIsMobileMenuOpen(false)} className="py-2 hover:text-blue-400">Security & Legal</Link>
             </nav>
-            
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-              <button style={{
-                padding: '1rem 2rem',
-                borderRadius: '50px',
-                fontWeight: 600,
-                border: '2px solid white',
-                color: 'white',
-                background: 'transparent',
-                cursor: 'pointer',
-                transition: 'all 0.3s ease',
-                fontSize: '1rem'
-              }}>
-                <Link to="/register" style={{ textDecoration: 'none', color: 'inherit' }}>
-                  Sign up
-                </Link>
-              </button>
-              <button style={{
-                padding: '1rem 2rem',
-                borderRadius: '50px',
-                fontWeight: 600,
-                background: 'white',
-                color: '#667eea',
-                border: 'none',
-                cursor: 'pointer',
-                transition: 'all 0.3s ease',
-                fontSize: '1rem'
-              }}>
-                <Link to="/login" style={{ textDecoration: 'none', color: 'inherit' }}>
-                  Log In
-                </Link>
-              </button>
+            <div className="pt-4 border-t border-slate-800 flex flex-col gap-2.5">
+              <Link to="/login" className="w-full text-center py-2.5 rounded-xl bg-slate-900 text-white text-xs font-bold border border-slate-800">
+                Sign In
+              </Link>
+              <Link to="/register" className="w-full text-center py-2.5 rounded-xl bg-blue-600 text-white text-xs font-bold shadow-lg shadow-blue-600/30">
+                Get Started Free
+              </Link>
             </div>
           </div>
         )}
       </header>
-      {/* Hero / About Section */}
-      <section id="about" className="min-h-screen flex flex-col items-center justify-center text-center px-6 py-20">
-        <motion.h1
-          className="text-5xl md:text-6xl font-bold text-gray-800 mb-6"
-          initial={{ opacity: 0, y: -30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8 }}
-        >
-          About Our Project
-        </motion.h1>
-        <p className="max-w-3xl text-lg md:text-xl text-gray-600 mb-12">
-          Our platform provides everything your team needs: Dashboard, Chat,
-          Task Manager, File Manager, Calendar, and Video Conferencing – all in
-          one place.
+
+      {/* ── HERO BANNER ── */}
+      <section className="pt-32 sm:pt-44 pb-16 sm:pb-24 px-4 sm:px-6 lg:px-8 max-w-5xl mx-auto text-center">
+        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-semibold mb-6">
+          <Sparkles className="w-3.5 h-3.5" />
+          <span>Architected for Seamless Distributed Teamwork</span>
+        </div>
+
+        <h1 className="text-4xl sm:text-6xl font-black text-white tracking-tight mb-6 leading-[1.15]">
+          About Our Real-Time{" "}
+          <span className="bg-gradient-to-r from-blue-400 via-indigo-300 to-purple-400 bg-clip-text text-transparent">
+            Collaboration Platform
+          </span>
+        </h1>
+
+        <p className="text-base sm:text-lg text-slate-400 max-w-3xl mx-auto leading-relaxed">
+          Milapp was engineered to eliminate tool fragmentation. Instead of juggling six disconnected software subscriptions, Milapp provides an all-in-one modern workspace unifying video meetings, collaborative whiteboard, multilingual messaging, sales CRM, Figma embedding, and smart scheduling.
         </p>
-        <motion.div
-          className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl"
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true }}
-          variants={{
-            hidden: { opacity: 0, y: 50 },
-            visible: {
-              opacity: 1,
-              y: 0,
-              transition: { staggerChildren: 0.2 },
-            },
-          }}
-        >
-          {[
-            "Dashboard",
-            "Chat Page",
-            "Task Manager",
-            "File Manager",
-            "Calendar",
-            "Video Conferencing",
-          ].map((feature, i) => (
-            <motion.div
-              key={i}
-              className="bg-white rounded-2xl p-8 shadow-lg hover:shadow-2xl transition-all"
-              whileHover={{ scale: 1.05 }}
-            >
-              <h3 className="text-2xl font-semibold text-indigo-600 mb-4">
-                {feature}
-              </h3>
-              <p className="text-gray-600">
-                A seamless {feature.toLowerCase()} experience designed for
-                collaboration and productivity.
-              </p>
-            </motion.div>
-          ))}
-        </motion.div>
       </section>
 
-      {/* Careers Section */}
-      <section id="careers" className="min-h-screen bg-white py-20 px-6">
-        <motion.h2
-          className="text-4xl md:text-5xl font-bold text-center text-gray-800 mb-12"
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-        >
-          Careers & Opportunities
-        </motion.h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
-          {[
-            {
-              title: "Free & User Friendly",
-              desc: "Our platform is easy to use and accessible for all.",
-            },
-            {
-              title: "Team Collaboration",
-              desc: "Work together with real-time updates and integrations.",
-            },
-            {
-              title: "File Sharing",
-              desc: "Upload, share, and manage files securely in one place.",
-            },
-            {
-              title: "Video Conferencing",
-              desc: "Communicate instantly with high-quality video calls.",
-            },
-            {
-              title: "Guidance & Growth",
-              desc: "Grow with us and get continuous career mentorship.",
-            },
-            {
-              title: "Innovation",
-              desc: "Be part of a team that builds next-gen solutions.",
-            },
-          ].map((career, i) => (
-            <motion.div
-              key={i}
-              className="bg-gradient-to-br from-indigo-100 to-blue-50 rounded-2xl p-8 shadow-lg hover:shadow-2xl"
-              whileHover={{ scale: 1.05 }}
-            >
-              <h3 className="text-2xl font-semibold text-indigo-700 mb-4">
-                {career.title}
-              </h3>
-              <p className="text-gray-600">{career.desc}</p>
-            </motion.div>
-          ))}
-        </div>
-      </section>
-
-      {/* Blog Section */}
-      <section id="blog" className="min-h-screen py-20 px-6">
-        <motion.h2
-          className="text-4xl md:text-5xl font-bold text-center text-gray-800 mb-12"
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-        >
-          Blogs & Insights
-        </motion.h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
-          {[
-            {
-              title: "Dashboard Overview",
-              desc: "How our dashboard centralizes everything for your team.",
-            },
-            {
-              title: "Seamless Chat",
-              desc: "Real-time messaging with emoji reactions and file sharing.",
-            },
-            {
-              title: "Managing Tasks",
-              desc: "Stay organized with deadlines and progress tracking.",
-            },
-            {
-              title: "File Management",
-              desc: "A better way to upload, share, and manage files.",
-            },
-            {
-              title: "Calendar & Events",
-              desc: "Schedule and manage events with integrated notes.",
-            },
-            {
-              title: "Future of Remote Work",
-              desc: "How video conferencing powers collaboration anywhere.",
-            },
-          ].map((blog, i) => (
-            <motion.div
-              key={i}
-              className="bg-white rounded-2xl p-8 shadow-lg hover:shadow-2xl"
-              whileHover={{ scale: 1.05 }}
-            >
-              <h3 className="text-xl font-semibold text-indigo-600 mb-3">
-                {blog.title}
-              </h3>
-              <p className="text-gray-600">{blog.desc}</p>
-              <button className="mt-4 text-indigo-500 font-medium hover:underline">
-                Read More →
-              </button>
-            </motion.div>
-          ))}
-        </div>
-      </section>
-
-      {/* Contact Section */}
-      <section id="contact" className="min-h-screen bg-gradient-to-r from-indigo-600 to-blue-500 flex flex-col items-center justify-center py-20 px-6 text-white relative overflow-hidden">
-        <motion.h2
-          className="text-5xl font-bold mb-6"
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-        >
-          Contact Us
-        </motion.h2>
-        <p className="text-lg mb-12 max-w-xl text-center">
-          Have questions or want to collaborate? Reach out to our team and let’s
-          build the future together.
-        </p>
-        <motion.form
-          className="bg-white text-gray-800 rounded-2xl shadow-lg p-8 max-w-lg w-full"
-          initial={{ opacity: 0, scale: 0.8 }}
-          animate={{ opacity: 1, scale: 1 }}
-        >
-          <input
-            type="text"
-            placeholder="Your Name"
-            className="w-full p-4 mb-4 border rounded-xl focus:ring-2 focus:ring-indigo-400"
-          />
-          <input
-            type="email"
-            placeholder="Your Email"
-            className="w-full p-4 mb-4 border rounded-xl focus:ring-2 focus:ring-indigo-400"
-          />
-          <textarea
-            placeholder="Your Message"
-            rows="5"
-            className="w-full p-4 mb-4 border rounded-xl focus:ring-2 focus:ring-indigo-400"
-          ></textarea>
-          <button className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-semibold transition-all">
-            Send Message
-          </button>
-        </motion.form>
-      </section>
-
-       {/* Footer */}
-      <footer
-        id="footer"
-        className="observe-section"
-        style={{
-          padding: '4rem 2rem 2rem',
-          background: 'linear-gradient(135deg, #1e293b 0%, #334155 100%)',
-          color: 'white',
-          transform: isVisible.footer ? 'translateY(0)' : 'translateY(50px)',
-          opacity: isVisible.footer ? 1 : 0,
-          transition: 'all 0.8s cubic-bezier(0.23, 1, 0.32, 1)'
-        }}
-      >
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-          gap: '3rem',
-          maxWidth: '1200px',
-          margin: '0 auto 3rem'
-        }}>
-          <div>
-            <div style={{
-              fontSize: '1.8rem',
-              fontWeight: 800,
-              background: 'linear-gradient(45deg, #667eea, #764ba2)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              backgroundClip: 'text',
-              marginBottom: '1.5rem'
-            }}>
-              ConnectWise
-            </div>
-            <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
-              {[
-                { icon: <FaFacebookF/>, label: 'Facebook', url: 'https://www.facebook.com/' },
-                { icon: <FaSquareXTwitter/>, label: 'Twitter', url: 'https://x.com/Sp_rajjput' },
-                { icon: <FaInstagramSquare/>, label: 'Instagram', url: 'https://www.instagram.com/sp_singh.1' },
-                { icon: <CiLinkedin/>, label: 'LinkedIn', url: 'https://www.linkedin.com/in/' },
-                { icon: <FaGithub/>, label: 'GitHub', url: 'https://github.com/SPSingh-1' }
-              ].map((social, index) => (
-                <Link
-                  key={index}
-                  to={social.url} // Use the specific URL here
-                  style={{
-                    width: '40px',
-                    height: '40px',
-                    background: 'rgba(255, 255, 255, 0.1)',
-                    borderRadius: '10px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    transition: 'all 0.3s ease',
-                    textDecoration: 'none',
-                    fontSize: '1.2rem'
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.2)';
-                    e.currentTarget.style.transform = 'translateY(-2px)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
-                    e.currentTarget.style.transform = 'translateY(0)';
-                  }}
-                >
-                  {social.icon}
-                </Link>
-              ))}
-            </div>
-          </div>
-          
-          <div>
-            <h4 style={{
-              fontSize: '1.2rem',
-              fontWeight: 700,
-              marginBottom: '1.5rem',
-              color: 'white'
-            }}>
-              Product
-            </h4>
-            <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
-              {['Home', 'Features', 'Join'].map((item, index) => (
-                <li key={index} style={{ marginBottom: '0.75rem' }}>
-                  <Link
-                    to="/"
-                    style={{
-                      color: 'rgba(255, 255, 255, 0.7)',
-                      textDecoration: 'none',
-                      transition: 'color 0.3s ease'
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.color = 'white';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.color = 'rgba(255, 255, 255, 0.7)';
-                    }}
-                  >
-                    {item}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-          
-          <div>
-            <h4 style={{
-              fontSize: '1.2rem',
-              fontWeight: 700,
-              marginBottom: '1.5rem',
-              color: 'white'
-            }}>
-              Company
-            </h4>
-            <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
-              {['About Us', 'Careers', 'Blog'].map((item, index) => (
-                <li key={index} style={{ marginBottom: '0.75rem' }}>
-                  <Link
-                    to="/company"
-                    style={{
-                      color: 'rgba(255, 255, 255, 0.7)',
-                      textDecoration: 'none',
-                      transition: 'color 0.3s ease'
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.color = 'white';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.color = 'rgba(255, 255, 255, 0.7)';
-                    }}
-                  >
-                    {item}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-          
-          <div>
-            <h4 style={{
-              fontSize: '1.2rem',
-              fontWeight: 700,
-              marginBottom: '1.5rem',
-              color: 'white'
-            }}>
-              Legal
-            </h4>
-            <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
-              {['Privacy Policy', 'Terms of Service'].map((item, index) => (
-                <li key={index} style={{ marginBottom: '0.75rem' }}>
-                  <Link
-                    to="/legal"
-                    style={{
-                      color: 'rgba(255, 255, 255, 0.7)',
-                      textDecoration: 'none',
-                      transition: 'color 0.3s ease'
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.color = 'white';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.color = 'rgba(255, 255, 255, 0.7)';
-                    }}
-                  >
-                    {item}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </div>
-        
-        <div style={{
-          textAlign: 'center',
-          paddingTop: '2rem',
-          borderTop: '1px solid rgba(255, 255, 255, 0.1)',
-          color: 'rgba(255, 255, 255, 0.7)'
-        }}>
-          <p style={{ margin: 0 }}>
-            &copy; 2024 Milapp. All rights reserved.
+      {/* ── 6 CORE PLATFORM PILLARS ── */}
+      <section className="py-16 sm:py-24 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto border-t border-slate-900">
+        <div className="text-center max-w-2xl mx-auto mb-16">
+          <h2 className="text-2xl sm:text-4xl font-extrabold text-white tracking-tight mb-3">
+            The 6 Pillars of the Platform
+          </h2>
+          <p className="text-xs sm:text-sm text-slate-400">
+            Engineered with modern protocols to deliver sub-100ms real-time responsiveness.
           </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
+          {pillars.map((item, idx) => (
+            <div
+              key={idx}
+              className="p-6 sm:p-7 rounded-3xl bg-slate-900/70 border border-slate-800/80 hover:border-slate-700 backdrop-blur-xl shadow-xl flex flex-col justify-between transition-all duration-300 hover:-translate-y-1 group"
+            >
+              <div>
+                <div className="flex items-center justify-between mb-4">
+                  <div className="w-12 h-12 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-center shadow-md group-hover:scale-110 transition-transform">
+                    {item.icon}
+                  </div>
+                  <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-slate-950 text-slate-400 border border-slate-800">
+                    {item.category}
+                  </span>
+                </div>
+                <h3 className="text-base sm:text-lg font-bold text-white mb-2">{item.title}</h3>
+                <p className="text-xs sm:text-sm text-slate-400 leading-relaxed">{item.desc}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* ── TECHNOLOGY STACK & ARCHITECTURE ── */}
+      <section className="py-16 sm:py-24 px-4 sm:px-6 lg:px-8 max-w-6xl mx-auto border-t border-slate-900">
+        <div className="rounded-3xl bg-gradient-to-b from-slate-900 to-slate-950 border border-slate-800 p-6 sm:p-12 shadow-2xl">
+          <div className="max-w-2xl mb-10">
+            <span className="text-xs font-bold uppercase tracking-wider text-purple-400 bg-purple-500/10 px-3 py-1 rounded-full border border-purple-500/20">
+              Modern Tech Architecture
+            </span>
+            <h2 className="text-2xl sm:text-4xl font-extrabold text-white mt-4 mb-3">
+              Built on Modern Real-Time Web Standards
+            </h2>
+            <p className="text-xs sm:text-sm text-slate-400">
+              Zero third-party bloated trackers. Direct peer-to-peer data transport with secure WebSocket event loops.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+            {techStack.map((tech, idx) => (
+              <div
+                key={idx}
+                className="p-4 sm:p-5 rounded-2xl bg-slate-950/80 border border-slate-800/80 flex items-start gap-3.5"
+              >
+                <div className="w-8 h-8 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 flex-shrink-0 mt-0.5">
+                  <Cpu className="w-4 h-4" />
+                </div>
+                <div>
+                  <h4 className="text-sm font-bold text-white">{tech.name}</h4>
+                  <p className="text-xs text-slate-400 mt-0.5">{tech.category}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── CTA BANNER ── */}
+      <section className="py-16 sm:py-24 px-4 sm:px-6 lg:px-8 max-w-5xl mx-auto text-center">
+        <div className="p-8 sm:p-14 rounded-3xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-purple-600 shadow-2xl text-white relative overflow-hidden">
+          <div className="relative z-10 max-w-2xl mx-auto">
+            <h2 className="text-2xl sm:text-4xl font-black mb-3 tracking-tight">
+              Ready to Upgrade Your Team Workspace?
+            </h2>
+            <p className="text-xs sm:text-sm text-blue-100 mb-8 leading-relaxed">
+              Create your free workspace in under 30 seconds. No credit card required.
+            </p>
+            <Link
+              to="/register"
+              className="inline-flex items-center gap-2 px-8 py-3.5 rounded-2xl bg-slate-950 hover:bg-slate-900 text-white text-xs sm:text-sm font-extrabold shadow-xl transition transform hover:scale-105 active:scale-95"
+            >
+              <span>Get Started Free</span>
+              <ArrowRight className="w-4 h-4" />
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* ── FOOTER ── */}
+      <footer className="border-t border-slate-900 bg-slate-950/90 py-12 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between text-xs text-slate-500 gap-4">
+          <div className="flex items-center gap-2">
+            <div className="w-6 h-6 rounded-lg bg-blue-600 flex items-center justify-center text-white font-bold text-xs">
+              M
+            </div>
+            <span className="text-slate-300 font-bold">Milapp Collaboration Platform</span>
+          </div>
+          <p>© {new Date().getFullYear()} Milapp Inc. All rights reserved.</p>
         </div>
       </footer>
     </div>

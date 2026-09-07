@@ -2,6 +2,7 @@
 import React, { createContext, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import { jwtDecode } from "jwt-decode";
 
 const AppContext = createContext();
 
@@ -14,22 +15,70 @@ const AppProvider = ({ children }) => {
   const [authChecked, setAuthChecked] = useState(false);
   const navigate = useNavigate();
 
+  // Helper to safely clear all stored auth credentials
+  const clearAuthStorage = () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("auth-token");
+    localStorage.removeItem("authToken");
+    localStorage.removeItem("user");
+  };
+
   // ✅ Wrapper around setUser that also updates localStorage
   const setUser = (newUser) => {
     if (newUser) {
       _setUser(newUser);
       if (newUser.token) {
         localStorage.setItem("token", newUser.token);
+        localStorage.setItem("auth-token", newUser.token);
       }
       localStorage.setItem("user", JSON.stringify(newUser));
     } else {
       _setUser(null);
-      localStorage.removeItem("token");
-      localStorage.removeItem("user");
+      clearAuthStorage();
     }
   };
 
-  // ✅ Check authentication on app load
+  // ✅ Global Axios interceptor for expired tokens and unauthorized responses
+  useEffect(() => {
+    const interceptor = axios.interceptors.response.use(
+      (response) => response,
+      (error) => {
+        if (error.response && error.response.status === 401) {
+          const errorData = error.response.data;
+          const isTokenError = 
+            errorData?.code === 'TOKEN_EXPIRED' ||
+            errorData?.code === 'INVALID_TOKEN' ||
+            errorData?.code === 'TOKEN_INVALID' ||
+            (typeof errorData?.error === 'string' && (
+              errorData.error.toLowerCase().includes('token') ||
+              errorData.error.toLowerCase().includes('access denied') ||
+              errorData.error.toLowerCase().includes('expired')
+            ));
+
+          if (isTokenError || error.response.status === 401) {
+            console.warn("🔒 Session expired or unauthorized (401). Clearing session and redirecting to /login...");
+            setUser(null);
+            setTeams([]);
+            setGlobals([]);
+            setNotifications([]);
+            
+            const currentPath = window.location.pathname;
+            const publicPaths = ['/login', '/register', '/forgot-password', '/reset-password', '/join'];
+            if (!publicPaths.some(path => currentPath.startsWith(path))) {
+              navigate("/login", { replace: true });
+            }
+          }
+        }
+        return Promise.reject(error);
+      }
+    );
+
+    return () => {
+      axios.interceptors.response.eject(interceptor);
+    };
+  }, [navigate]);
+
+  // ✅ Check authentication on app load with JWT expiration verification
   useEffect(() => {
     checkAuth();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -37,12 +86,37 @@ const AppProvider = ({ children }) => {
 
   const checkAuth = async () => {
     try {
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem("token") || localStorage.getItem("auth-token") || localStorage.getItem("authToken");
       const storedUserData = localStorage.getItem("user");
 
       if (!token || !storedUserData) {
+        clearAuthStorage();
         setLoading(false);
         setAuthChecked(true);
+        return;
+      }
+
+      // Check if token is expired before attempting to use it
+      try {
+        const decoded = jwtDecode(token);
+        if (decoded.exp && decoded.exp * 1000 < Date.now()) {
+          console.warn("⚠️ Token is expired on startup. Redirecting to login...");
+          setUser(null);
+          setLoading(false);
+          setAuthChecked(true);
+          const currentPath = window.location.pathname;
+          const publicPaths = ['/login', '/register', '/forgot-password', '/reset-password', '/join'];
+          if (!publicPaths.some(path => currentPath.startsWith(path))) {
+            navigate("/login", { replace: true });
+          }
+          return;
+        }
+      } catch (jwtErr) {
+        console.warn("⚠️ Invalid token format on startup. Clearing session:", jwtErr);
+        setUser(null);
+        setLoading(false);
+        setAuthChecked(true);
+        navigate("/login", { replace: true });
         return;
       }
 

@@ -805,69 +805,61 @@ const DailyReporting = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 relative overflow-hidden">
-      {/* Animated background elements */}
-      <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute -top-40 -right-40 w-80 h-80 bg-purple-500 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse"></div>
-        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-blue-500 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse animation-delay-2000"></div>
-        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-indigo-500 rounded-full mix-blend-multiply filter blur-xl opacity-10 animate-spin-slow"></div>
-      </div>
-
-      <div className="relative z-10 container mx-auto px-4 py-8">
+    <div className="min-h-full bg-slate-950 text-slate-100 pb-12">
+      <div className="container mx-auto px-4 py-6">
         {/* Header */}
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-white mb-2 bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text">
-            Daily Reporting & Complaints System
+          <h1 className="text-2xl sm:text-3xl font-bold text-white mb-2">
+            Daily Reporting & Complaints Hub
           </h1>
-          <p className="text-white/70">Manage your daily reports, complaints, feedback, and assignments</p>
+          <p className="text-slate-400 text-sm">Manage daily work reports, employee grievances, and assignment feedback</p>
         </div>
 
-        {/* Enhanced Stats Dashboard - Add debug logging */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-          <div className="bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl p-4 text-center">
+        {/* Enhanced Stats Dashboard */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 mb-8">
+          <div className="bg-slate-900 border border-slate-800 rounded-xl p-4 text-center">
             <div className="text-2xl font-bold text-blue-400 mb-1">
-              {/* Debug: Add fallback and logging */}
               {stats.reports?.total || 0}
             </div>
-            <div className="text-white/70 text-sm">Total Reports</div>
+            <div className="text-slate-400 text-xs font-medium">Total Reports</div>
           </div>
-          <div className="bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl p-4 text-center">
+          <div className="bg-slate-900 border border-slate-800 rounded-xl p-4 text-center">
             <div className="text-2xl font-bold text-red-400 mb-1">
               {stats.complaints?.total || 0}
             </div>
-            <div className="text-white/70 text-sm">Total Complaints</div>
+            <div className="text-slate-400 text-xs font-medium">Total Complaints</div>
           </div>
-          <div className="bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl p-4 text-center">
+          <div className="bg-slate-900 border border-slate-800 rounded-xl p-4 text-center">
             <div className="text-2xl font-bold text-yellow-400 mb-1">
               {(stats.reports?.pending || 0) + (stats.complaints?.pending || 0)}
             </div>
-            <div className="text-white/70 text-sm">Pending Items</div>
+            <div className="text-slate-400 text-xs font-medium">Pending Items</div>
           </div>
-          <div className="bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl p-4 text-center">
-            <div className="text-2xl font-bold text-green-400 mb-1">
-              {((stats.assignedReports || 0) + (stats.assignedComplaints || 0)) || 'Loading...'}
+          <div className="bg-slate-900 border border-slate-800 rounded-xl p-4 text-center">
+            <div className="text-2xl font-bold text-emerald-400 mb-1">
+              {((stats.assignedReports || 0) + (stats.assignedComplaints || 0))}
             </div>
-            <div className="text-white/70 text-sm">Assigned to Me</div>
+            <div className="text-slate-400 text-xs font-medium">Assigned to Me</div>
           </div>
         </div>
 
         {/* Tab Navigation */}
         <div className="flex justify-center mb-8">
-          <div className="bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl p-2 flex flex-wrap justify-center gap-2">
+          <div className="bg-slate-900 border border-slate-800 rounded-xl p-1.5 flex flex-wrap justify-center gap-1.5">
             {tabs.map((tab, index) => {
               const IconComponent = tab.icon;
               return (
                 <button
                   key={index}
                   onClick={() => setActiveTab(index)}
-                  className={`flex items-center space-x-2 px-4 py-2 rounded-xl transition-all duration-300 ${
+                  className={`flex items-center space-x-2 px-3.5 py-2 rounded-lg transition-colors text-xs sm:text-sm font-medium ${
                     activeTab === index
-                      ? 'bg-blue-500 text-white shadow-lg transform scale-105'
-                      : 'text-white/70 hover:text-white hover:bg-white/5'
+                      ? 'bg-blue-600 text-white font-semibold shadow-sm'
+                      : 'text-slate-400 hover:text-white hover:bg-slate-800'
                   }`}
                 >
-                  <IconComponent size={16} />
-                  <span className="font-medium text-sm">{tab.name}</span>
+                  <IconComponent size={15} />
+                  <span>{tab.name}</span>
                 </button>
               );
             })}
@@ -1147,9 +1139,10 @@ const DailyReporting = () => {
                       <label className="block text-white/90 text-sm font-medium mb-2">Incident Date</label>
                       <input
                         type="date"
+                        max={new Date().toISOString().split('T')[0]}
                         value={complaintData.incidentDate}
                         onChange={(e) => setComplaintData({...complaintData, incidentDate: e.target.value})}
-                        className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white focus:outline-none focus:border-blue-400/50"
+                        className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white focus:outline-none focus:border-blue-400/50 [color-scheme:dark] cursor-pointer"
                       />
                     </div>
 
@@ -1173,9 +1166,10 @@ const DailyReporting = () => {
                       <label className="block text-white/90 text-sm font-medium mb-2">Due Date</label>
                       <input
                         type="date"
+                        min={new Date().toISOString().split('T')[0]}
                         value={complaintData.dueDate}
                         onChange={(e) => setComplaintData({...complaintData, dueDate: e.target.value})}
-                        className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white focus:outline-none focus:border-blue-400/50"
+                        className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white focus:outline-none focus:border-blue-400/50 [color-scheme:dark] cursor-pointer"
                       />
                     </div>
                   </div>

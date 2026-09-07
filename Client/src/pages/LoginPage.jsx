@@ -1,342 +1,284 @@
+// src/pages/LoginPage.jsx
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import TextField from '@mui/material/TextField';
-import Button from '@mui/material/Button';
-import Alert from '@mui/material/Alert';
-import CircularProgress from '@mui/material/CircularProgress';
-import { FcGoogle } from "react-icons/fc";
-// eslint-disable-next-line no-unused-vars
-import { motion } from 'framer-motion';
+import { FcGoogle } from 'react-icons/fc';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Eye, EyeOff, Mail, Lock, LogIn, AlertCircle, CheckCircle, Sparkles, ArrowRight } from 'lucide-react';
 import axios from 'axios';
 import './Reg.css';
-import useAppContext from "../context/useAppContext";
+import useAppContext from '../context/useAppContext';
 
 const LoginPage = () => {
   const navigate = useNavigate();
   const { login, user, loading } = useAppContext();
-  const [form, setForm] = useState({
-    email: '',
-    password: '',
-    role: 'single',
-    teamId: ''
-  });
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
 
-  // Redirect if already logged in
+  const [form, setForm]           = useState({ email: '', password: '' });
+  const [showPass, setShowPass]   = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError]         = useState('');
+  const [success, setSuccess]     = useState('');
+  const [blocked, setBlocked]     = useState(null); // { reason, attemptsLeft }
+
   useEffect(() => {
-    if (user && !loading) {
-      navigate('/dashboard');
-    }
+    if (user && !loading) navigate('/dashboard');
   }, [user, loading, navigate]);
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
-    setError(''); // Clear error when user types
+    setError('');
+    setBlocked(null);
   };
 
   const handleLogin = async (e) => {
     e.preventDefault();
+    if (!form.email || !form.password) {
+      setError('Please fill in all fields');
+      return;
+    }
     setIsLoading(true);
     setError('');
+    setBlocked(null);
     setSuccess('');
 
     try {
-      const payload = { 
-        email: form.email, 
-        password: form.password, 
-        role: form.role 
-      };
+      const res = await axios.post(
+        `${import.meta.env.VITE_BACKEND_URL}/api/auth/login`,
+        { email: form.email, password: form.password }
+      );
 
-      if (form.role === 'team') {
-        if (!form.teamId.trim()) {
-          setError("Please enter your Team ID");
-          setIsLoading(false);
-          return;
-        }
-        payload.teamId = form.teamId.trim();
+      // Team member pending / rejected
+      if (!res.data.success && res.data.blocked) {
+        setBlocked({ reason: res.data.reason, attemptsLeft: res.data.attemptsLeft });
+        setIsLoading(false);
+        return;
       }
 
-      if (form.role === 'global') {
-        payload.globalId = 'GLOBAL123';
-      }
+      if (!res.data.success) throw new Error(res.data.error || 'Login failed');
 
-      const res = await axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/auth/login`, payload);
-
-      if (!res.data.success) {
-        throw new Error(res.data.error || 'Login failed');
-      }
-
-      console.log('Login response:', res.data); // Debug log
-
-      setSuccess('Login successful! Redirecting...');
-      
-      // FIXED: Pass the complete user object with token
-      const userWithToken = {
-        ...res.data.user,
-        token: res.data.token // Ensure token is included
-      };
-      
-      console.log('Calling login with:', userWithToken); // Debug log
-      
-      await login(userWithToken);
-      
-      setTimeout(() => {
-        navigate('/dashboard');
-      }, 1000);
+      setSuccess('Login successful! Redirecting to workspace…');
+      await login({ ...res.data.user, token: res.data.token });
+      setTimeout(() => navigate('/dashboard'), 600);
 
     } catch (err) {
-      console.error('Login error:', err);
-      setError(err.response?.data?.error || err.message || 'Login failed');
+      // Handle blocked responses that come as 403
+      if (err.response?.data?.blocked) {
+        setBlocked({
+          reason:       err.response.data.reason,
+          attemptsLeft: err.response.data.attemptsLeft
+        });
+      } else {
+        setError(err.response?.data?.error || err.message || 'Login failed');
+      }
     } finally {
       setIsLoading(false);
     }
   };
 
-  const getRoleDescription = () => {
-    switch (form.role) {
-      case 'single':
-        return 'Personal account for individual use';
-      case 'team':
-        return 'Collaborate with your team members';
-      case 'global':
-        return 'Join the global community (ID: GLOBAL123)';
-      default:
-        return '';
-    }
+  const handleGoogleLogin = () => {
+    window.location.href = `${import.meta.env.VITE_BACKEND_URL}/api/auth/google`;
   };
 
-  // Show loading screen while checking auth
   if (loading) {
     return (
       <div className="login-bg flex items-center justify-center">
         <div className="text-white text-center">
-          <CircularProgress sx={{ color: 'white', mb: 2 }} />
-          <div>Checking authentication...</div>
+          <div className="w-10 h-10 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+          <div className="text-sm text-slate-400">Verifying session…</div>
         </div>
       </div>
     );
   }
 
-  const cardVariants = {
-    initial: { opacity: 0, scale: 0.9, y: 50 },
-    animate: { opacity: 1, scale: 1, y: 0 },
-    hover: { scale: 1.02, rotate: 0.5 },
-  };
-
   return (
     <div className="login-bg">
       <motion.div
-        variants={cardVariants}
-        initial="initial"
-        animate="animate"
-        whileHover="hover"
-        transition={{ duration: 0.6, ease: 'easeOut' }}
-        className="card-container"
+        initial={{ opacity: 0, y: 30 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, ease: 'easeOut' }}
+        className="card-container w-full max-w-md"
       >
-        <h3 className="text-center text-blue-400 font-bold text-2xl mb-2">
-          Welcome Back
-        </h3>
-        <p className="text-center text-gray-300 mb-6">Login to your account</p>
-
-        {error && (
-          <Alert severity="error" className="mb-4 !bg-red-900 !text-white">
-            {error}
-          </Alert>
-        )}
-
-        {success && (
-          <Alert severity="success" className="mb-4 !bg-green-900 !text-white">
-            {success}
-          </Alert>
-        )}
-
-        <form onSubmit={handleLogin} className="w-full form-content text-white space-y-4">
-          <TextField
-            type="email"
-            label="Email Address"
-            name="email"
-            required
-            fullWidth
-            value={form.email}
-            onChange={handleChange}
-            disabled={isLoading}
-            variant="outlined"
-            InputProps={{ 
-              style: { color: "white" },
-              className: "bg-gray-800/50 rounded-lg"
-            }}
-            InputLabelProps={{ style: { color: "white" } }}
-            sx={{
-              '& .MuiOutlinedInput-root': {
-                '& fieldset': { borderColor: 'rgba(255,255,255,0.3)' },
-                '&:hover fieldset': { borderColor: 'rgba(255,255,255,0.5)' },
-                '&.Mui-focused fieldset': { borderColor: '#3b82f6' },
-              }
-            }}
-          />
-
-          <TextField
-            type="password"
-            label="Password"
-            name="password"
-            required
-            fullWidth
-            value={form.password}
-            onChange={handleChange}
-            disabled={isLoading}
-            variant="outlined"
-            InputProps={{ 
-              style: { color: "white" },
-              className: "bg-gray-800/50 rounded-lg"
-            }}
-            InputLabelProps={{ style: { color: "white" } }}
-            sx={{
-              '& .MuiOutlinedInput-root': {
-                '& fieldset': { borderColor: 'rgba(255,255,255,0.3)' },
-                '&:hover fieldset': { borderColor: 'rgba(255,255,255,0.5)' },
-                '&.Mui-focused fieldset': { borderColor: '#3b82f6' },
-              }
-            }}
-          />
-
-          {/* ENHANCED ROLE SELECTION */}
-          <div className="space-y-3">
-            <label className="block text-white font-medium">Select Your Role:</label>
-            <div className="grid grid-cols-1 gap-3">
-              {[
-                { value: 'single', label: 'Personal', icon: '👤', desc: 'Individual account' },
-                { value: 'team', label: 'Team', icon: '👥', desc: 'Team collaboration' },
-                { value: 'global', label: 'Global', icon: '🌍', desc: 'Global community' }
-              ].map((role) => (
-                <label
-                  key={role.value}
-                  className={`flex items-center p-3 rounded-lg border-2 cursor-pointer transition-all duration-200 ${
-                    form.role === role.value
-                      ? 'border-blue-500 bg-blue-900/30'
-                      : 'border-gray-600 bg-gray-800/30 hover:border-gray-500'
-                  }`}
-                >
-                  <input
-                    type="radio"
-                    name="role"
-                    value={role.value}
-                    checked={form.role === role.value}
-                    onChange={handleChange}
-                    disabled={isLoading}
-                    className="sr-only"
-                  />
-                  <span className="text-2xl mr-3">{role.icon}</span>
-                  <div>
-                    <div className="text-white font-medium">{role.label}</div>
-                    <div className="text-gray-400 text-sm">{role.desc}</div>
-                  </div>
-                </label>
-              ))}
+        {/* Brand Logo & Header */}
+        <div className="text-center mb-6">
+          <Link to="/" className="inline-flex items-center gap-2 mb-4 group">
+            <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white font-black text-xl shadow-lg shadow-blue-600/30 group-hover:scale-105 transition-transform">
+              M
             </div>
-            <div className="text-sm text-gray-400 bg-gray-800/30 p-3 rounded-lg">
-              {getRoleDescription()}
+            <span className="text-xl font-extrabold tracking-tight text-white">Milapp</span>
+          </Link>
+          <h1 className="text-2xl font-bold text-white tracking-tight">Welcome Back</h1>
+          <p className="text-slate-400 text-xs sm:text-sm mt-1">Sign in to access your team workspace</p>
+        </div>
+
+        {/* Blocked / Review Status */}
+        <AnimatePresence>
+          {blocked && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              className={`mb-4 p-4 rounded-2xl border text-xs sm:text-sm ${
+                blocked.reason === 'pending_approval'
+                  ? 'bg-amber-500/10 border-amber-500/40 text-amber-300'
+                  : 'bg-red-500/10 border-red-500/40 text-red-300'
+              }`}
+            >
+              {blocked.reason === 'pending_approval' ? (
+                <div className="flex items-start gap-2.5">
+                  <span className="text-lg">⏳</span>
+                  <div>
+                    <div className="font-bold mb-0.5">Pending Admin Approval</div>
+                    <div className="text-xs opacity-85 leading-relaxed">
+                      Your team join request is currently under review by the team administrator.
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-start gap-2.5">
+                  <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <div className="font-bold mb-0.5">Join Request Rejected</div>
+                    <div className="text-xs opacity-85 leading-relaxed">
+                      {blocked.attemptsLeft > 0
+                        ? `You have ${blocked.attemptsLeft} re-apply attempt(s) remaining.`
+                        : 'Maximum attempts reached. Please contact your team admin.'}
+                    </div>
+                    {blocked.attemptsLeft > 0 && (
+                      <Link to="/register" className="text-xs font-bold underline mt-1.5 inline-block text-white hover:text-blue-300">
+                        Re-apply with a valid invite key →
+                      </Link>
+                    )}
+                  </div>
+                </div>
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Error / Success Toast Alerts */}
+        <AnimatePresence>
+          {error && (
+            <motion.div
+              initial={{ opacity: 0, y: -6 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -6 }}
+              className="mb-4 p-3 rounded-xl bg-red-500/15 border border-red-500/30 flex items-center gap-2.5 text-red-300 text-xs font-medium"
+            >
+              <AlertCircle className="w-4 h-4 flex-shrink-0 text-red-400" />
+              <span>{error}</span>
+            </motion.div>
+          )}
+          {success && (
+            <motion.div
+              initial={{ opacity: 0, y: -6 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="mb-4 p-3 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-center gap-2.5 text-emerald-300 text-xs font-medium"
+            >
+              <CheckCircle className="w-4 h-4 flex-shrink-0 text-emerald-400" />
+              <span>{success}</span>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Login Form */}
+        <form onSubmit={handleLogin} className="space-y-4">
+          {/* Email Field */}
+          <div>
+            <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+              Email Address
+            </label>
+            <div className="relative">
+              <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+              <input
+                type="email"
+                name="email"
+                value={form.email}
+                onChange={handleChange}
+                disabled={isLoading}
+                placeholder="you@company.com"
+                autoComplete="email"
+                required
+                className="w-full pl-10 pr-4 py-3 bg-slate-900/90 border border-slate-700/80 rounded-xl text-white placeholder-slate-500 text-xs sm:text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/50 transition-all shadow-inner"
+              />
             </div>
           </div>
 
-          {/* TEAM ID INPUT */}
-          {form.role === 'team' && (
-            <TextField
-              type="text"
-              label="Team ID"
-              name="teamId"
-              required
-              fullWidth
-              value={form.teamId}
-              onChange={handleChange}
-              disabled={isLoading}
-              placeholder="Enter your 5-character Team ID"
-              variant="outlined"
-              InputProps={{ 
-                style: { color: 'white' },
-                className: "bg-gray-800/50 rounded-lg"
-              }}
-              InputLabelProps={{ style: { color: 'white' } }}
-              sx={{
-                '& .MuiOutlinedInput-root': {
-                  '& fieldset': { borderColor: 'rgba(255,255,255,0.3)' },
-                  '&:hover fieldset': { borderColor: 'rgba(255,255,255,0.5)' },
-                  '&.Mui-focused fieldset': { borderColor: '#10b981' },
-                }
-              }}
-            />
-          )}
+          {/* Password Field */}
+          <div>
+            <div className="flex justify-between items-center mb-1.5">
+              <label className="text-xs font-semibold text-slate-300">
+                Password
+              </label>
+              <Link to="/forgot-password" className="text-xs text-blue-400 hover:text-blue-300 transition-colors">
+                Forgot password?
+              </Link>
+            </div>
+            <div className="relative">
+              <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+              <input
+                type={showPass ? 'text' : 'password'}
+                name="password"
+                value={form.password}
+                onChange={handleChange}
+                disabled={isLoading}
+                placeholder="Enter your password"
+                autoComplete="current-password"
+                required
+                className="w-full pl-10 pr-11 py-3 bg-slate-900/90 border border-slate-700/80 rounded-xl text-white placeholder-slate-500 text-xs sm:text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/50 transition-all shadow-inner"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPass(!showPass)}
+                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors p-1"
+              >
+                {showPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+            </div>
+          </div>
 
-          {/* GLOBAL ID DISPLAY */}
-          {form.role === 'global' && (
-            <TextField
-              type="text"
-              label="Global ID"
-              value="GLOBAL123"
-              fullWidth
-              disabled
-              variant="outlined"
-              InputProps={{ 
-                readOnly: true, 
-                style: { color: 'white' },
-                className: "bg-purple-900/30 rounded-lg"
-              }}
-              InputLabelProps={{ style: { color: 'white' } }}
-              sx={{
-                '& .MuiOutlinedInput-root': {
-                  '& fieldset': { borderColor: 'rgba(147, 51, 234, 0.5)' },
-                }
-              }}
-            />
-          )}
-
-          <Button 
-            type="submit" 
-            fullWidth
+          {/* Submit Button */}
+          <button
+            type="submit"
             disabled={isLoading}
-            className="!bg-gradient-to-r !from-blue-600 !to-blue-700 !text-white !py-3 !mt-6 !rounded-lg !font-semibold !text-lg hover:!from-blue-700 hover:!to-blue-800 !transition-all !duration-200 !shadow-lg hover:!shadow-xl disabled:!opacity-50"
+            className="w-full py-3.5 px-4 rounded-xl font-bold text-xs sm:text-sm text-white bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg shadow-blue-600/30 flex items-center justify-center gap-2 transform active:scale-[0.98]"
           >
             {isLoading ? (
-              <div className="flex items-center gap-2">
-                <CircularProgress size={20} sx={{ color: 'white' }} />
-                Signing In...
-              </div>
+              <>
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                <span>Signing in…</span>
+              </>
             ) : (
-              'Sign In'
+              <>
+                <span>Sign In to Workspace</span>
+                <ArrowRight className="w-4 h-4" />
+              </>
             )}
-          </Button>
-
-          <p className="text-center mt-4 text-gray-300">
-            Don't have an account?{' '}
-            <Link 
-              className="text-blue-400 hover:text-blue-300 transition font-medium" 
-              to="/register"
-            >
-              Sign Up
-            </Link>
-          </p>
-
+          </button>
         </form>
 
-        {/* ROLE INFO SECTION */}
-        <div className="mt-6 p-4 bg-gray-800/30 rounded-lg border border-gray-700">
-          <h4 className="text-white font-semibold mb-3">Account Types:</h4>
-          <div className="space-y-2 text-sm">
-            <div className="flex items-center gap-2">
-              <span>👤</span>
-              <span className="text-gray-300"><strong>Personal:</strong> Private messaging for individual use</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span>👥</span>
-              <span className="text-gray-300"><strong>Team:</strong> Collaborate with team members using Team ID</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span>🌍</span>
-              <span className="text-gray-300"><strong>Global:</strong> Join the worldwide community</span>
-            </div>
-          </div>
+        {/* Divider */}
+        <div className="flex items-center gap-3 my-6">
+          <div className="flex-1 h-px bg-slate-800" />
+          <span className="text-[11px] font-medium text-slate-500 uppercase tracking-wider">or continue with</span>
+          <div className="flex-1 h-px bg-slate-800" />
         </div>
+
+        {/* Google OAuth Login */}
+        <button
+          onClick={handleGoogleLogin}
+          type="button"
+          className="w-full py-3 px-4 rounded-xl font-semibold text-xs sm:text-sm text-slate-200 bg-slate-900/90 border border-slate-700/80 hover:bg-slate-800 hover:text-white hover:border-slate-600 transition-all flex items-center justify-center gap-2.5 shadow-sm"
+        >
+          <FcGoogle className="w-5 h-5" />
+          <span>Sign in with Google</span>
+        </button>
+
+        {/* Switch to Register */}
+        <p className="text-center text-slate-400 text-xs mt-6">
+          Don't have an account?{' '}
+          <Link to="/register" className="text-blue-400 hover:text-blue-300 font-bold transition-colors">
+            Create Free Account
+          </Link>
+        </p>
       </motion.div>
     </div>
   );

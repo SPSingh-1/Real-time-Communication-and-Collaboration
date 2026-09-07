@@ -1,10 +1,20 @@
 # Top-level .gitignore
-# Ignore node_modules in sub-directories
-client/node_modules/
+
+# Ignore node_modules in all directories
+node_modules/
+**/node_modules/
+Client/node_modules/
 Server/node_modules/
 
-# Ignore .env files in sub-directories
-client/.env
+# Ignore build folders
+dist/
+build/
+Client/build/
+
+# Ignore .env files in all directories
+.env
+*.env
+Client/.env
 Server/.env
 
 # Common OS and IDE files

@@ -238,9 +238,9 @@ const ChatBox = () => {
       return;
     }
 
-    // Check file size (50MB limit)
-    if (file.size > 50 * 1024 * 1024) {
-      alert("File size exceeds 50MB limit");
+    // Check file size (5MB limit)
+    if (file.size > 5 * 1024 * 1024) {
+      alert("File size exceeds the 5MB limit. Please select a file smaller than 5MB.");
       // Clear the input
       e.target.value = '';
       return;

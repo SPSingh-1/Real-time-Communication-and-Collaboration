@@ -1,83 +1,91 @@
-import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import TextField from '@mui/material/TextField';
-import Button from '@mui/material/Button';
-import Alert from '@mui/material/Alert';
-import CircularProgress from '@mui/material/CircularProgress';
-import { FcGoogle } from "react-icons/fc";
-// eslint-disable-next-line no-unused-vars
-import { motion } from 'framer-motion';
+// src/pages/RegisterPage.jsx
+import React, { useState, useEffect, useCallback } from 'react';
+import { Link, useNavigate, useParams } from 'react-router-dom';
+import { FcGoogle } from 'react-icons/fc';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Eye, EyeOff, Mail, Lock, User, Phone, Key, CheckCircle, AlertCircle, UserPlus, ArrowRight } from 'lucide-react';
 import axios from 'axios';
 import './Reg.css';
-import useAppContext from "../context/useAppContext";
+import useAppContext from '../context/useAppContext';
 
 const RegisterPage = () => {
-  const navigate = useNavigate();
-// eslint-disable-next-line no-unused-vars
+  const navigate      = useNavigate();
+  const { inviteKey: urlKey } = useParams(); // support /join/:key route
+  // eslint-disable-next-line no-unused-vars
   const { login, user, loading } = useAppContext();
-  const [form, setForm] = useState({
-    name: '',
-    email: '',
-    phoneno: '',
-    password: '',
-    confirmPassword: '',
-    role: 'single',
-    teamId: ''
-  });
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
-  const [passwordStrength, setPasswordStrength] = useState(0);
 
-  // Redirect if already logged in
+  const [form, setForm] = useState({
+    name:            '',
+    email:           '',
+    phoneno:         '',
+    password:        '',
+    confirmPassword: '',
+    inviteKey:       urlKey || ''  // pre-fill if coming from magic link
+  });
+
+  const [showPass, setShowPass]       = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [isLoading, setIsLoading]     = useState(false);
+  const [error, setError]             = useState('');
+  const [success, setSuccess]         = useState('');
+  const [showKeyField, setShowKeyField] = useState(!!urlKey);
+  const [passwordStrength, setPasswordStrength] = useState(0);
+  const [keyStatus, setKeyStatus] = useState(null); // null | 'checking' | { valid, teamName, error }
+
   useEffect(() => {
-    if (user && !loading) {
-      navigate('/dashboard');
-    }
+    if (user && !loading) navigate('/dashboard');
   }, [user, loading, navigate]);
+
+  // Validate invite key on change (debounced)
+  const validateKey = useCallback(async (key) => {
+    if (!key || key.trim().length < 8) {
+      setKeyStatus(null);
+      return;
+    }
+    setKeyStatus('checking');
+    try {
+      const res = await axios.get(
+        `${import.meta.env.VITE_BACKEND_URL}/api/team/validate-invite/${key.trim()}`
+      );
+      setKeyStatus({ valid: res.data.valid, teamName: res.data.teamName, error: res.data.error });
+    } catch {
+      setKeyStatus({ valid: false, error: 'Could not validate key' });
+    }
+  }, []);
+
+  useEffect(() => {
+    const timer = setTimeout(() => validateKey(form.inviteKey), 600);
+    return () => clearTimeout(timer);
+  }, [form.inviteKey, validateKey]);
+
+  // Auto-show key field if url has invite key
+  useEffect(() => {
+    if (urlKey) {
+      setForm(f => ({ ...f, inviteKey: urlKey }));
+      setShowKeyField(true);
+    }
+  }, [urlKey]);
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
     setError('');
-
-    // Check password strength
     if (e.target.name === 'password') {
-      const password = e.target.value;
-      let strength = 0;
-      if (password.length >= 8) strength += 25;
-      if (/[A-Z]/.test(password)) strength += 25;
-      if (/[0-9]/.test(password)) strength += 25;
-      if (/[^A-Za-z0-9]/.test(password)) strength += 25;
-      setPasswordStrength(strength);
+      const p = e.target.value;
+      let s   = 0;
+      if (p.length >= 8) s += 25;
+      if (/[A-Z]/.test(p)) s += 25;
+      if (/[0-9]/.test(p)) s += 25;
+      if (/[^A-Za-z0-9]/.test(p)) s += 25;
+      setPasswordStrength(s);
     }
   };
 
   const validateForm = () => {
-    if (form.password !== form.confirmPassword) {
-      setError("Passwords don't match");
-      return false;
-    }
-
-    if (form.password.length < 5) {
-      setError("Password must be at least 5 characters");
-      return false;
-    }
-
-    if (form.role === 'team' && !/^[A-Za-z0-9_@]{5}$/.test(form.teamId)) {
-      setError('Team ID must be exactly 5 characters: letters, numbers, _ or @');
-      return false;
-    }
-
-    if (!/^[\w-.]+@([\w-]+\.)+[\w-]{2,4}$/.test(form.email)) {
-      setError('Please enter a valid email address');
-      return false;
-    }
-
-    if (!/^\+?[\d\s\-()]{10,}$/.test(form.phoneno)) {
-      setError('Please enter a valid phone number');
-      return false;
-    }
-
+    if (form.password !== form.confirmPassword) { setError("Passwords don't match"); return false; }
+    if (form.password.length < 5) { setError('Password must be at least 5 characters'); return false; }
+    if (!/^[\w-.]+@([\w-]+\.)+[\w-]{2,4}$/.test(form.email)) { setError('Invalid email address'); return false; }
+    if (!/^\+?[\d\s\-()]{10,}$/.test(form.phoneno)) { setError('Invalid phone number'); return false; }
+    if (form.inviteKey && keyStatus && !keyStatus.valid) { setError('Please enter a valid invite key or leave it empty'); return false; }
     return true;
   };
 
@@ -87,461 +95,335 @@ const RegisterPage = () => {
     setError('');
     setSuccess('');
 
-    if (!validateForm()) {
-      setIsLoading(false);
-      return;
-    }
+    if (!validateForm()) { setIsLoading(false); return; }
 
     try {
       const payload = {
-        name: form.name.trim(),
-        email: form.email.trim().toLowerCase(),
+        name:    form.name.trim(),
+        email:   form.email.trim().toLowerCase(),
         phoneno: form.phoneno.trim(),
         password: form.password,
-        role: form.role
+        ...(form.inviteKey && form.inviteKey.trim() ? { inviteKey: form.inviteKey.trim().toUpperCase() } : {})
       };
 
-      if (form.role === 'team') {
-        payload.teamId = form.teamId.trim().toUpperCase();
-      }
-
-      if (form.role === 'global') {
-        payload.globalId = 'GLOBAL123';
-      }
-
-      console.log('Signup payload:', payload);
-
       const res = await axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/auth/createuser`, payload);
-      
-      if (!res.data.success) {
-        throw new Error(res.data.error || 'Signup failed');
-      }
 
-      console.log('Signup response:', res.data);
+      if (!res.data.success) throw new Error(res.data.error || 'Signup failed');
 
-      setSuccess('Account created successfully! Redirecting to login...');
-      
-      // Store token temporarily and redirect to login
-      if (res.data.token) {
-        localStorage.setItem('token', res.data.token);
+      if (res.data.pending) {
+        setSuccess(`✅ Account created! ${res.data.message}`);
+        setTimeout(() => navigate('/login'), 2500);
+      } else {
+        setSuccess('Account created successfully! Redirecting to login…');
+        setTimeout(() => navigate('/login'), 1200);
       }
-      
-      setTimeout(() => {
-        navigate('/login');
-      }, 2000);
 
     } catch (err) {
-      console.error('Signup error:', err);
       setError(err.response?.data?.error || err.message || 'Signup failed');
     } finally {
       setIsLoading(false);
     }
   };
 
-  const getRoleDescription = () => {
-    switch (form.role) {
-      case 'single':
-        return 'Create a personal account for individual use';
-      case 'team':
-        return 'Join or create a team for collaboration';
-      case 'global':
-        return 'Join the global community (Fixed ID: GLOBAL123)';
-      default:
-        return '';
-    }
-  };
+  const strengthColor  = passwordStrength >= 75 ? '#22c55e' : passwordStrength >= 50 ? '#eab308' : passwordStrength >= 25 ? '#f97316' : '#ef4444';
+  const strengthLabel  = passwordStrength >= 75 ? 'Strong' : passwordStrength >= 50 ? 'Good' : passwordStrength >= 25 ? 'Fair' : 'Weak';
 
-  const getPasswordStrengthColor = () => {
-    if (passwordStrength < 25) return 'bg-red-500';
-    if (passwordStrength < 50) return 'bg-orange-500';
-    if (passwordStrength < 75) return 'bg-yellow-500';
-    return 'bg-green-500';
-  };
-
-  const getPasswordStrengthText = () => {
-    if (passwordStrength < 25) return 'Weak';
-    if (passwordStrength < 50) return 'Fair';
-    if (passwordStrength < 75) return 'Good';
-    return 'Strong';
-  };
-
-  // Show loading screen while checking auth
   if (loading) {
     return (
       <div className="register-bg flex items-center justify-center">
-        <div className="text-white text-center">
-          <CircularProgress sx={{ color: 'white', mb: 2 }} />
-          <div>Loading...</div>
-        </div>
+        <div className="w-10 h-10 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
 
-  const cardVariants = {
-    initial: { opacity: 0, scale: 0.9, y: 50 },
-    animate: { opacity: 1, scale: 1, y: 0 },
-    hover: { scale: 1.02, rotate: 0.5 },
-  };
-
   return (
     <div className="register-bg">
       <motion.div
-        variants={cardVariants}
-        initial="initial"
-        animate="animate"
-        whileHover="hover"
-        transition={{ duration: 0.6, ease: 'easeOut' }}
-        className="card-container max-w-md mx-auto"
+        initial={{ opacity: 0, y: 30 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, ease: 'easeOut' }}
+        className="card-container w-full max-w-lg my-6"
       >
-        <h3 className="text-center text-blue-400 font-bold text-2xl mb-2">
-          Join Our Platform
-        </h3>
-        <p className="text-center text-gray-300 mb-6">Create your account to get started</p>
-
-        {error && (
-          <Alert severity="error" className="mb-4 !bg-red-900 !text-white">
-            {error}
-          </Alert>
-        )}
-
-        {success && (
-          <Alert severity="success" className="mb-4 !bg-green-900 !text-white">
-            {success}
-          </Alert>
-        )}
-
-        <form onSubmit={handleSignup} className="w-full form-content text-white space-y-4">
-          <TextField
-            type="text"
-            label="Full Name"
-            name="name"
-            required
-            fullWidth
-            value={form.name}
-            onChange={handleChange}
-            disabled={isLoading}
-            variant="outlined"
-            InputProps={{ 
-              style: { color: "white" },
-              className: "bg-gray-800/50 rounded-lg"
-            }}
-            InputLabelProps={{ style: { color: "white" } }}
-            sx={{
-              '& .MuiOutlinedInput-root': {
-                '& fieldset': { borderColor: 'rgba(255,255,255,0.3)' },
-                '&:hover fieldset': { borderColor: 'rgba(255,255,255,0.5)' },
-                '&.Mui-focused fieldset': { borderColor: '#3b82f6' },
-              }
-            }}
-          />
-
-          <TextField
-            type="email"
-            label="Email Address"
-            name="email"
-            required
-            fullWidth
-            value={form.email}
-            onChange={handleChange}
-            disabled={isLoading}
-            variant="outlined"
-            InputProps={{ 
-              style: { color: "white" },
-              className: "bg-gray-800/50 rounded-lg"
-            }}
-            InputLabelProps={{ style: { color: "white" } }}
-            sx={{
-              '& .MuiOutlinedInput-root': {
-                '& fieldset': { borderColor: 'rgba(255,255,255,0.3)' },
-                '&:hover fieldset': { borderColor: 'rgba(255,255,255,0.5)' },
-                '&.Mui-focused fieldset': { borderColor: '#3b82f6' },
-              }
-            }}
-          />
-
-          <TextField
-            type="tel"
-            label="Phone Number"
-            name="phoneno"
-            required
-            fullWidth
-            value={form.phoneno}
-            onChange={handleChange}
-            disabled={isLoading}
-            placeholder="+1234567890"
-            variant="outlined"
-            InputProps={{ 
-              style: { color: "white" },
-              className: "bg-gray-800/50 rounded-lg"
-            }}
-            InputLabelProps={{ style: { color: "white" } }}
-            sx={{
-              '& .MuiOutlinedInput-root': {
-                '& fieldset': { borderColor: 'rgba(255,255,255,0.3)' },
-                '&:hover fieldset': { borderColor: 'rgba(255,255,255,0.5)' },
-                '&.Mui-focused fieldset': { borderColor: '#3b82f6' },
-              }
-            }}
-          />
-
-          <div className="space-y-2">
-            <TextField
-              type="password"
-              label="Password"
-              name="password"
-              required
-              fullWidth
-              value={form.password}
-              onChange={handleChange}
-              disabled={isLoading}
-              variant="outlined"
-              InputProps={{ 
-                style: { color: "white" },
-                className: "bg-gray-800/50 rounded-lg"
-              }}
-              InputLabelProps={{ style: { color: "white" } }}
-              sx={{
-                '& .MuiOutlinedInput-root': {
-                  '& fieldset': { borderColor: 'rgba(255,255,255,0.3)' },
-                  '&:hover fieldset': { borderColor: 'rgba(255,255,255,0.5)' },
-                  '&.Mui-focused fieldset': { borderColor: '#3b82f6' },
-                }
-              }}
-            />
-            
-            {form.password && (
-              <div className="space-y-1">
-                <div className="flex justify-between text-xs">
-                  <span className="text-gray-400">Password strength:</span>
-                  <span className={`font-medium ${
-                    passwordStrength >= 75 ? 'text-green-400' :
-                    passwordStrength >= 50 ? 'text-yellow-400' :
-                    passwordStrength >= 25 ? 'text-orange-400' : 'text-red-400'
-                  }`}>
-                    {getPasswordStrengthText()}
-                  </span>
-                </div>
-                <div className="w-full bg-gray-700 rounded-full h-2">
-                  <div 
-                    className={`h-2 rounded-full transition-all duration-300 ${getPasswordStrengthColor()}`}
-                    style={{ width: `${passwordStrength}%` }}
-                  ></div>
-                </div>
-                <div className="text-xs text-gray-400">
-                  Include uppercase, numbers, and special characters for better security
-                </div>
-              </div>
-            )}
-          </div>
-
-          <TextField
-            type="password"
-            label="Confirm Password"
-            name="confirmPassword"
-            required
-            fullWidth
-            value={form.confirmPassword}
-            onChange={handleChange}
-            disabled={isLoading}
-            variant="outlined"
-            error={form.confirmPassword && form.password !== form.confirmPassword}
-            helperText={
-              form.confirmPassword && form.password !== form.confirmPassword 
-                ? "Passwords don't match" 
-                : ""
-            }
-            InputProps={{ 
-              style: { color: "white" },
-              className: "bg-gray-800/50 rounded-lg"
-            }}
-            InputLabelProps={{ style: { color: "white" } }}
-            FormHelperTextProps={{ style: { color: "#ef4444" } }}
-            sx={{
-              '& .MuiOutlinedInput-root': {
-                '& fieldset': { borderColor: 'rgba(255,255,255,0.3)' },
-                '&:hover fieldset': { borderColor: 'rgba(255,255,255,0.5)' },
-                '&.Mui-focused fieldset': { borderColor: '#3b82f6' },
-                '&.Mui-error fieldset': { borderColor: '#ef4444' },
-              }
-            }}
-          />
-
-          {/* ENHANCED ROLE SELECTION */}
-          <div className="space-y-3">
-            <label className="block text-white font-medium">Choose Your Account Type:</label>
-            <div className="grid grid-cols-1 gap-3">
-              {[
-                { 
-                  value: 'single', 
-                  label: 'Personal Account', 
-                  icon: '👤', 
-                  desc: 'Perfect for individual use and personal projects',
-                  color: 'blue'
-                },
-                { 
-                  value: 'team', 
-                  label: 'Team Account', 
-                  icon: '👥', 
-                  desc: 'Collaborate with your team members',
-                  color: 'green'
-                },
-                { 
-                  value: 'global', 
-                  label: 'Global Community', 
-                  icon: '🌍', 
-                  desc: 'Join the worldwide community',
-                  color: 'purple'
-                }
-              ].map((role) => (
-                <label
-                  key={role.value}
-                  className={`flex items-center p-4 rounded-xl border-2 cursor-pointer transition-all duration-200 ${
-                    form.role === role.value
-                      ? `border-${role.color}-500 bg-${role.color}-900/30 shadow-lg`
-                      : 'border-gray-600 bg-gray-800/30 hover:border-gray-500 hover:bg-gray-800/50'
-                  }`}
-                >
-                  <input
-                    type="radio"
-                    name="role"
-                    value={role.value}
-                    checked={form.role === role.value}
-                    onChange={handleChange}
-                    disabled={isLoading}
-                    className="sr-only"
-                  />
-                  <span className="text-3xl mr-4">{role.icon}</span>
-                  <div className="flex-1">
-                    <div className="text-white font-semibold text-lg">{role.label}</div>
-                    <div className="text-gray-400 text-sm">{role.desc}</div>
-                  </div>
-                  {form.role === role.value && (
-                    <div className={`w-4 h-4 rounded-full bg-${role.color}-500`}></div>
-                  )}
-                </label>
-              ))}
+        {/* Brand Logo & Header */}
+        <div className="text-center mb-6">
+          <Link to="/" className="inline-flex items-center gap-2 mb-4 group">
+            <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white font-black text-xl shadow-lg shadow-blue-600/30 group-hover:scale-105 transition-transform">
+              M
             </div>
-            
-            <div className="text-sm text-gray-400 bg-gray-800/30 p-3 rounded-lg border border-gray-700">
-              <div className="font-medium text-gray-300 mb-1">Selected: {getRoleDescription()}</div>
-            </div>
-          </div>
+            <span className="text-xl font-extrabold tracking-tight text-white">Milapp</span>
+          </Link>
+          <h1 className="text-2xl font-bold text-white tracking-tight">Create Workspace Account</h1>
+          <p className="text-slate-400 text-xs sm:text-sm mt-1">Start collaborating with your team in seconds</p>
+        </div>
 
-          {/* TEAM ID INPUT */}
-          {form.role === 'team' && (
-            <div className="space-y-2">
-              <TextField
+        {/* Alerts */}
+        <AnimatePresence>
+          {error && (
+            <motion.div
+              initial={{ opacity: 0, y: -6 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -6 }}
+              className="mb-4 p-3 rounded-xl bg-red-500/15 border border-red-500/30 flex items-start gap-2.5 text-red-300 text-xs font-medium"
+            >
+              <AlertCircle className="w-4 h-4 flex-shrink-0 text-red-400 mt-0.5" />
+              <span>{error}</span>
+            </motion.div>
+          )}
+          {success && (
+            <motion.div
+              initial={{ opacity: 0, y: -6 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="mb-4 p-3 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-start gap-2.5 text-emerald-300 text-xs font-medium"
+            >
+              <CheckCircle className="w-4 h-4 flex-shrink-0 text-emerald-400 mt-0.5" />
+              <span>{success}</span>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        <form onSubmit={handleSignup} className="space-y-3.5">
+          {/* Full Name */}
+          <div>
+            <label className="block text-xs font-semibold text-slate-300 mb-1.5">Full Name</label>
+            <div className="relative">
+              <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+              <input
                 type="text"
-                label="Team ID"
-                name="teamId"
-                required
-                fullWidth
-                value={form.teamId}
+                name="name"
+                value={form.name}
                 onChange={handleChange}
                 disabled={isLoading}
-                placeholder="Enter 5-character Team ID"
-                variant="outlined"
-                inputProps={{ maxLength: 5, style: { textTransform: 'uppercase' } }}
-                InputProps={{ 
-                  style: { color: 'white' },
-                  className: "bg-gray-800/50 rounded-lg"
-                }}
-                InputLabelProps={{ style: { color: 'white' } }}
-                sx={{
-                  '& .MuiOutlinedInput-root': {
-                    '& fieldset': { borderColor: 'rgba(255,255,255,0.3)' },
-                    '&:hover fieldset': { borderColor: 'rgba(255,255,255,0.5)' },
-                    '&.Mui-focused fieldset': { borderColor: '#10b981' },
+                placeholder="e.g., Shashi Pratap Singh"
+                required
+                className="w-full pl-10 pr-4 py-2.5 sm:py-3 bg-slate-900/90 border border-slate-700/80 rounded-xl text-white placeholder-slate-500 text-xs sm:text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/50 transition-all shadow-inner"
+              />
+            </div>
+          </div>
+
+          {/* Email Address & Phone Number (Side by side on larger screens) */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+            <div>
+              <label className="block text-xs font-semibold text-slate-300 mb-1.5">Email Address</label>
+              <div className="relative">
+                <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                <input
+                  type="email"
+                  name="email"
+                  value={form.email}
+                  onChange={handleChange}
+                  disabled={isLoading}
+                  placeholder="you@company.com"
+                  required
+                  autoComplete="email"
+                  className="w-full pl-10 pr-4 py-2.5 sm:py-3 bg-slate-900/90 border border-slate-700/80 rounded-xl text-white placeholder-slate-500 text-xs sm:text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/50 transition-all shadow-inner"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-slate-300 mb-1.5">Phone Number</label>
+              <div className="relative">
+                <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                <input
+                  type="tel"
+                  name="phoneno"
+                  value={form.phoneno}
+                  onChange={handleChange}
+                  disabled={isLoading}
+                  placeholder="+91 98765 43210"
+                  required
+                  className="w-full pl-10 pr-4 py-2.5 sm:py-3 bg-slate-900/90 border border-slate-700/80 rounded-xl text-white placeholder-slate-500 text-xs sm:text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/50 transition-all shadow-inner"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Password & Confirm Password */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+            <div>
+              <label className="block text-xs font-semibold text-slate-300 mb-1.5">Password</label>
+              <div className="relative">
+                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                <input
+                  type={showPass ? 'text' : 'password'}
+                  name="password"
+                  value={form.password}
+                  onChange={handleChange}
+                  disabled={isLoading}
+                  placeholder="Min 5 characters"
+                  required
+                  className="w-full pl-10 pr-10 py-2.5 sm:py-3 bg-slate-900/90 border border-slate-700/80 rounded-xl text-white placeholder-slate-500 text-xs sm:text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/50 transition-all shadow-inner"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPass(!showPass)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 p-1"
+                >
+                  {showPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+              {form.password && (
+                <div className="mt-1.5 space-y-1">
+                  <div className="w-full bg-slate-800 rounded-full h-1.5 overflow-hidden">
+                    <div className="h-full rounded-full transition-all duration-300" style={{ width: `${passwordStrength}%`, backgroundColor: strengthColor }} />
+                  </div>
+                  <div className="text-[10px] font-bold" style={{ color: strengthColor }}>{strengthLabel} Strength</div>
+                </div>
+              )}
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-slate-300 mb-1.5">Confirm Password</label>
+              <div className="relative">
+                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                <input
+                  type={showConfirm ? 'text' : 'password'}
+                  name="confirmPassword"
+                  value={form.confirmPassword}
+                  onChange={handleChange}
+                  disabled={isLoading}
+                  placeholder="Re-enter password"
+                  required
+                  className={`w-full pl-10 pr-10 py-2.5 sm:py-3 bg-slate-900/90 border rounded-xl text-white placeholder-slate-500 text-xs sm:text-sm focus:outline-none transition-all shadow-inner ${
+                    form.confirmPassword && form.password !== form.confirmPassword
+                      ? 'border-red-500/60 focus:border-red-500'
+                      : 'border-slate-700/80 focus:border-blue-500'
+                  }`}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirm(!showConfirm)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 p-1"
+                >
+                  {showConfirm ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+              {form.confirmPassword && form.password !== form.confirmPassword && (
+                <p className="text-[10px] text-red-400 mt-1">Passwords do not match</p>
+              )}
+            </div>
+          </div>
+
+          {/* ── Invite Key (Optional, Collapsible) ────────────────── */}
+          {!urlKey && (
+            <div className="pt-1">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowKeyField(!showKeyField);
+                  if (showKeyField) {
+                    setForm((f) => ({ ...f, inviteKey: '' }));
+                    setKeyStatus(null);
                   }
                 }}
-              />
-              <div className="text-xs text-gray-400 bg-green-900/20 p-2 rounded border border-green-700/30">
-                Team ID must be exactly 5 characters using letters, numbers, underscore (_), or at symbol (@)
-              </div>
+                className="flex items-center gap-1.5 text-xs text-blue-400 hover:text-blue-300 font-semibold transition-colors"
+              >
+                <Key className="w-3.5 h-3.5" />
+                <span>{showKeyField ? 'Remove team invite key' : 'Have a team invite key? (Click here)'}</span>
+              </button>
             </div>
           )}
 
-          {/* GLOBAL ID DISPLAY */}
-          {form.role === 'global' && (
-            <div className="space-y-2">
-              <TextField
-                type="text"
-                label="Global Community ID"
-                value="GLOBAL123"
-                fullWidth
-                disabled
-                variant="outlined"
-                InputProps={{ 
-                  readOnly: true, 
-                  style: { color: 'white' },
-                  className: "bg-purple-900/30 rounded-lg"
-                }}
-                InputLabelProps={{ style: { color: 'white' } }}
-                sx={{
-                  '& .MuiOutlinedInput-root': {
-                    '& fieldset': { borderColor: 'rgba(147, 51, 234, 0.5)' },
-                  }
-                }}
-              />
-              <div className="text-xs text-gray-400 bg-purple-900/20 p-2 rounded border border-purple-700/30">
-                This ID connects you to the global community of users worldwide
-              </div>
-            </div>
-          )}
+          <AnimatePresence>
+            {showKeyField && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                className="pt-1"
+              >
+                <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+                  Team Invite Key
+                  {urlKey && <span className="ml-2 text-blue-400 font-normal">(Auto-filled from magic link)</span>}
+                </label>
+                <div className="relative">
+                  <Key className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                  <input
+                    type="text"
+                    name="inviteKey"
+                    value={form.inviteKey}
+                    onChange={handleChange}
+                    disabled={isLoading || !!urlKey}
+                    placeholder="e.g., 8-character Key"
+                    maxLength={8}
+                    className={`w-full pl-10 pr-10 py-2.5 sm:py-3 bg-slate-900/90 border rounded-xl text-white placeholder-slate-500 text-xs sm:text-sm font-mono tracking-widest uppercase focus:outline-none transition-all shadow-inner ${
+                      keyStatus === null || keyStatus === 'checking'
+                        ? 'border-slate-700/80 focus:border-blue-500'
+                        : keyStatus.valid
+                        ? 'border-emerald-500/60 bg-emerald-500/5'
+                        : 'border-red-500/60 bg-red-500/5'
+                    }`}
+                  />
+                  <div className="absolute right-3.5 top-1/2 -translate-y-1/2">
+                    {keyStatus === 'checking' && (
+                      <div className="w-4 h-4 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" />
+                    )}
+                    {keyStatus && keyStatus !== 'checking' && keyStatus.valid && (
+                      <CheckCircle className="w-4 h-4 text-emerald-400" />
+                    )}
+                    {keyStatus && keyStatus !== 'checking' && !keyStatus.valid && (
+                      <AlertCircle className="w-4 h-4 text-red-400" />
+                    )}
+                  </div>
+                </div>
+                {keyStatus && keyStatus !== 'checking' && (
+                  <p className={`text-[11px] font-semibold mt-1.5 ${keyStatus.valid ? 'text-emerald-400' : 'text-red-400'}`}>
+                    {keyStatus.valid ? `✅ Valid Invite! Joining team "${keyStatus.teamName}"` : `❌ ${keyStatus.error}`}
+                  </p>
+                )}
+                <p className="text-[10px] text-slate-500 mt-1">
+                  Leave blank if you want to create a standard personal workspace.
+                </p>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
-          <Button 
-            type="submit" 
-            fullWidth
-            disabled={isLoading || (form.password && form.password !== form.confirmPassword)}
-            className="!bg-gradient-to-r !from-blue-600 !to-blue-700 !text-white !py-3 !mt-6 !rounded-lg !font-semibold !text-lg hover:!from-blue-700 hover:!to-blue-800 !transition-all !duration-200 !shadow-lg hover:!shadow-xl disabled:!opacity-50"
+          {/* Submit Button */}
+          <button
+            type="submit"
+            disabled={isLoading || Boolean(form.confirmPassword && form.password !== form.confirmPassword)}
+            className="w-full py-3.5 px-4 rounded-xl font-bold text-xs sm:text-sm text-white bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg shadow-blue-600/30 flex items-center justify-center gap-2 transform active:scale-[0.98] mt-2"
           >
             {isLoading ? (
-              <div className="flex items-center gap-2">
-                <CircularProgress size={20} sx={{ color: 'white' }} />
-                Creating Account...
-              </div>
+              <>
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                <span>Creating Workspace Account…</span>
+              </>
             ) : (
-              'Create Account'
+              <>
+                <span>Create Free Workspace</span>
+                <ArrowRight className="w-4 h-4" />
+              </>
             )}
-          </Button>
-
-          <p className="text-center mt-4 text-gray-300">
-            Already have an account?{' '}
-            <Link 
-              className="text-blue-400 hover:text-blue-300 transition font-medium" 
-              to="/login"
-            >
-              Sign In
-            </Link>
-          </p>
-
+          </button>
         </form>
 
-        {/* ROLE INFO SECTION */}
-        <div className="mt-6 p-4 bg-gray-800/30 rounded-lg border border-gray-700">
-          <h4 className="text-white font-semibold mb-3">Account Types:</h4>
-          <div className="space-y-2 text-sm">
-            <div className="flex items-center gap-2">
-              <span>👤</span>
-              <span className="text-gray-300"><strong>Personal:</strong> Individual workspace and private messaging</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span>👥</span>
-              <span className="text-gray-300"><strong>Team:</strong> Collaborate with specific team members</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span>🌍</span>
-              <span className="text-gray-300"><strong>Global:</strong> Connect with users worldwide</span>
-            </div>
-          </div>
+        {/* Divider */}
+        <div className="flex items-center gap-3 my-5">
+          <div className="flex-1 h-px bg-slate-800" />
+          <span className="text-[11px] font-medium text-slate-500 uppercase tracking-wider">or</span>
+          <div className="flex-1 h-px bg-slate-800" />
         </div>
 
-        {/* SECURITY NOTICE */}
-        <div className="mt-4 p-3 bg-blue-900/20 rounded-lg border border-blue-700/30">
-          <div className="text-xs text-blue-300">
-            <strong>Security Notice:</strong> Your data is encrypted and secure. We never share your personal information.
-          </div>
-        </div>
+        {/* Google OAuth Register */}
+        <button
+          type="button"
+          onClick={() => { 
+            const keyParam = form.inviteKey && form.inviteKey.trim() ? `?inviteKey=${encodeURIComponent(form.inviteKey.trim().toUpperCase())}` : '';
+            window.location.href = `${import.meta.env.VITE_BACKEND_URL}/api/auth/google${keyParam}`; 
+          }}
+          className="w-full py-3 px-4 rounded-xl font-semibold text-xs sm:text-sm text-slate-200 bg-slate-900/90 border border-slate-700/80 hover:bg-slate-800 hover:text-white hover:border-slate-600 transition-all flex items-center justify-center gap-2.5 shadow-sm"
+        >
+          <FcGoogle className="w-5 h-5" />
+          <span>Sign up with Google</span>
+        </button>
+
+        <p className="text-center text-slate-400 text-xs mt-6">
+          Already have an account?{' '}
+          <Link to="/login" className="text-blue-400 hover:text-blue-300 font-bold transition-colors">
+            Sign in
+          </Link>
+        </p>
       </motion.div>
     </div>
   );

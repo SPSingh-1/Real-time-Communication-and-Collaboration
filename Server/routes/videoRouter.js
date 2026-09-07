@@ -214,10 +214,10 @@ router.put('/role-meetings/:roomName/heartbeat', verifyToken, async (req, res) =
     }
 });
 
-// --- 1. Endpoint to initiate Google OAuth login ---
-router.get('/auth/google', (req, res) => {
+// --- 1. Endpoint to initiate Google Meet OAuth login ---
+router.get('/auth/google-meet', (req, res) => {
     if (!oauth2Client) {
-        return res.status(500).json({ error: 'Google OAuth client not initialized. Check server configuration (e.g., .env variables).' });
+        return res.status(500).json({ error: 'Google Meet OAuth client not initialized.' });
     }
     const authorizeUrl = oauth2Client.generateAuthUrl({
         access_type: 'offline',

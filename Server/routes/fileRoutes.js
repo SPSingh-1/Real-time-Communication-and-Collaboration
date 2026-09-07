@@ -201,23 +201,65 @@ fileRouter.get('/stats', fetchUser, async (req, res) => {
   }
 });
 
-// GET /files/test - Test endpoint for debugging authentication
-fileRouter.get('/test', fetchUser, async (req, res) => {
+import axios from 'axios';
+
+// GET /files/view/:id - Stream file directly to browser for preview
+fileRouter.get('/view/:id', async (req, res) => {
   try {
-    res.json({
-      message: 'Authentication successful',
-      user: {
-        id: req.user.id,
-        name: req.user.name,
-        role: req.user.role,
-        teamId: req.user.teamId
-      },
-      jwtSecretAvailable: !!process.env.JWT_SECRET,
-      timestamp: new Date().toISOString()
-    });
+    const file = await FileModel.findById(req.params.id);
+    if (!file) return res.status(404).send('File not found');
+
+    let streamUrl = file.fileUrl;
+    if (streamUrl.includes('res.cloudinary.com')) {
+      if (streamUrl.includes('/image/upload/')) {
+        streamUrl = streamUrl.replace('/image/upload/', '/image/upload/fl_attachment/');
+      } else if (streamUrl.includes('/raw/upload/')) {
+        streamUrl = streamUrl.replace('/raw/upload/', '/raw/upload/fl_attachment/');
+      }
+    }
+
+    const response = await axios.get(streamUrl, { responseType: 'stream' });
+    res.setHeader('Content-Type', file.mimetype || 'application/pdf');
+    res.setHeader('Content-Disposition', `inline; filename="${encodeURIComponent(file.filename)}"`);
+    response.data.pipe(res);
   } catch (err) {
-    console.error('❌ Test endpoint error:', err);
-    res.status(500).json({ error: 'Test failed', details: err.message });
+    console.error('❌ Direct file stream error:', err.message);
+    const file = await FileModel.findById(req.params.id);
+    if (file && file.fileUrl) {
+      res.redirect(file.fileUrl);
+    } else {
+      res.status(500).send('Unable to load file preview');
+    }
+  }
+});
+
+// GET /files/download/:id - Direct download with correct filename
+fileRouter.get('/download/:id', async (req, res) => {
+  try {
+    const file = await FileModel.findById(req.params.id);
+    if (!file) return res.status(404).send('File not found');
+
+    let streamUrl = file.fileUrl;
+    if (streamUrl.includes('res.cloudinary.com')) {
+      if (streamUrl.includes('/image/upload/')) {
+        streamUrl = streamUrl.replace('/image/upload/', '/image/upload/fl_attachment/');
+      } else if (streamUrl.includes('/raw/upload/')) {
+        streamUrl = streamUrl.replace('/raw/upload/', '/raw/upload/fl_attachment/');
+      }
+    }
+
+    const response = await axios.get(streamUrl, { responseType: 'stream' });
+    res.setHeader('Content-Type', file.mimetype || 'application/octet-stream');
+    res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(file.filename)}"`);
+    response.data.pipe(res);
+  } catch (err) {
+    console.error('❌ Direct file download error:', err.message);
+    const file = await FileModel.findById(req.params.id);
+    if (file && file.fileUrl) {
+      res.redirect(file.fileUrl);
+    } else {
+      res.status(500).send('Unable to download file');
+    }
   }
 });
 

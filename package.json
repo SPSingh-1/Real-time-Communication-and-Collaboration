@@ -1,0 +1,15 @@
+{
+  "name": "real-time-communication-and-collaboration",
+  "version": "1.0.0",
+  "description": "Real-time Communication and Collaboration Platform",
+  "scripts": {
+    "dev": "concurrently --kill-others-on-fail --prefix-colors \"bgBlue.bold,bgGreen.bold\" --prefix \"[{name}]\" --names \"CLIENT,SERVER\" \"npm run dev --prefix Client\" \"npm start --prefix Server\"",
+    "client": "npm run dev --prefix Client",
+    "server": "npm start --prefix Server",
+    "install:all": "npm install --prefix Client && npm install --legacy-peer-deps --prefix Server",
+    "build": "npm run build --prefix Client"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  }
+}

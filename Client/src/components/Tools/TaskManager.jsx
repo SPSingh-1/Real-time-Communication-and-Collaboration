@@ -230,315 +230,84 @@ const TaskManager = () => {
     const roleInfo = getRoleDisplayInfo();
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 relative overflow-hidden">
-            {/* Animated 3D Background Elements */}
-            <div className="absolute inset-0 overflow-hidden">
-                {/* Floating geometric shapes - responsive sizing */}
-                <div className="absolute top-10 left-2 sm:left-10 w-12 h-12 sm:w-20 sm:h-20 bg-gradient-to-r from-cyan-400 to-blue-500 rounded-lg opacity-20 animate-spin-slow transform-gpu"></div>
-                <div className="absolute top-20 right-4 sm:right-20 w-8 h-8 sm:w-16 sm:h-16 bg-gradient-to-r from-purple-400 to-pink-500 rounded-full opacity-30 animate-bounce-slow transform-gpu"></div>
-                <div className="absolute bottom-20 left-1/4 w-6 h-6 sm:w-12 sm:h-12 bg-gradient-to-r from-emerald-400 to-teal-500 rounded-lg opacity-25 animate-pulse transform-gpu"></div>
-                <div className="absolute top-1/2 right-2 sm:right-10 w-12 h-12 sm:w-24 sm:h-24 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full opacity-20 animate-ping transform-gpu"></div>
-                
-                {/* Large background orbs - hidden on mobile for performance */}
-                <div className="hidden sm:block absolute -top-40 -left-40 w-96 h-96 bg-gradient-to-br from-cyan-500/10 to-blue-500/10 rounded-full blur-3xl animate-pulse transform-gpu"></div>
-                <div className="hidden sm:block absolute -bottom-40 -right-40 w-96 h-96 bg-gradient-to-br from-purple-500/10 to-pink-500/10 rounded-full blur-3xl animate-pulse delay-1000 transform-gpu"></div>
-                <div className="hidden lg:block absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-80 h-80 bg-gradient-to-br from-emerald-500/10 to-teal-500/10 rounded-full blur-3xl animate-pulse delay-500 transform-gpu"></div>
-            </div>
-
-            {/* Floating particles - reduced count on mobile */}
-            <div className="absolute inset-0 pointer-events-none">
-                {[...Array(window.innerWidth < 768 ? 10 : 20)].map((_, i) => (
-                    <div
-                        key={i}
-                        className="absolute w-1 h-1 sm:w-2 sm:h-2 bg-white/40 rounded-full animate-float-3d transform-gpu"
-                        style={{
-                            left: `${Math.random() * 100}%`,
-                            top: `${Math.random() * 100}%`,
-                            animationDelay: `${Math.random() * 5}s`,
-                            animationDuration: `${3 + Math.random() * 4}s`
-                        }}
-                    ></div>
-                ))}
-            </div>
-
-            <div className="relative z-10 p-3 sm:p-4 lg:p-6 max-w-7xl mx-auto">
-                {/* 3D Container with perspective - responsive padding and border radius */}
-                <div 
-                    className="bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-xl rounded-2xl lg:rounded-3xl border border-white/20 shadow-2xl mb-4 lg:mb-6 transform-gpu transition-all duration-1000 hover:scale-[1.01] lg:hover:scale-[1.02] hover:rotate-x-2"
-                    style={{
-                        transformStyle: 'preserve-3d',
-                        perspective: '1000px'
-                    }}
-                >
-                    {/* Glowing border effect */}
-                    <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/20 via-purple-500/20 to-pink-500/20 rounded-2xl lg:rounded-3xl blur-xl animate-pulse-glow"></div>
+        <div className="min-h-full bg-slate-950 text-slate-100 p-4 sm:p-6 max-w-7xl mx-auto">
+            {/* Header Card */}
+            <div className="bg-slate-900 border border-slate-800 rounded-xl p-4 sm:p-6 mb-6">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                    <div>
+                        <h2 className="text-xl sm:text-2xl font-bold text-white mb-1">
+                            Task Manager
+                        </h2>
+                        <p className="text-slate-400 text-xs sm:text-sm">Create, track, and manage workspace assignments</p>
+                    </div>
                     
-                    <div className="relative z-10 p-4 sm:p-6">
-                        {/* Enhanced 3D Header with Role Information - responsive layout */}
-                        <div className="mb-4 lg:mb-6 transform-gpu transition-all duration-700 hover:translate-z-4">
-                            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                                <div className="text-center sm:text-left">
-                                    <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400 text-transparent bg-clip-text mb-2 animate-text-shimmer">
-                                        🚀 Task Manager
-                                    </h2>
-                                    <div className="h-1 w-20 sm:w-24 lg:w-32 bg-gradient-to-r from-cyan-400 to-purple-400 rounded-full animate-width-expand mx-auto sm:mx-0"></div>
-                                </div>
-                                
-                                {/* Role Badge - responsive sizing */}
-                                <div className="flex items-center justify-center sm:justify-end space-x-3 lg:space-x-4">
-                                    <div className="text-center sm:text-right">
-                                        <div className="text-xs sm:text-sm text-white/60">Welcome back,</div>
-                                        <div className="text-sm sm:text-lg font-bold text-white/90 truncate max-w-32 sm:max-w-none">{currentUser.name}</div>
-                                    </div>
-                                    <div className={`px-3 py-2 lg:px-4 lg:py-2 rounded-xl bg-gradient-to-r ${roleInfo.color} text-white font-bold shadow-lg transform-gpu transition-all duration-500 hover:scale-110 hover:rotate-y-6`}>
-                                        <div className="flex items-center space-x-2">
-                                            <span className="text-base lg:text-lg">{roleInfo.icon}</span>
-                                            <span className="text-xs sm:text-sm lg:text-base">{roleInfo.label} Mode</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
+                    {/* Role & User Info */}
+                    <div className="flex items-center gap-3">
+                        <div className="text-left sm:text-right">
+                            <div className="text-xs text-slate-400">Welcome,</div>
+                            <div className="text-sm font-semibold text-white truncate max-w-xs">{currentUser.name}</div>
                         </div>
-
-                        {/* Role-based Information Panel - responsive text */}
-                        <div className="mb-4 lg:mb-6 p-3 lg:p-4 bg-gradient-to-r from-white/10 to-white/5 rounded-xl lg:rounded-2xl border border-white/20 transform-gpu transition-all duration-500 hover:scale-105">
-                            <div className="text-xs sm:text-sm text-white/70">
-                                {currentUser.role === 'single' && (
-                                    <div className="flex items-center space-x-2">
-                                        <span>📝</span>
-                                        <span>You can create and manage your personal tasks</span>
-                                    </div>
-                                )}
-                                {currentUser.role === 'team' && (
-                                    <div className="flex items-center space-x-2">
-                                        <span>👥</span>
-                                        <span>You can create and manage tasks for your team {currentUser.teamId ? `(Team ID: ${currentUser.teamId})` : ''}</span>
-                                    </div>
-                                )}
-                                {currentUser.role === 'global' && (
-                                    <div className="flex items-center space-x-2">
-                                        <span>🌍</span>
-                                        <span>You can create and manage global organization tasks {currentUser.globalId ? `(Global ID: ${currentUser.globalId})` : ''}</span>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-
-                        {/* 3D Navigation Buttons - responsive positioning */}
-                        <div className="flex justify-center sm:justify-end mb-4 lg:mb-6">
-                            {currentView === 'list' && (
-                                <button
-                                    onClick={handleAddTaskClick}
-                                    className="group relative px-4 py-3 lg:px-8 lg:py-4 bg-gradient-to-r from-emerald-500 to-teal-500 text-white rounded-xl lg:rounded-2xl shadow-2xl hover:shadow-emerald-500/50 transform-gpu transition-all duration-500 hover:scale-110 hover:rotate-y-12 focus:outline-none focus:ring-4 focus:ring-emerald-500/50"
-                                    style={{ transformStyle: 'preserve-3d' }}
-                                >
-                                    <div className="absolute inset-0 bg-gradient-to-r from-emerald-600 to-teal-600 rounded-xl lg:rounded-2xl transform translate-z-[-4px] group-hover:translate-z-[-8px] transition-transform duration-500"></div>
-                                    <div className="relative z-10 font-bold flex items-center space-x-2">
-                                        <span className="text-lg lg:text-xl">✨</span>
-                                        <span className="text-sm lg:text-base">Add New {roleInfo.label} Task</span>
-                                    </div>
-                                    <div className="absolute inset-0 bg-white/20 rounded-xl lg:rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                                </button>
-                            )}
-                            
-                            {currentView === 'form' && (
-                                <button
-                                    onClick={handleBackToListClick}
-                                    className="group relative px-4 py-3 lg:px-8 lg:py-4 bg-gradient-to-r from-gray-600 to-gray-700 text-white rounded-xl lg:rounded-2xl shadow-2xl hover:shadow-gray-500/50 transform-gpu transition-all duration-500 hover:scale-110 hover:rotate-y-12 focus:outline-none focus:ring-4 focus:ring-gray-500/50"
-                                    style={{ transformStyle: 'preserve-3d' }}
-                                >
-                                    <div className="absolute inset-0 bg-gradient-to-r from-gray-700 to-gray-800 rounded-xl lg:rounded-2xl transform translate-z-[-4px] group-hover:translate-z-[-8px] transition-transform duration-500"></div>
-                                    <div className="relative z-10 font-bold flex items-center space-x-2">
-                                        <span className="text-lg lg:text-xl">⬅️</span>
-                                        <span className="text-sm lg:text-base">Back to Task List</span>
-                                    </div>
-                                    <div className="absolute inset-0 bg-white/20 rounded-xl lg:rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                                </button>
-                            )}
-                        </div>
-                        
-                        {/* 3D Content Container with transition effects - responsive */}
-                        <div 
-                            className={`transform-gpu transition-all duration-1000 ${
-                                currentView === 'form' 
-                                    ? 'translate-x-0 rotate-y-0 opacity-100' 
-                                    : 'translate-x-0 rotate-y-0 opacity-100'
-                            }`}
-                            style={{ 
-                                transformStyle: 'preserve-3d',
-                                perspective: '1000px'
-                            }}
-                        >
-                            {/* Conditional Rendering of TaskForm or TaskList with 3D effects */}
-                            {currentView === 'form' ? (
-                                <div className="transform-gpu transition-all duration-1000 animate-slide-in-right">
-                                    <TaskForm
-                                        task={editingTask}
-                                        onSave={handleSaveTask}
-                                        onCancel={handleBackToListClick}
-                                        currentUser={currentUser}
-                                    />
-                                </div>
-                            ) : (
-                                <div className="transform-gpu transition-all duration-1000 animate-slide-in-left">
-                                    <TaskList
-                                        tasks={tasks}
-                                        onEdit={handleEditTaskClick}
-                                        onDelete={handleDeleteTask}
-                                        currentUser={currentUser}
-                                    />
-                                </div>
-                            )}
+                        <div className="px-3 py-1.5 rounded-lg bg-blue-600/20 border border-blue-500/30 text-blue-400 text-xs font-semibold flex items-center gap-1.5">
+                            <span>{roleInfo.icon}</span>
+                            <span>{roleInfo.label} Mode</span>
                         </div>
                     </div>
                 </div>
+
+                {/* Role Description Panel */}
+                <div className="mt-4 pt-4 border-t border-slate-800/80 text-xs text-slate-400">
+                    {currentUser.role === 'single' && (
+                        <span>📝 Personal workspace mode: manage your individual tasks.</span>
+                    )}
+                    {currentUser.role === 'team' && (
+                        <span>👥 Team workspace mode: manage tasks for your team {currentUser.teamId ? `(Team ID: ${currentUser.teamId})` : ''}.</span>
+                    )}
+                    {currentUser.role === 'global' && (
+                        <span>🌍 Organization workspace mode: manage global organization tasks.</span>
+                    )}
+                </div>
+
+                {/* Action Bar */}
+                <div className="mt-4 flex justify-end">
+                    {currentView === 'list' && (
+                        <button
+                            onClick={handleAddTaskClick}
+                            className="bg-blue-600 hover:bg-blue-700 text-white font-medium text-xs sm:text-sm px-4 py-2 rounded-lg transition-colors flex items-center gap-2"
+                        >
+                            <span>+</span>
+                            <span>Add New {roleInfo.label} Task</span>
+                        </button>
+                    )}
+                    {currentView === 'form' && (
+                        <button
+                            onClick={handleBackToListClick}
+                            className="bg-slate-800 hover:bg-slate-700 text-slate-200 font-medium text-xs sm:text-sm px-4 py-2 rounded-lg transition-colors flex items-center gap-2"
+                        >
+                            <span>←</span>
+                            <span>Back to Task List</span>
+                        </button>
+                    )}
+                </div>
             </div>
 
-            <style>{`
-                @keyframes spin-slow {
-                    from { transform: rotate(0deg) rotateY(0deg); }
-                    to { transform: rotate(360deg) rotateY(360deg); }
-                }
-                @keyframes bounce-slow {
-                    0%, 100% { 
-                        transform: translateY(0px) rotateX(0deg) scale(1); 
-                        opacity: 0.3; 
-                    }
-                    50% { 
-                        transform: translateY(-20px) rotateX(180deg) scale(1.1); 
-                        opacity: 0.6; 
-                    }
-                }
-                @keyframes float-3d {
-                    0%, 100% { 
-                        transform: translateY(0px) translateX(0px) rotateZ(0deg) rotateY(0deg); 
-                        opacity: 0.4; 
-                    }
-                    25% { 
-                        transform: translateY(-10px) translateX(5px) rotateZ(90deg) rotateY(90deg); 
-                        opacity: 0.8; 
-                    }
-                    50% { 
-                        transform: translateY(-20px) translateX(0px) rotateZ(180deg) rotateY(180deg); 
-                        opacity: 1; 
-                    }
-                    75% { 
-                        transform: translateY(-10px) translateX(-5px) rotateZ(270deg) rotateY(270deg); 
-                        opacity: 0.8; 
-                    }
-                }
-                @keyframes pulse-glow {
-                    0%, 100% { opacity: 0.3; transform: scale(1); }
-                    50% { opacity: 0.6; transform: scale(1.05); }
-                }
-                @keyframes text-shimmer {
-                    0% { background-position: -200% center; }
-                    100% { background-position: 200% center; }
-                }
-                @keyframes width-expand {
-                    0% { width: 0; opacity: 0; }
-                    100% { width: 5rem; opacity: 1; }
-                }
-                @media (min-width: 640px) {
-                    @keyframes width-expand {
-                        0% { width: 0; opacity: 0; }
-                        100% { width: 6rem; opacity: 1; }
-                    }
-                }
-                @media (min-width: 1024px) {
-                    @keyframes width-expand {
-                        0% { width: 0; opacity: 0; }
-                        100% { width: 8rem; opacity: 1; }
-                    }
-                }
-                @keyframes slide-in-right {
-                    from { 
-                        transform: translateX(50%) rotateY(45deg) scale(0.9); 
-                        opacity: 0; 
-                    }
-                    to { 
-                        transform: translateX(0) rotateY(0deg) scale(1); 
-                        opacity: 1; 
-                    }
-                }
-                @keyframes slide-in-left {
-                    from { 
-                        transform: translateX(-50%) rotateY(-45deg) scale(0.9); 
-                        opacity: 0; 
-                    }
-                    to { 
-                        transform: translateX(0) rotateY(0deg) scale(1); 
-                        opacity: 1; 
-                    }
-                }
-                @keyframes rotate-y-12 {
-                    to { transform: rotateY(12deg); }
-                }
-                
-                .animate-spin-slow {
-                    animation: spin-slow 8s linear infinite;
-                }
-                .animate-bounce-slow {
-                    animation: bounce-slow 4s ease-in-out infinite;
-                }
-                .animate-float-3d {
-                    animation: float-3d 6s ease-in-out infinite;
-                }
-                .animate-pulse-glow {
-                    animation: pulse-glow 3s ease-in-out infinite;
-                }
-                .animate-text-shimmer {
-                    background: linear-gradient(90deg, #06b6d4, #8b5cf6, #ec4899, #06b6d4);
-                    background-size: 400% 400%;
-                    animation: text-shimmer 3s ease-in-out infinite;
-                }
-                .animate-width-expand {
-                    animation: width-expand 2s ease-out forwards;
-                }
-                .animate-slide-in-right {
-                    animation: slide-in-right 1s ease-out forwards;
-                }
-                .animate-slide-in-left {
-                    animation: slide-in-left 1s ease-out forwards;
-                }
-                .hover\\:rotate-y-12:hover {
-                    animation: rotate-y-12 0.5s ease-out forwards;
-                }
-                .hover\\:rotate-y-6:hover {
-                    transform: rotateY(6deg);
-                }
-                .hover\\:translate-z-4:hover {
-                    transform: translateZ(16px);
-                }
-                .translate-z-\\[-4px\\] {
-                    transform: translateZ(-4px);
-                }
-                .group:hover .group-hover\\:translate-z-\\[-8px\\] {
-                    transform: translateZ(-8px);
-                }
-                .hover\\:rotate-x-2:hover {
-                    transform: rotateX(2deg);
-                }
-                
-                /* Mobile optimizations */
-                @media (max-width: 640px) {
-                    .hover\\:scale-110:hover,
-                    .hover\\:scale-105:hover,
-                    .hover\\:scale-\\[1\\.01\\]:hover,
-                    .hover\\:scale-\\[1\\.02\\]:hover {
-                        transform: scale(1.02);
-                    }
-                    
-                    .animate-bounce-slow,
-                    .animate-float-3d {
-                        animation-duration: 8s;
-                    }
-                    
-                    .animate-spin-slow {
-                        animation-duration: 12s;
-                    }
-                }
-            `}</style>
+            {/* Main Content Area */}
+            <div>
+                {currentView === 'form' ? (
+                    <TaskForm
+                        task={editingTask}
+                        onSave={handleSaveTask}
+                        onCancel={handleBackToListClick}
+                        currentUser={currentUser}
+                    />
+                ) : (
+                    <TaskList
+                        tasks={tasks}
+                        onEdit={handleEditTaskClick}
+                        onDelete={handleDeleteTask}
+                        currentUser={currentUser}
+                    />
+                )}
+            </div>
         </div>
     );
 };

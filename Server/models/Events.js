@@ -8,7 +8,12 @@ const EventSchema = new mongoose.Schema({
   user: { type: mongoose.Schema.Types.ObjectId, ref: 'user', required: true },
   createdAt: { type: Date, default: Date.now },
   teamId: { type: mongoose.Schema.Types.ObjectId, ref: 'Team', default: null },
-  scope: { type: String, enum: ['single', 'team', 'global'], default: 'single' }
+  scope: { type: String, enum: ['single', 'team', 'global'], default: 'single' },
+  targetType: { type: String, enum: ['all', 'specific'], default: 'all' },
+  targetUserIds: [{ type: mongoose.Schema.Types.ObjectId, ref: 'user' }],
+  isMeeting: { type: Boolean, default: false },
+  meetingRoomId: { type: String, default: '' },
+  callType: { type: String, enum: ['video', 'audio'], default: 'video' }
 }, { timestamps: true });
 
 
