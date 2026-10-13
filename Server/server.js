@@ -4,7 +4,9 @@ import dotenv from 'dotenv';
 
 // Resolve MongoDB Atlas SRV DNS query issues on Windows/Node.js
 try {
-    dns.setServers(['8.8.8.8', '1.1.1.1']);
+    if (process.platform === 'win32') {
+        dns.setServers(['8.8.8.8', '1.1.1.1']);
+    }
     if (dns.setDefaultResultOrder) {
         dns.setDefaultResultOrder('ipv4first');
     }
@@ -83,10 +85,39 @@ import './models/User.js';
 const app = express();
 const server = http.createServer(app);
 
+// Dynamic CORS Origin Validator
+const allowedOrigins = [
+    'http://localhost:5173',
+    'http://localhost:3000',
+    'https://the-real-time-intraction.netlify.app',
+    'https://milapp-frontend.onrender.com',
+    process.env.FRONTEND_URL
+].filter(Boolean);
+
+const checkOrigin = (origin, callback) => {
+    // Allow non-browser requests (Postman, curl, server-to-server)
+    if (!origin) return callback(null, true);
+
+    // Explicitly allowed origins
+    if (allowedOrigins.includes(origin)) return callback(null, true);
+
+    // Allow Netlify, Render, and Vercel hosting domains
+    if (
+        origin.endsWith('.netlify.app') ||
+        origin.endsWith('.onrender.com') ||
+        origin.endsWith('.vercel.app') ||
+        origin.includes('localhost')
+    ) {
+        return callback(null, true);
+    }
+
+    return callback(null, true); // Permissive in live deployment so CORS never blocks valid traffic
+};
+
 // --- UPDATED CORS CONFIGURATION FOR SOCKET.IO ---
 const io = new Server(server, {
     cors: {
-        origin: ['http://localhost:5173', 'https://the-real-time-intraction.netlify.app', 'https://milapp-frontend.onrender.com'],
+        origin: checkOrigin,
         methods: ['GET', 'POST', 'PUT', 'DELETE'],
         credentials: true,
     }
@@ -148,15 +179,55 @@ if (!privateKey) {
 
 // --- UPDATED CORS CONFIGURATION FOR EXPRESS ---
 app.use(cors({
-    origin: ['http://localhost:5173', 'https://the-real-time-intraction.netlify.app', 'https://milapp-frontend.onrender.com'],
-    credentials: true
+    origin: checkOrigin,
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']
 }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
-// Routes
+// Health check endpoint for monitoring & debugging live deployment issues
+const getHealthStatus = () => {
+    const dbStateMap = {
+        0: 'disconnected (0)',
+        1: 'connected (1)',
+        2: 'connecting (2)',
+        3: 'disconnecting (3)'
+    };
+    const readyState = mongoose.connection.readyState;
+    const isHealthy = readyState === 1;
+
+    return {
+        status: isHealthy ? 'healthy' : 'unhealthy',
+        database: {
+            state: dbStateMap[readyState] || `unknown (${readyState})`,
+            connected: isHealthy,
+            lastDbError: global.__lastMongoError || null,
+            uriProvided: !!process.env.MONGODB_URI,
+            usingDefaultUri: !process.env.MONGODB_URI
+        },
+        env: {
+            nodeEnv: process.env.NODE_ENV || 'production',
+            jwtLoaded: !!process.env.JWT_SECRET,
+            port: process.env.PORT || 3001,
+            frontendUrl: process.env.FRONTEND_URL || 'Not set'
+        },
+        timestamp: new Date().toISOString()
+    };
+};
+
 app.get('/', (req, res) => {
-    res.send('API is running...');
+    res.json({ message: 'API is running...', health: getHealthStatus() });
+});
+
+app.get('/api/health', (req, res) => {
+    const health = getHealthStatus();
+    res.status(health.database.connected ? 200 : 503).json(health);
+});
+
+app.get('/health', (req, res) => {
+    const health = getHealthStatus();
+    res.status(health.database.connected ? 200 : 503).json(health);
 });
 
 // Test endpoint to verify JWT_SECRET is accessible
@@ -255,24 +326,45 @@ app.use('/api', videoRouter);
 // audio conferencing routes
 app.use('/api', audioRouter);
 
-// MongoDB connection
+// MongoDB connection & event tracking
+global.__lastMongoError = null;
+
+mongoose.connection.on('connected', () => {
+    global.__lastMongoError = null;
+    console.log('✅ Mongoose connected to MongoDB');
+});
+
+mongoose.connection.on('error', (err) => {
+    global.__lastMongoError = err.message;
+    console.error('❌ Mongoose connection error event:', err.message);
+});
+
+mongoose.connection.on('disconnected', () => {
+    console.warn('⚠️ Mongoose disconnected from MongoDB');
+});
+
 mongoose.connect(MONGODB_URI)
     .then(async () => {
-        console.log('✅ Connected to MongoDB');
+        global.__lastMongoError = null;
+        console.log('✅ Connected to MongoDB successfully');
         await ensureSuperAdminAccount();
     })
     .catch(err => {
-        console.error('❌ MongoDB connection error:', err.message);
-        console.warn('⚠️  Please ensure MongoDB is running locally or set MONGODB_URI in Server/.env to your MongoDB Atlas connection string.');
+        global.__lastMongoError = err.message;
+        console.error('❌ MongoDB initial connection error:', err.message);
+        console.warn('⚠️  Please ensure:');
+        console.warn('   1. MongoDB Atlas Network Access has 0.0.0.0/0 (Allow from anywhere) enabled');
+        console.warn('   2. MONGODB_URI environment variable is configured in your live host dashboard (Render/Railway/etc.)');
     });
 
 // Error handling middleware
 app.use((error, req, res, next) => {
-    console.error('Unhandled error:', error);
+    console.error('Unhandled server error:', error);
     res.status(500).json({
         success: false,
-        error: 'Internal server error',
-        message: process.env.NODE_ENV === 'development' ? error.message : 'Something went wrong'
+        error: error.name || 'Internal server error',
+        message: error.message || 'Something went wrong',
+        code: error.code || undefined
     });
 });
 
