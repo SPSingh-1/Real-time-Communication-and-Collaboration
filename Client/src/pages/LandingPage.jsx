@@ -596,11 +596,11 @@ const LandingPage = () => {
                   {/* Participant 1 */}
                   <div className="relative aspect-video rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-center overflow-hidden group">
                     <div className="w-16 h-16 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-xl font-bold text-white shadow-lg">
-                      SP
+                      JD
                     </div>
                     <div className="absolute bottom-3 left-3 bg-black/60 backdrop-blur-md px-2.5 py-1 rounded-lg text-xs font-semibold text-white flex items-center gap-1.5">
                       <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
-                      <span>S.P. Singh (Host)</span>
+                      <span>John Doe (Host)</span>
                     </div>
                     <div className="absolute top-3 right-3 bg-blue-600/80 text-white text-[10px] px-2 py-0.5 rounded-md font-bold">
                       HD 1080p
@@ -923,7 +923,7 @@ const LandingPage = () => {
               The real-time collaboration operating system built for modern distributed teams and enterprise organizations.
             </p>
             <div className="flex items-center gap-3 text-slate-400">
-              <a href="https://github.com/SPSingh-1" target="_blank" rel="noreferrer" className="p-2 bg-slate-900 hover:text-white rounded-lg border border-slate-800 transition">
+              <a href="https://github.com/johndoe" target="_blank" rel="noreferrer" className="p-2 bg-slate-900 hover:text-white rounded-lg border border-slate-800 transition">
                 <FaGithub className="w-4 h-4" />
               </a>
               <a href="https://twitter.com" target="_blank" rel="noreferrer" className="p-2 bg-slate-900 hover:text-white rounded-lg border border-slate-800 transition">

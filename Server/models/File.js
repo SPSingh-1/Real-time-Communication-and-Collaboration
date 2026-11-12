@@ -4,7 +4,7 @@ import mongoose from 'mongoose';
 const fileSchema = new mongoose.Schema({
     fileUrl: { type: String, required: true },
     filename: { type: String, required: true }, // Original file name
-    uploadedBy: { type: String, required: true }, // User's name (e.g., "Shashi")
+    uploadedBy: { type: String, required: true }, // User's name (e.g., "John Doe")
     uploadedById: { // User's MongoDB _id
         type: mongoose.Schema.Types.ObjectId,
         ref: 'user', // Match your User model name
